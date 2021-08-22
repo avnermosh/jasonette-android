@@ -37,10 +37,11 @@
               </intent-filter>
               -->
     </activity>
-  <activity
-    android:name="com.commonsware.cwac.cam2.CameraActivity"
-    android:process=":cwac_cam2"
-    android:theme="@style/CameraTheme"/>
+    <activity
+      android:name="com.commonsware.cwac.cam2.CameraActivity"
+      android:process=":cwac_cam2"
+      android:theme="@style/CameraTheme">
+    </activity>
 
     <!-- Uncomment below line and add your Google Maps API key -->
     <!--

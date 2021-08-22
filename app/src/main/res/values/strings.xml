@@ -1,5 +1,43 @@
 <resources>
-    <string name="app_name">Jasonette</string>
-    <string name="url">file://col_from_local_files.json</string>
+    <string name="app_name">ConstructionOverlay</string>
+    <!-- <string name="url">file://load_from_offline_online_via_button_in_json.json</string> -->
+
+    <!-- <string name="url">file://load_from_offline_online_via_button.json</string> -->
+    <!-- <string name="url">file://hello.json</string> -->
+    <!-- <string name="url">file://col_from_local_files.json</string> -->
+    <!-- <string name="url">file://AgentJason_href_app.json</string> -->
+    <!-- <string name="url">file://AgentJason_trigger_app.json</string> -->
+    <!-- <string name="url">file://button_example_app.json</string> -->
+    <!-- <string name="url">file://splash_screen.json</string> -->
+    <!-- <string name="url">file://s3-upload-example-app.json</string> -->
+    <!-- <string name="url">file://docs/examples/jasonette/apps/instagram/camera.json</string> -->
+    <!-- <string name="url">file://docs/examples/jasonette/apps/beerjs/splash.json</string> -->
+    <!-- <string name="url">file://docs/examples/jasonette/apps/erc20/mobile/app/main.json</string> -->
+    <!-- <string name="url">file://docs/examples/jasonette/apps/erc20/mobile/app/simple.json</string> -->
+    <!-- <string name="url">file://docs/examples/jasonette/apps/layers/index.json</string> -->
+    <!-- <string name="url">file://docs/examples/jasonette/apps/jasonpedia/view/background/index.json</string> -->
+    
+    
+
+    <!-- ok - usecase0 -->
+    <!-- <string name="url">file://load_external_image_file_via_webcontainer_with_attribute_text.json</string> -->
+
+    <!-- ok - usecase1 -->
+    <!-- <string name="url">file://load_offline_online_via_buttons_via_jason.json</string> -->
+    
+    <!-- ok - usecase2 -->
+    <!-- <string name="url">file://overlay_button_on_local_image_via_jason_layers.json</string> -->
+    
+    <!-- ok - usecase3 - 1 button -->
+    <!-- ok when using via "url:" (not ok when using via "text:") -->
+    <!-- <string name="url">file://overlay_button_on_local_image_via_webcontainer.json</string> -->
+    
+    <!-- ok - usecase3 - 2 buttons -->
+    <string name="url">file://overlay_button_on_local_image_via_webcontainer_take2.json</string>
+
+
+    <!-- <string name="url">file://native_transition.json</string> -->
+    
+    
     <string name="launch">file://preload.json</string>
 </resources>

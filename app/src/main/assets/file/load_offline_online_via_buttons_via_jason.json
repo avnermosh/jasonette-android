@@ -1,0 +1,73 @@
+{
+    "$jason": {
+        "head": {
+            "title": "Test̑1",
+            "actions": {
+                "$load": {
+                    "type": "$render"
+                },
+                "$foreground": {
+                    "type": "$reload"
+                }
+            },
+            "templates": {
+                "body": {
+                    "style": {
+                        "background": "#ffffff",
+                        "border": "none"
+                    },
+                    "sections": [
+                        {
+                            "items": [
+                                {
+                                    "type": "label",
+                                    "text": "Online mode from local webserver",
+                                    "href": {
+                                        "url": "http://192.168.1.75",
+                                        "view": "web"
+                                    }
+                                },
+                                {
+                                    "type": "button",
+                                    "text": "Offline (load local files)",
+                                    "style": {
+                                        "width": "200",
+                                        "background": "#87CEFA",
+                                        "color": "#ffffff",
+                                        "font": "HelveticaNeue",
+                                        "size": "12",
+                                        "corner_radius": "25",
+                                        "padding": "20"
+                                    },
+                                    "action": {
+                                        "type": "$href",
+                                        "options": {
+                                            "url": "file://col_from_local_files.json"
+                                        }
+                                    }
+                                },
+                                {
+                                    "type": "button",
+                                    "text": "Online (load remote files)",
+                                    "style": {
+                                        "width": "200",
+                                        "background": "#7cfde9",
+                                        "color": "#ffffff",
+                                        "font": "HelveticaNeue",
+                                        "size": "12",
+                                        "corner_radius": "25",
+                                        "padding": "20"
+                                    },
+                                    "href": {
+                                        "url": "https://bldlog.com",
+                                        "view": "web"
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        }
+    }
+}

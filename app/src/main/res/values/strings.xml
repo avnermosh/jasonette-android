@@ -16,6 +16,7 @@
     <!-- <string name="url">file://docs/examples/jasonette/apps/erc20/mobile/app/simple.json</string> -->
     <!-- <string name="url">file://docs/examples/jasonette/apps/layers/index.json</string> -->
     <!-- <string name="url">file://docs/examples/jasonette/apps/jasonpedia/view/background/index.json</string> -->
+    <!-- <string name="url">file://native_transition.json</string> -->
     
     
 
@@ -29,11 +30,14 @@
     <!-- <string name="url">file://overlay_button_on_local_image_via_jason_layers.json</string> -->
     
     <!-- ok - usecase3 - 2 buttons -->
-    <string name="url">file://overlay_button_on_local_image_via_webcontainer.json</string>
+    <!-- <string name="url">file://overlay_button_on_local_image_via_webcontainer.json</string> -->
 
 
-    <!-- <string name="url">file://native_transition.json</string> -->
-    
-    
+    <!-- ok - camera takes a photo on real device -->
+    <string name="url">file://hello.json</string>
+
+    <!-- ok - camera takes a photo on real device -->
+    <!-- <string name="url">file://media_camera.json</string> -->
+
     <string name="launch">file://preload.json</string>
 </resources>

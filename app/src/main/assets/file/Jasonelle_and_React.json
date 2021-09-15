@@ -1,0 +1,36 @@
+{
+    "$jason": {
+        "head": {
+            "actions": {
+                "camera.show": {
+                    "type": "$media.camera",
+                    "options": {
+                        "type": "photo",
+                        "quality": "high"
+                    },
+                    "success": {
+                        "type": "$agent.request",
+                        "options": {
+                            "id": "$webcontainer",
+                            "method": "window.savePhoto",
+                            "params": ["{{$jason.data_uri}}"]
+                        }
+                    }
+                }
+            }
+        },
+        "body": {
+            "background": {
+                "type": "html",
+                "url": "http://192.168.1.75:3000",
+                "style": {
+                    "background": "#ffffff",
+                    "progress" : "rgba(0,0,0,0)"
+                },
+                "action": {
+                    "type": "$default"
+                }
+            }
+        }
+    }
+}

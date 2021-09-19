@@ -1,12 +1,77 @@
 {
     "$jason": {
         "head": {
-            "title": "Web Container Agent Demo"
+            "title": "Web Container Agent Demo",
+            "actions": {
+                "camera.show": {
+                    "type": "$media.camera",
+                    "options": {
+                        "type": "photo",
+                        "quality": "high"
+                    },
+                    "success": {
+                        "type": "$agent.request",
+                        "options": {
+                            "id": "$webcontainer",
+                            "method": "window.savePhoto",
+                            "params": ["{{$jason.data_uri}}"]
+                        }
+                    }
+                },
+                "media.permissions": {
+                    "type": "$media.permissions",
+                    "options": {
+                        "types": "camera"
+                    },
+                    "success": {
+                        "type": "$util.alert",
+                        "options": {
+                            "title": "Hello",
+                            "description": "{{$jason}}"
+                        }
+                    }
+                },
+                "media.pickerAndCamera": {
+                    "type": "$media.pickerAndCamera",
+                    "options": {
+                        "edit": "true",
+                        "type": "image1"
+                    },
+                    "success": {
+                        "type": "$agent.request",
+                        "options": {
+                            "id": "$webcontainer",
+                            // "method": "window.savePhoto",
+                            "method": "window.openImageFileButton_onChange",
+                            // "method": "window.onChange2",
+                            // "method": "window.onChange3",
+                            // "method": "window.onChange4",
+                            "params": ["{{$jason.data_uri}}"]
+                        }
+                    }
+                },
+                "media.picker": {
+                    "type": "$media.picker",
+                    "options": {
+                        "edit": "true",
+                        "type": "video"
+                    },
+                    "success": {
+                        "type": "$util.alert",
+                        "options": {
+                            "title": "Selected {{$jason['content_type']}} at",
+                            "description": "{{$jason.file_url}}"
+                        }
+                    }
+                }
+            }
         },
         "body": {
             "background": {
                 "type": "html",
                 "url": "file://overlay_button_on_local_image_via_webcontainer.html",
+                // "url": "https://192.168.1.75",
+                // "url": "http://192.168.1.75:3000",
                 "action": {
                     "type": "$default"
                 }            

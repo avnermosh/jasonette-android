@@ -8,15 +8,22 @@
         <div class="container">
             <img class="container_img" src='backgroundImageConstructionSite1.jpg'/>
             <button id="offlineButton" class="btn">Offline (load local files)</button>
-            <button id="onlineButton" class="btn">Online (load remote files)</button>
+            <button id="onlineButton1" class="btn">Online (load remote files)</button>
+            <button id="onlineButton2" class="btn">Online-localhost (load remote files from localhost)</button>
 
             <script type="text/javascript">
              document.getElementById("offlineButton").onclick = function () {
                  location.href = "root/html/raw/index.html";
              };
 
-             document.getElementById("onlineButton").onclick = function () {
+             document.getElementById("onlineButton1").onclick = function () {
                  location.href = "https://www.bldlog.com";
+             };
+
+             document.getElementById("onlineButton2").onclick = function () {
+                 /* location.href = "https://local.bldlog.com";*/
+                 location.href = "http://192.168.1.75";
+                 /* location.href = "http://192.168.1.75:3000";*/
              };
             </script>
             

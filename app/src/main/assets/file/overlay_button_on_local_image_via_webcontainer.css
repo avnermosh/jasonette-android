@@ -29,11 +29,18 @@
 #offlineButton {
     background-color: red;
     position: absolute;
+    top: 20%;
+    left: 50%;
+}
+
+#onlineButton1 {
+    background-color: blue;
+    position: absolute;
     top: 40%;
     left: 50%;
 }
 
-#onlineButton {
+#onlineButton2 {
     background-color: blue;
     position: absolute;
     top: 60%;

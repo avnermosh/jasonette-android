@@ -31,6 +31,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
 
+// avner
+import android.webkit.SslErrorHandler;
+import android.net.http.SslError;
+
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.OkHttpClient;
@@ -372,6 +376,29 @@ public class JasonAgentService {
                     agent.setWebChromeClient(new WebChromeClient());
                 }
                 agent.setWebViewClient(new WebViewClient() {
+
+                    @Override
+                    public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError error) {
+                      // Ignore SSL certificate errors
+                      Log.d("Warning", "Ignore SSL certificate errors11111111111111111: " + error.toString());
+                      switch (error.getPrimaryError()) {
+                      case SslError.SSL_UNTRUSTED:
+                      Log.d("Warning", "SslError : The certificate authority is not trusted.");
+                      break;
+                      case SslError.SSL_EXPIRED:
+                      Log.d("Warning", "SslError : The certificate has expired.");
+                      break;
+                      case SslError.SSL_IDMISMATCH:
+                      Log.d("Warning", "The certificate Hostname mismatch.");
+                      break;
+                      case SslError.SSL_NOTYETVALID:
+                      Log.d("Warning", "The certificate is not yet valid.");
+                      break;
+                      }
+                      handler.proceed();                      
+                    }
+
+                    
                     @Override public void onPageFinished(WebView view, final String url) {
                         // Inject agent.js
                         try {

@@ -1,0 +1,64 @@
+{
+    "$jason": {
+        "head": {
+            "actions": {
+                "camera.show": {
+                    "type": "$media.camera",
+                    "options": {
+                        "type": "photo",
+                        "quality": "high"
+                    },
+                    "success": {
+                        "type": "$agent.request",
+                        "options": {
+                            "id": "$webcontainer",
+                            "method": "window.savePhoto",
+                            "params": ["{{$jason.data_uri}}"]
+                        }
+                    }
+                },
+                "media.pickerAndCamera": {
+                    "type": "$media.pickerAndCamera",
+                    "options": {
+                        "edit": "true",
+                        "type": "image"
+                    },
+                    "success": {
+                        "type": "$util.alert",
+                        "options": {
+                            "title": "Selected {{$jason['content_type']}} at",
+                            "description": "{{$jason.file_url}}"
+                        }
+                    }
+                },
+                "media.picker": {
+                    "type": "$media.picker",
+                    "options": {
+                        "edit": "true",
+                        "type": "image"
+                    },
+                    "success": {
+                        "type": "$util.alert",
+                        "options": {
+                            "title": "Selected {{$jason['content_type']}} at",
+                            "description": "{{$jason.file_url}}"
+                        }
+                    }
+                }
+            }
+        },
+        "body": {
+            "background": {
+                "type": "html",
+                "url": "http://192.168.1.75:3000",
+                "style": {
+                    "background": "#ffffff",
+                    "progress" : "rgba(0,0,0,0)"
+                },
+                "action": {
+                    "type": "$default"
+                }
+            }
+        }
+    }
+}

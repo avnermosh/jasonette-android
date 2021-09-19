@@ -1,0 +1,16 @@
+{
+    "$jason": {
+        "head": {
+            "title": "Web Container Agent Demo"
+        },
+        "body": {
+            "background": {
+                "type": "html",
+                "url": "file://overlay_button_on_local_image_via_webcontainer.html",
+                "action": {
+                    "type": "$default"
+                }            
+            }
+        }
+    }
+}

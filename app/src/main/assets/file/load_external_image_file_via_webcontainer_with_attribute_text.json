@@ -1,0 +1,15 @@
+{
+  "$jason": {
+    "head": {
+      "title": "pdf.js"
+    },
+    "body": {
+      "style": {
+        "background": {
+          "type": "html",
+          "text": "<html><head><style>html{padding:0;margin:0;margin-top: 64px;}</style><body><img src='https://image.shutterstock.com/image-photo/example-word-written-on-wooden-260nw-1765482248.jpg'/></body></html>"
+        }
+      }
+    }
+  }
+}

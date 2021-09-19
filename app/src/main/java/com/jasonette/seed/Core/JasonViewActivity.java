@@ -559,6 +559,9 @@ public class JasonViewActivity extends AppCompatActivity implements ActivityComp
             if(intent_to_resolve != null) {
                 if(intent_to_resolve.has("type")){
                     ((Launcher)getApplicationContext()).trigger(intent_to_resolve, JasonViewActivity.this);
+                    // if (intent_to_resolve.get("type") == "success") {
+                    //     backgroundWebview.onActivityResult(intent_to_resolve.getInt("name"), RESULT_OK, (Intent)intent_to_resolve.get("intent"));
+                    // }
                     intent_to_resolve = null;
                 }
             }

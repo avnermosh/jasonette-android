@@ -1,0 +1,45 @@
+/* https://www.w3schools.com/howto/tryit.asp?filename=tryhow_css_button_on_image */
+
+.container {
+    position: relative;
+    width: 100%;
+    max-width: 400px;
+}
+
+.container img {
+    width: 100%;
+    /* height: auto; */
+    height: 100%;
+    object-fit: cover;
+}
+
+.container .btn {
+    transform: translate(-50%, -50%);
+    -ms-transform: translate(-50%, -50%);
+    /* background-color: #555; */
+    color: white;
+    font-size: 16px;
+    padding: 12px 24px;
+    border: none;
+    cursor: pointer;
+    border-radius: 5px;
+    text-align: center;
+}
+
+#offlineButton {
+    background-color: red;
+    position: absolute;
+    top: 40%;
+    left: 50%;
+}
+
+#onlineButton {
+    background-color: blue;
+    position: absolute;
+    top: 60%;
+    left: 50%;
+}
+
+.container .btn:hover {
+    background-color: black;
+}

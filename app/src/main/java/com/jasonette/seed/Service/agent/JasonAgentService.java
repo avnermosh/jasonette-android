@@ -108,6 +108,7 @@ public class JasonAgentService {
                 JSONObject transaction = (JSONObject) this.agent.getTag();
 
                 if (message.has("request")) {
+                  Log.d("Warning", "foo1");
                     /***
                      1. Request: Agent making request to another agent
 
@@ -143,6 +144,8 @@ public class JasonAgentService {
                     }
 
                 } else if (message.has("response")) {
+                  Log.d("Warning", "foo2");
+                    
                     /*****************
 
                      2. Response
@@ -217,6 +220,7 @@ public class JasonAgentService {
                     }
 
                 } else if (message.has("trigger")) {
+                  Log.d("Warning", "foo3");
                     /************************
 
                      3. Trigger
@@ -255,6 +259,7 @@ public class JasonAgentService {
 
 
                 } else if (message.has("href")) {
+                  Log.d("Warning", "foo4");
                     /************************************
 
                      4. Href
@@ -280,6 +285,7 @@ public class JasonAgentService {
 
                 }
             } catch (Exception e) {
+              Log.d("Warning", "foo5");
                 Log.d("Warning", e.getStackTrace()[0].getMethodName() + " : " + e.toString());
             }
         }
@@ -338,6 +344,9 @@ public class JasonAgentService {
                 CookieManager.getInstance().setAcceptCookie(true);
                 agent = new WebView(context);
                 agent.getSettings().setDefaultTextEncodingName("utf-8");
+                // avner
+                agent.getSettings().setAppCacheEnabled(false);
+                agent.getSettings().setCacheMode(WebSettings.LOAD_NO_CACHE);
 
                 if (id.startsWith("$webcontainer")) {
                     ProgressBar pBar;
@@ -554,8 +563,12 @@ public class JasonAgentService {
                 settings.setJavaScriptCanOpenWindowsAutomatically(true);
                 settings.setAppCachePath(context.getCacheDir().getAbsolutePath());
                 settings.setAllowFileAccess(true);
-                settings.setAppCacheEnabled(true);
-                settings.setCacheMode(WebSettings.LOAD_DEFAULT);
+                // settings.setAppCacheEnabled(true);
+                // settings.setCacheMode(WebSettings.LOAD_DEFAULT);
+                // avner
+                settings.setAppCacheEnabled(false);
+                settings.setCacheMode(WebSettings.LOAD_NO_CACHE);
+                
                 
                 // Check for special options in background webview
                 /* Example JSON

@@ -2,10 +2,12 @@
     <string name="app_name">ConstructionOverlay</string>
 
     <!-- ok - camera works -->
-     <!-- <string name="url">file://Jasonelle_and_React.json</string> -->
-    
+    <string name="url">file://Jasonelle_and_React.json</string>
+
     <!-- ok - usecase3 - 2 buttons -->
-    <string name="url">file://overlay_button_on_local_image_via_webcontainer.json</string>
+<!--
+     <string name="url">file://overlay_button_on_local_image_via_webcontainer.json</string>
+-->
 
     <!-- ok - camera takes a photo on real device -->
     <!-- <string name="url">file://hello.json</string> -->

@@ -9,6 +9,11 @@ console.log("file://custom.js loaded");
 //     console.log('BEG Scenebar::window.onChange3');
 // });
 
+
+openImageFileButton_onChange2 = function () {
+    console.log('BEG openImageFileButton_onChange2');
+};
+
 onChange4 = function () {
     console.log('BEG onChange4');
 };

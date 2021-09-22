@@ -2,8 +2,28 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.jasonette.seed">
 
+    <uses-feature android:name="android.hardware.camera" android:required="false"/>
+
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.VIBRATE"/>
+
+    <queries>
+        <!-- Browser -->
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="http" />
+        </intent>
+
+        <!-- Camera -->
+        <intent>
+            <action android:name="android.media.action.IMAGE_CAPTURE" />
+        </intent>
+
+        <!-- Gallery -->
+        <intent>
+            <action android:name="android.intent.action.GET_CONTENT" />
+        </intent>
+    </queries>
     <application
         android:name=".Launcher.Launcher"
         android:allowBackup="true"
@@ -12,6 +32,17 @@
         android:supportsRtl="true"
       android:usesCleartextTraffic="true"
         android:theme="@style/SplashTheme">
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="com.example.android.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths"></meta-data>
+        </provider>
+
         <activity android:name=".Core.JasonViewActivity" android:windowSoftInputMode="adjustResize" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -66,6 +97,7 @@
 
         <service android:name=".Service.push.JasonPushRegisterService" />
     </application>
+
 
     <!-- Uncomment below line to enable $util.addressbook -->
     <!--

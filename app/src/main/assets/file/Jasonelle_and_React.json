@@ -13,6 +13,7 @@
                         "options": {
                             "id": "$webcontainer",
                             "method": "window.savePhoto",
+                            "data": "bar1",
                             "params": ["{{$jason.data_uri}}"]
                         }
                     }
@@ -24,10 +25,13 @@
                         "type": "image"
                     },
                     "success": {
-                        "type": "$util.alert",
+                        "trigger": "camera.show"
+                    },
+                    "error": {
+                        "type": "$util.banner",
                         "options": {
-                            "title": "Selected {{$jason['content_type']}} at",
-                            "description": "{{$jason.file_url}}"
+                            "title": "Error",
+                            "description": "Please enter a valid url."
                         }
                     }
                 },

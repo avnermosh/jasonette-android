@@ -22,6 +22,10 @@ public class JasonHtmlComponent {
                 WebView webview = new WebView(context);
                 webview.getSettings().setDefaultTextEncodingName("utf-8");
 
+                // avner
+                webview.getSettings().setAppCacheEnabled(false);
+                webview.getSettings().setCacheMode(WebSettings.LOAD_NO_CACHE);
+                
                 return webview;
             } catch (Exception e) {
                 Log.d("Warning", e.getStackTrace()[0].getMethodName() + " : " + e.toString());
@@ -46,8 +50,11 @@ public class JasonHtmlComponent {
 
                 settings.setAppCachePath( context.getCacheDir().getAbsolutePath() );
                 settings.setAllowFileAccess( true );
-                settings.setAppCacheEnabled( true );
-                settings.setCacheMode( WebSettings.LOAD_DEFAULT );
+                // settings.setAppCacheEnabled( true );
+                // settings.setCacheMode( WebSettings.LOAD_DEFAULT );
+                // avner
+                settings.setAppCacheEnabled(false);
+                settings.setCacheMode(WebSettings.LOAD_NO_CACHE);
 
 
                 // not interactive by default;

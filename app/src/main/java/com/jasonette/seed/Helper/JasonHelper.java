@@ -6,6 +6,7 @@ import android.content.res.AssetManager;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.util.TypedValue;
 import android.view.WindowManager;
 import android.widget.TextView;
@@ -349,6 +350,7 @@ public class JasonHelper {
         // This will be used to name the handlers
         int requestCode;
         try {
+            Log.d("Warning", "name: " + name);
             requestCode = Integer.parseInt(name);
         } catch (NumberFormatException e) {
             requestCode = -1;

@@ -24,8 +24,10 @@ import com.commonsware.cwac.cam2.AbstractCameraActivity;
 import com.commonsware.cwac.cam2.CameraActivity;
 import com.commonsware.cwac.cam2.VideoRecorderActivity;
 import com.commonsware.cwac.cam2.ZoomStyle;
+import com.jasonette.seed.Core.JasonViewActivity;
 import com.jasonette.seed.Helper.JasonHelper;
 import com.jasonette.seed.Launcher.Launcher;
+import com.jasonette.seed.Service.agent.JasonAgentService;
 
 import org.json.JSONObject;
 
@@ -36,6 +38,9 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 public class JasonMediaAction {
+
+    // https://developpaper.com/android-webview-supports-input-file-to-enable-camera-photo-selection/
+    public static Uri imageUri;
 
     /**********************************
      *
@@ -97,16 +102,60 @@ public class JasonMediaAction {
      *
      **********************************/
 
-    private File createImageFile() throws IOException {
+    // https://developpaper.com/android-webview-supports-input-file-to-enable-camera-photo-selection/
+    private int REQUEST_CODE = 1234;
+
+    /**
+     *Call camera
+     */
+    public static Intent takePhoto1() {
+        //Adjust the camera in a way that specifies the storage location for taking pictures
+        String filePath = Environment.getExternalStorageDirectory() + File.separator
+                + Environment.DIRECTORY_PICTURES + File.separator;
+        // String fileName = "IMG_" + DateFormat.format("yyyyMMdd_hhmmss", Calendar.getInstance(Locale.CHINA)) + ".jpg";
+        String fileName = "tmp1.jpg";
+        imageUri = Uri.fromFile(new File(filePath + fileName));
+
+        Intent captureIntent = new Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
+        captureIntent.putExtra(MediaStore.EXTRA_OUTPUT, imageUri);
+
+        Intent galleryIntent = new Intent(Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+
+        Intent chooserIntent = Intent.createChooser(galleryIntent, "Image Chooser");
+        chooserIntent.putExtra(Intent.EXTRA_INITIAL_INTENTS, new Parcelable[]{captureIntent});
+
+        // Intent chooserIntent = galleryIntent;
+
+//        Intent chooserIntent = Intent.createChooser(captureIntent, "Image Chooser");
+
+        return chooserIntent;
+
+    }
+
+  
+/*
+    public static void takePhoto2(final JSONObject action, JSONObject data, final JSONObject event, final Context context) {
+      Intent chooserIntent = takePhoto1();
+
+      JSONObject callback = new JSONObject();
+      callback.put("class", "JasonMediaAction");
+      callback.put("method", "process");
+
+      JasonHelper.dispatchIntent(action, data, event, context, chooserIntent, callback);
+    }
+*/
+
+
+    private static File createImageFile() throws IOException {
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
         String imageFileName = "1mind_" + timeStamp + ".jpg";
         File photo = new File(Environment.getExternalStorageDirectory(),  imageFileName);
         return photo;
     }
 
-    private File mTempImage;
+    // public File mTempImage;
 
-    public Intent makePhotoIntent(String title, Context context){
+    public static Intent makePhotoIntent(String title){
 
         //Build galleryIntent
         Intent galleryIntent = new Intent(Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
@@ -116,7 +165,7 @@ public class JasonMediaAction {
         Intent chooser = Intent.createChooser(galleryIntent,title);
 
         Intent  cameraIntent = new Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
-        mTempImage = null;
+        File mTempImage = null;
         try {
             mTempImage = createImageFile();
         } catch (IOException e) {
@@ -153,7 +202,7 @@ public class JasonMediaAction {
                 intent = new Intent(Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
             }
 
-            intent = makePhotoIntent("pickerAndCamera", context);
+            intent = makePhotoIntent("pickerAndCamera");
 
             // dispatchIntent method
             // 1. triggers an external Intent

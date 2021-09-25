@@ -1,5 +1,6 @@
 package com.jasonette.seed.Core;
 
+import android.app.Activity;
 import android.app.SearchManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -18,6 +19,10 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Parcelable;
 
+import androidx.activity.result.ActivityResult;
+import androidx.activity.result.ActivityResultCallback;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
@@ -38,12 +43,15 @@ import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewTreeObserver;
 import android.view.inputmethod.InputMethodManager;
+import android.webkit.ValueCallback;
 import android.webkit.WebView;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
+import android.widget.Toast;
+
 import com.aurelhubert.ahbottomnavigation.AHBottomNavigation;
 import com.aurelhubert.ahbottomnavigation.AHBottomNavigationItem;
 import com.bumptech.glide.Glide;
@@ -53,6 +61,7 @@ import com.bumptech.glide.request.target.CustomTarget;
 import com.bumptech.glide.request.target.SizeReadyCallback;
 import com.bumptech.glide.request.target.Target;
 import com.bumptech.glide.request.transition.Transition;
+import com.jasonette.seed.Action.JasonMediaAction;
 import com.jasonette.seed.Component.JasonComponentFactory;
 import com.jasonette.seed.Component.JasonImageComponent;
 import com.jasonette.seed.Helper.JasonHelper;
@@ -83,6 +92,8 @@ import java.util.concurrent.Executors;
 import static com.bumptech.glide.Glide.with;
 
 public class JasonViewActivity extends AppCompatActivity implements ActivityCompat.OnRequestPermissionsResultCallback{
+    public static ActivityResultLauncher<Intent> someActivityResultLauncher;
+
     private JasonToolbar toolbar;
     private RecyclerView listView;
     public String url;
@@ -130,6 +141,8 @@ public class JasonViewActivity extends AppCompatActivity implements ActivityComp
     private boolean isexecuting = false;
     /* Variable for checking a savedInstanceState for loadURL in JasonAgentService */
     public boolean savedInstance = false;
+    // https://developpaper.com/android-webview-supports-input-file-to-enable-camera-photo-selection/
+    public static ValueCallback<Uri[]> mUploadCallbackAboveL;
 
     /*************************************************************
      *
@@ -306,6 +319,56 @@ public class JasonViewActivity extends AppCompatActivity implements ActivityComp
             loaded = true; // in case of oauth process we need to set loaded to true since we know it's already been loaded.
             return;
         }
+
+
+        // You can do the assignment inside onAttach or onCreate, i.e, before the activity is displayed
+        someActivityResultLauncher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                new ActivityResultCallback<ActivityResult>() {
+                    @Override
+                    public void onActivityResult(ActivityResult result) {
+
+                        Log.d("Warning", "result.getResultCode(): " + result.getResultCode());
+                        int resultCode = result.getResultCode();
+                        Log.d("Warning", "resultCode: " + resultCode);
+
+                        try {
+                            // We can't process the intent here because
+                            // we need to wait until onResume gets triggered (which comes after this callback)
+                            // onResume reattaches all the onCall/onSuccess/onError callbacks to the current Activity
+                            // so we need to wait until that happens.
+                            // Therefore here we only set the "intent_to_resolve", and the actual processing is
+                            // carried out inside onResume()
+                            Intent data = result.getData();
+
+
+                            if (mUploadCallbackAboveL != null) {
+                                chooseAbove(resultCode, data);
+                            } else {
+                                // Toast.makeText (this, "an error occurred.", Toast.LENGTH_SHORT).show();
+                                Log.d("Warning", "an error occurred");
+                            }
+
+                            intent_to_resolve = new JSONObject();
+                            if(result.getResultCode() == Activity.RESULT_OK) {
+                                intent_to_resolve.put("type", "$agent.request");
+                                intent_to_resolve.put("name", "onChange4");
+                                intent_to_resolve.put("intent", data);
+                            } else {
+                                intent_to_resolve.put("type", "error");
+                                intent_to_resolve.put("name", "foo2");
+                            }
+                        } catch (Exception e) {
+                            Log.d("Warning", e.getStackTrace()[0].getMethodName() + " : " + e.toString());
+                        }
+
+                        if (result.getResultCode() == Activity.RESULT_OK) {
+                            // There are no request codes
+                            Intent data = result.getData();
+                            // doSomeOperations();
+                        }
+                    }
+                });
 
         if(savedInstanceState != null) {
             this.savedInstance = false;
@@ -578,10 +641,54 @@ public class JasonViewActivity extends AppCompatActivity implements ActivityComp
 
     }
 
+    // https://developpaper.com/android-webview-supports-input-file-to-enable-camera-photo-selection/
+
+    /**
+     *Callback processing of Android API > = 21 (Android 5.0)
+     *@ param resultcode select the return code of the file or photo
+     *@ param data select file or photo return results
+     */
+    private void chooseAbove(int resultCode, Intent data) {
+        Log.d ("wangj", "return call method -- chooseabove");
+
+        if (RESULT_OK == resultCode) {
+            updatePhotos();
+
+            if (data != null) {
+                //Here is the processing of selecting pictures from a file
+                Uri[] results;
+                Uri uriData = data.getData();
+                if (uriData != null) {
+                    results = new Uri[]{uriData};
+                    for (Uri uri : results) {
+                        Log.d ("wangj", "system return URI:"+ uri.toString ());
+                    }
+                    mUploadCallbackAboveL.onReceiveValue(results);
+                } else {
+                    mUploadCallbackAboveL.onReceiveValue(null);
+                }
+            } else {
+                Log.d ("wangj", "custom results" + JasonMediaAction.imageUri.toString ());
+                mUploadCallbackAboveL.onReceiveValue(new Uri[]{JasonMediaAction.imageUri});
+            }
+        } else {
+            mUploadCallbackAboveL.onReceiveValue(null);
+        }
+        mUploadCallbackAboveL = null;
+    }
+
+    private void updatePhotos() {
+        //It doesn't matter if the broadcast is sent multiple times (that is, if the photos are selected successfully), it just wakes up the system to refresh the media files
+        Intent intent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
+        intent.setData(JasonMediaAction.imageUri);
+        sendBroadcast(intent);
+    }
+
 
     // This gets executed automatically when an external intent returns with result
     protected void onActivityResult(int requestCode, int resultCode, Intent intent) {
         super.onActivityResult(requestCode, resultCode, intent);
+
         try {
             // We can't process the intent here because
             // we need to wait until onResume gets triggered (which comes after this callback)

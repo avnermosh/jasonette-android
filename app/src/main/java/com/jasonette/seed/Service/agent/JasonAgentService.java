@@ -4,10 +4,13 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+
+import android.net.Uri;
 import android.util.Log;
 import android.view.View;
 import android.webkit.CookieManager;
 import android.webkit.JavascriptInterface;
+import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
@@ -15,6 +18,8 @@ import android.webkit.WebViewClient;
 import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 
+import com.jasonette.seed.Action.JasonMediaAction;
+import com.jasonette.seed.Action.JasonUtilAction;
 import com.jasonette.seed.Core.JasonParser;
 import com.jasonette.seed.Core.JasonViewActivity;
 import com.jasonette.seed.Helper.JasonHelper;
@@ -49,6 +54,7 @@ public class JasonAgentService {
     // Initialize
     public JasonAgentService() {
     }
+
     private class JasonAgentInterface {
 
         private WebView agent;
@@ -371,6 +377,25 @@ public class JasonAgentService {
                     final ProgressBar progressBar = pBar;
                     agent.addView(progressBar);
                     agent.setWebChromeClient(new WebChromeClient() {
+
+                        /**
+                         *API > = 21 (Android 5.0.1) calls back this method
+                         */
+                        @Override
+                        public boolean onShowFileChooser(WebView webView, ValueCallback<Uri[]> valueCallback, FileChooserParams fileChooserParams) {
+                            JasonViewActivity.mUploadCallbackAboveL = valueCallback;
+
+                            Intent chooserIntent = JasonMediaAction.takePhoto1();
+                            // Intent chooserIntent = JasonMediaAction.makePhotoIntent("pickerAndCamera");
+
+                            JasonViewActivity.someActivityResultLauncher.launch(chooserIntent);
+
+                            // should be something like this ...
+                            // JasonMediaAction.takePhoto2(action, data, event, context);
+                            
+                            return true;
+                        }
+
                         public void onProgressChanged(WebView view, int progress) {
                             progressBar.setProgress(progress);
                             if (progress == 100) {

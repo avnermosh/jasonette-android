@@ -35,6 +35,13 @@
                         }
                     }
                 },
+                "util.banner": {
+                    "type": "$util.banner",
+                    "options": {
+                        "title": "Error111",
+                        "description": "Please enter a valid url11."
+                    },
+                },
                 "media.picker": {
                     "type": "$media.picker",
                     "options": {

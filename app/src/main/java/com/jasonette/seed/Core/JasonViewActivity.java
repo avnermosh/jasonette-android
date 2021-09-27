@@ -321,56 +321,8 @@ public class JasonViewActivity extends AppCompatActivity implements ActivityComp
         }
 
 
-        // You can do the assignment inside onAttach or onCreate, i.e, before the activity is displayed
-        someActivityResultLauncher = registerForActivityResult(
-                new ActivityResultContracts.StartActivityForResult(),
-                new ActivityResultCallback<ActivityResult>() {
-                    @Override
-                    public void onActivityResult(ActivityResult result) {
 
-                        Log.d("Warning", "result.getResultCode(): " + result.getResultCode());
-                        int resultCode = result.getResultCode();
-                        Log.d("Warning", "resultCode: " + resultCode);
-
-                        try {
-                            // We can't process the intent here because
-                            // we need to wait until onResume gets triggered (which comes after this callback)
-                            // onResume reattaches all the onCall/onSuccess/onError callbacks to the current Activity
-                            // so we need to wait until that happens.
-                            // Therefore here we only set the "intent_to_resolve", and the actual processing is
-                            // carried out inside onResume()
-                            Intent data = result.getData();
-
-
-                            if (mUploadCallbackAboveL != null) {
-                                chooseAbove(resultCode, data);
-                            } else {
-                                // Toast.makeText (this, "an error occurred.", Toast.LENGTH_SHORT).show();
-                                Log.d("Warning", "an error occurred");
-                            }
-
-                            intent_to_resolve = new JSONObject();
-                            if(result.getResultCode() == Activity.RESULT_OK) {
-                                intent_to_resolve.put("type", "$agent.request");
-                                intent_to_resolve.put("name", "onChange4");
-                                intent_to_resolve.put("intent", data);
-                            } else {
-                                intent_to_resolve.put("type", "error");
-                                intent_to_resolve.put("name", "foo2");
-                            }
-                        } catch (Exception e) {
-                            Log.d("Warning", e.getStackTrace()[0].getMethodName() + " : " + e.toString());
-                        }
-
-                        if (result.getResultCode() == Activity.RESULT_OK) {
-                            // There are no request codes
-                            Intent data = result.getData();
-                            // doSomeOperations();
-                        }
-                    }
-                });
-
-        if(savedInstanceState != null) {
+      if(savedInstanceState != null) {
             this.savedInstance = false;
             // Restore model and url
             // Then rebuild the view

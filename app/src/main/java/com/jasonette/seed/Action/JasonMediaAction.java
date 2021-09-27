@@ -13,12 +13,14 @@ import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Parcelable;
+import android.os.StrictMode;
 import android.provider.MediaStore;
 import android.util.Base64;
 import android.util.Log;
 
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.core.content.FileProvider;
 
 import com.commonsware.cwac.cam2.AbstractCameraActivity;
 import com.commonsware.cwac.cam2.CameraActivity;
@@ -108,7 +110,7 @@ public class JasonMediaAction {
     /**
      *Call camera
      */
-    public static Intent takePhoto1() {
+    public Intent takePhoto1(Context context) {
         //Adjust the camera in a way that specifies the storage location for taking pictures
         String filePath = Environment.getExternalStorageDirectory() + File.separator
                 + Environment.DIRECTORY_PICTURES + File.separator;
@@ -116,35 +118,34 @@ public class JasonMediaAction {
         String fileName = "tmp1.jpg";
         imageUri = Uri.fromFile(new File(filePath + fileName));
 
-        Intent captureIntent = new Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
-        captureIntent.putExtra(MediaStore.EXTRA_OUTPUT, imageUri);
+        Intent chooserIntent = null;
+        try {
+            Intent captureIntent = new Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
+            File f1 = createFile2("image", context);
+            // imageUri = Uri.fromFile(f1);
 
-        Intent galleryIntent = new Intent(Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+            imageUri = FileProvider.getUriForFile(
+                    context,
+                    //(use your app signature + ".provider" )
+                    // "com.example.android.fileprovider",
+                    "com.jasonette.android.fileprovider",
+                    f1);
 
-        Intent chooserIntent = Intent.createChooser(galleryIntent, "Image Chooser");
-        chooserIntent.putExtra(Intent.EXTRA_INITIAL_INTENTS, new Parcelable[]{captureIntent});
+            captureIntent.putExtra(MediaStore.EXTRA_OUTPUT, imageUri);
 
-        // Intent chooserIntent = galleryIntent;
+            Intent galleryIntent = new Intent(Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
 
-//        Intent chooserIntent = Intent.createChooser(captureIntent, "Image Chooser");
+            chooserIntent = Intent.createChooser(galleryIntent, "Image Chooser");
+            chooserIntent.putExtra(Intent.EXTRA_INITIAL_INTENTS, new Parcelable[]{captureIntent});
+        } catch (SecurityException e){
+            JasonHelper.permission_exception("$media.camera", context);
+        } catch (Exception e) {
+            Log.d("Warning", e.getStackTrace()[0].getMethodName() + " : " + e.toString());
+        }
 
         return chooserIntent;
 
     }
-
-  
-/*
-    public static void takePhoto2(final JSONObject action, JSONObject data, final JSONObject event, final Context context) {
-      Intent chooserIntent = takePhoto1();
-
-      JSONObject callback = new JSONObject();
-      callback.put("class", "JasonMediaAction");
-      callback.put("method", "process");
-
-      JasonHelper.dispatchIntent(action, data, event, context, chooserIntent, callback);
-    }
-*/
-
 
     private static File createImageFile() throws IOException {
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
@@ -152,35 +153,6 @@ public class JasonMediaAction {
         File photo = new File(Environment.getExternalStorageDirectory(),  imageFileName);
         return photo;
     }
-
-    // public File mTempImage;
-
-    public static Intent makePhotoIntent(String title){
-
-        //Build galleryIntent
-        Intent galleryIntent = new Intent(Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
-        galleryIntent.setType("image/*");
-
-        //Create chooser
-        Intent chooser = Intent.createChooser(galleryIntent,title);
-
-        Intent  cameraIntent = new Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
-        File mTempImage = null;
-        try {
-            mTempImage = createImageFile();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        if (mTempImage != null){
-            cameraIntent.putExtra(android.provider.MediaStore.EXTRA_OUTPUT, Uri.fromFile(mTempImage));
-            Intent[] extraIntents = {cameraIntent};
-            chooser.putExtra(Intent.EXTRA_INITIAL_INTENTS, extraIntents);
-        }
-
-        return chooser;
-    }
-
 
     public void pickerAndCamera(final JSONObject action, JSONObject data, final JSONObject event, final Context context) {
 
@@ -193,16 +165,12 @@ public class JasonMediaAction {
                 }
             }
 
-            Intent intent;
-            if(type.equalsIgnoreCase("video")){
-                // video
-                intent = new Intent(Intent.ACTION_PICK, MediaStore.Video.Media.EXTERNAL_CONTENT_URI);
-            } else {
-                // image
-                intent = new Intent(Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
-            }
+            // StrictMode.VmPolicy.Builder builder = new StrictMode.VmPolicy.Builder();
+            // StrictMode.setVmPolicy(builder.build());
 
-            intent = makePhotoIntent("pickerAndCamera");
+            Intent intent;
+            intent = takePhoto1(context);
+
 
             // dispatchIntent method
             // 1. triggers an external Intent
@@ -418,7 +386,12 @@ public class JasonMediaAction {
             JSONObject event = options.getJSONObject("event");
             Context context = (Context)options.get("context");
 
+            // for file picker
             Uri uri = intent.getData();
+            if(uri == null) {
+                // for camera
+                uri = imageUri;
+            }
 
             // handling image
             String type = "image";
@@ -463,6 +436,7 @@ public class JasonMediaAction {
             Log.d("Warning", e.getStackTrace()[0].getMethodName() + " : " + e.toString());
         }
     }
+    
     private File createFile(String type, Context context) throws IOException {
         // Create an image file name
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
@@ -480,4 +454,15 @@ public class JasonMediaAction {
         return f;
     }
 
+    private File createFile2(String type, Context context) throws IOException {
+        // Create an image file name
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+        String fileName = "" + timeStamp + "_";
+        File storageDir = context.getExternalFilesDir(Environment.DIRECTORY_PICTURES);
+
+        // https://stackoverflow.com/questions/35272403/camera-result-always-returns-result-canceled
+        File f2 = new File(context.getExternalFilesDir(Environment.DIRECTORY_PICTURES), "camera.jpg");
+        return f2;
+    }
 }
+

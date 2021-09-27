@@ -21,12 +21,26 @@
                 "media.pickerAndCamera": {
                     "type": "$media.pickerAndCamera",
                     "options": {
-                        "edit": "true",
-                        "type": "image"
+                        "type": "photo",
+                        "quality": "high"
                     },
                     "success": {
-                        "trigger": "camera.show"
+                        "type": "$agent.request",
+                        "options": {
+                            "id": "$webcontainer",
+                            "method": "window.savePhoto",
+                            "data": "bar1",
+                            "params": ["{{$jason.data_uri}}"]
+                        }
                     },
+
+//                    "success": {
+//                       "type": "$util.banner",
+//                       "options": {
+//                           "title": "Success",
+//                           "description": "foo11111111111111111111111111111111111111111111111111"
+//                        }
+//                    },
                     "error": {
                         "type": "$util.banner",
                         "options": {

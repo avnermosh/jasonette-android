@@ -378,24 +378,6 @@ public class JasonAgentService {
                     agent.addView(progressBar);
                     agent.setWebChromeClient(new WebChromeClient() {
 
-                        /**
-                         *API > = 21 (Android 5.0.1) calls back this method
-                         */
-                        @Override
-                        public boolean onShowFileChooser(WebView webView, ValueCallback<Uri[]> valueCallback, FileChooserParams fileChooserParams) {
-                            JasonViewActivity.mUploadCallbackAboveL = valueCallback;
-
-                            Intent chooserIntent = JasonMediaAction.takePhoto1();
-                            // Intent chooserIntent = JasonMediaAction.makePhotoIntent("pickerAndCamera");
-
-                            JasonViewActivity.someActivityResultLauncher.launch(chooserIntent);
-
-                            // should be something like this ...
-                            // JasonMediaAction.takePhoto2(action, data, event, context);
-                            
-                            return true;
-                        }
-
                         public void onProgressChanged(WebView view, int progress) {
                             progressBar.setProgress(progress);
                             if (progress == 100) {

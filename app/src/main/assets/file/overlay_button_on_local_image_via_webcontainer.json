@@ -41,12 +41,9 @@
                         "type": "$agent.request",
                         "options": {
                             "id": "$webcontainer",
-                            // "method": "window.savePhoto",
-                            "method": "window.openImageFileButton_onChange2"
-                            // "method": "window.onChange2",
-                            // "method": "window.onChange3",
-                            // "method": "window.onChange4",
-                            // "params": ["{{$jason.data_uri}}"]
+                            "method": "window.savePhoto"
+                            // "method": "window.openImageFileButton_onChange2"
+                            "params": ["{{$jason.data_uri}}"]
                         }
                     }
                 },
@@ -69,9 +66,10 @@
         "body": {
             "background": {
                 "type": "html",
-                // "url": "file://overlay_button_on_local_image_via_webcontainer.html",
+                "url": "file://overlay_button_on_local_image_via_webcontainer.html",
+                // "url": "https://192.168.1.80",
                 // "url": "https://192.168.1.75",
-                "url": "http://192.168.1.75:3000",
+                // "url": "http://192.168.1.75:3000",
                 "action": {
                     "type": "$default"
                 }            

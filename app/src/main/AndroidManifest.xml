@@ -44,7 +44,10 @@
                 android:resource="@xml/file_paths"></meta-data>
         </provider>
 
-        <activity android:name=".Core.JasonViewActivity" android:windowSoftInputMode="adjustResize" >
+        <activity android:name=".Core.JasonViewActivity"
+            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden"
+            android:windowSoftInputMode="adjustResize">
+
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -72,6 +75,7 @@
         </activity>
         <activity
             android:name="com.commonsware.cwac.cam2.CameraActivity"
+            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden"
             android:process=":cwac_cam2"
             android:theme="@style/CameraTheme"/>
 

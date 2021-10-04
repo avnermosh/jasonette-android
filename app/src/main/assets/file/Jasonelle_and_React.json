@@ -75,7 +75,7 @@
         "body": {
             "background": {
                 "type": "html",
-                "url": "http://192.168.1.75:3000",
+                "url": "http://192.168.1.74:3000",
                 "style": {
                     "background": "#ffffff",
                     "progress" : "rgba(0,0,0,0)"

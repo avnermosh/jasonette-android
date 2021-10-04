@@ -158,6 +158,13 @@ public class JasonMediaAction {
 
         // Image picker intent
         try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                if (ContextCompat.checkSelfPermission(context, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED
+                        || ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+                    ActivityCompat.requestPermissions((Activity) context, new String[]{Manifest.permission.CAMERA}, 51);
+                }
+            }
+
             String type = "image";
             if(action.has("options")){
                 if(action.getJSONObject("options").has("type")){

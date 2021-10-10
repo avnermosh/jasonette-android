@@ -1,7 +1,6 @@
 package com.jasonette.seed.Component;
 
 import android.content.Context;
-import android.graphics.Typeface;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.View;

@@ -3,21 +3,6 @@
         "head": {
             "title": "Web Container Agent Demo",
             "actions": {
-                "camera.show": {
-                    "type": "$media.camera",
-                    "options": {
-                        "type": "photo",
-                        "quality": "high"
-                    },
-                    "success": {
-                        "type": "$agent.request",
-                        "options": {
-                            "id": "$webcontainer",
-                            "method": "window.savePhoto",
-                            "params": ["{{$jason.data_uri}}"]
-                        }
-                    }
-                },
                 "media.permissions": {
                     "type": "$media.permissions",
                     "options": {
@@ -44,20 +29,6 @@
                             "method": "window.savePhoto"
                             // "method": "window.openImageFileButton_onChange2"
                             "params": ["{{$jason.data_uri}}"]
-                        }
-                    }
-                },
-                "media.picker": {
-                    "type": "$media.picker",
-                    "options": {
-                        "edit": "true",
-                        "type": "video"
-                    },
-                    "success": {
-                        "type": "$util.alert",
-                        "options": {
-                            "title": "Selected {{$jason['content_type']}} at",
-                            "description": "{{$jason.file_url}}"
                         }
                     }
                 }

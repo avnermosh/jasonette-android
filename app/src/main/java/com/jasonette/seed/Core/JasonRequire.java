@@ -14,7 +14,6 @@ import org.json.JSONObject;
 import java.io.IOException;
 import java.net.URI;
 import java.util.Dictionary;
-import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.concurrent.CountDownLatch;
 

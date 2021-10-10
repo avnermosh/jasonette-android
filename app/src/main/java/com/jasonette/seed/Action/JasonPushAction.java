@@ -1,19 +1,8 @@
 package com.jasonette.seed.Action;
 
-import android.content.Context;
-import android.util.Log;
-
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
 // import com.google.firebase.iid.FirebaseInstanceId;
 // import com.google.firebase.iid.InstanceIdResult;
-import com.jasonette.seed.Core.JasonViewActivity;
-import com.jasonette.seed.Helper.JasonHelper;
-import com.jasonette.seed.Launcher.Launcher;
 
-import org.json.JSONObject;
-
-import androidx.annotation.NonNull;
 
 // Unlike APN which requires manual registration, FCM automatically registers push upon app launch.
 // As a result, $push.register can behave in two different ways:

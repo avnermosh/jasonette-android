@@ -1,6 +1,5 @@
 package com.jasonette.seed.Launcher;
 
-import android.app.Activity;
 import android.app.Application;
 import android.content.Context;
 import android.content.Intent;
@@ -24,7 +23,6 @@ import org.json.JSONTokener;
 import java.io.InputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;

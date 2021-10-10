@@ -5,12 +5,10 @@ import android.content.Intent;
 import android.graphics.Color;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
-import android.net.Uri;
 import android.util.Log;
 import android.view.View;
 import android.webkit.CookieManager;
 import android.webkit.JavascriptInterface;
-import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
@@ -18,8 +16,6 @@ import android.webkit.WebViewClient;
 import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 
-import com.jasonette.seed.Action.JasonMediaAction;
-import com.jasonette.seed.Action.JasonUtilAction;
 import com.jasonette.seed.Core.JasonParser;
 import com.jasonette.seed.Core.JasonViewActivity;
 import com.jasonette.seed.Helper.JasonHelper;

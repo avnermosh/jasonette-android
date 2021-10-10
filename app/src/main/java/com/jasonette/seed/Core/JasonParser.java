@@ -1,7 +1,6 @@
 package com.jasonette.seed.Core;
 
 import android.content.Context;
-import android.util.Log;
 
 import com.eclipsesource.v8.V8;
 import com.eclipsesource.v8.V8Array;

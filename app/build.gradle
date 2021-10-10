@@ -11,10 +11,15 @@ repositories {
 apply plugin: 'com.android.application'
 
 android {
+    signingConfigs {
+        release {
+            keyAlias 'key0'
+        }
+    }
     compileSdkVersion 31
     buildToolsVersion '31.0.0'
     defaultConfig {
-        applicationId "com.jasonette"
+        applicationId "com.construction_overlay"
         minSdkVersion 22
         // Android 8 is the minimum required for the playstore
         targetSdkVersion 30
@@ -22,6 +27,7 @@ android {
         versionName "0.1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         multiDexEnabled true
+        signingConfig signingConfigs.debug
     }
     buildTypes {
         release {

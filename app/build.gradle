@@ -19,7 +19,7 @@ android {
     compileSdkVersion 31
     buildToolsVersion '31.0.0'
     defaultConfig {
-        applicationId "com.construction_overlay"
+        applicationId 'com.construction_overlay_internal'
         minSdkVersion 22
         // Android 8 is the minimum required for the playstore
         targetSdkVersion 30

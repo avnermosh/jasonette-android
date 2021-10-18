@@ -8,8 +8,8 @@ var COL = {
     y0: 1.1,
     doUseBootstrap: true,
     doEnableToastr: true,
-    doWorkOnline: true,
-    // doWorkOnline: false,
+    // doWorkOnline: true,
+    doWorkOnline: false,
     doEnableWhiteboard: false,
 };
 

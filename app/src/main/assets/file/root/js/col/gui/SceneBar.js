@@ -753,8 +753,36 @@ class SceneBar {
         // SCENE BAR EVENT HANDLERS
         ////////////////////////////////////////////////////////////////////////////////
 
+        openZipFileButton.onClick(async function (input) {
+            console.log('BEG openZipFileButton.onClick');
+
+            console.log('COL.util.isObjectValid(window.$agent)', COL.util.isObjectValid(window.$agent));
+            
+            if( COL.util.isObjectValid(window.$agent))
+            {
+                // window.$agent is defined, i.e. the client is the jasonette mobile app
+                // trigger a request to add a zip file from the
+                // file system on the mobile device
+                window.$agent.trigger("media.pickerAndCamera");
+            }
+            
+
+        });
+        
         openZipFileButton.onChange(async function (input) {
             console.log('BEG openZipFileButton.onChange'); 
+
+            console.log('COL.util.isObjectValid(window.$agent11111111)', COL.util.isObjectValid(window.$agent));
+            
+            if( COL.util.isObjectValid(window.$agent))
+            {
+                // window.$agent is defined, i.e. the client is the jasonette mobile app
+                // trigger a request to add a zip file from the
+                // file system on the mobile device
+                window.$agent.trigger("media.pickerAndCamera");
+            }
+
+
 
             COL.model.fileZip = new FileZip_withJson();
             await COL.model.fileZip.openZipFile(input.files);

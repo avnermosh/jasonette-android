@@ -9,7 +9,7 @@ import {Raycaster as THREE_Raycaster,
         Vector3 as THREE_Vector3,
         MOUSE as THREE_MOUSE,
         EventDispatcher as THREE_EventDispatcher
-       } from '../../include/three.js/three.js-r120/build/three.module.js';
+       } from '../../static/three.js/three.js-r120/build/three.module.js';
 
 import { COL } from  "../COL.js";
 import { OverlayRect } from "../core/OverlayRect.js";

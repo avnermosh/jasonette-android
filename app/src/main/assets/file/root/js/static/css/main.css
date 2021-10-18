@@ -1,0 +1,23 @@
+
+.error {
+  color: red;
+  font-size: .8em;
+}
+
+.jumbotron {
+  background: url('../../../static/images/IMG_8994.JPG');
+  background-size: cover;
+  background-position: center center;
+  height: 300px;
+}
+
+.jumbotron h1 {
+  color: #fff;
+  font-size: 48px;
+  font-weight: bold;
+}
+
+.jumbotron p {
+  font-size: 20px;
+  color: #fff;
+}

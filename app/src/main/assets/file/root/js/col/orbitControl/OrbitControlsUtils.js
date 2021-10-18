@@ -11,7 +11,7 @@ import { Model } from "../core/Model.js";
 
 import {Vector2 as THREE_Vector2,
         Vector3 as THREE_Vector3,
-       } from '../../include/three.js/three.js-r120/build/three.module.js';
+       } from '../../static/three.js/three.js-r120/build/three.module.js';
 
 
 // ipad shows as OS: MAC (for Safari), Unknown (for Chrome) ???

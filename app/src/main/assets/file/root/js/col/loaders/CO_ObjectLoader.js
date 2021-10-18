@@ -8,7 +8,7 @@ import {DoubleSide as THREE_DoubleSide,
         ObjectLoader as THREE_ObjectLoader,
         ImageUtils as THREE_ImageUtils,
         LoadingManager as THREE_LoadingManager
-       } from '../../include/three.js/three.js-r120/build/three.module.js';
+       } from '../../static/three.js/three.js-r120/build/three.module.js';
 
 import { COL } from  "../COL.js";
 import { Model } from "../core/Model.js";

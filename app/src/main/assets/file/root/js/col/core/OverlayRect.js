@@ -12,7 +12,7 @@ import {
     MeshPhongMaterial as THREE_MeshPhongMaterial,
     DoubleSide as THREE_DoubleSide,
     Mesh as THREE_Mesh
-} from '../../include/three.js/three.js-r120/build/three.module.js';
+} from '../../static/three.js/three.js-r120/build/three.module.js';
         
 import { COL } from  "../COL.js";
 import { Model } from "./Model.js";

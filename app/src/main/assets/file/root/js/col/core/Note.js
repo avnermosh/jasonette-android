@@ -7,9 +7,9 @@
  */
 
 import {MOUSE as THREE_MOUSE, Vector3 as THREE_Vector3
-       } from '../../include/three.js/three.js-r120/build/three.module.js';
+       } from '../../static/three.js/three.js-r120/build/three.module.js';
 
-import {CSS2DObject, CSS2DRenderer} from "../../include/CSS2DRenderer.js";
+import {CSS2DObject, CSS2DRenderer} from "../../static/CSS2DRenderer.js";
 
 import { COL } from  "../COL.js";
 import { Model } from "./Model.js";

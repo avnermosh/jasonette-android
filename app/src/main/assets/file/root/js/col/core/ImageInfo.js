@@ -2,7 +2,7 @@
 import {
     Vector3 as THREE_Vector3,
     OrthographicCamera as THREE_OrthographicCamera,
-} from '../../include/three.js/three.js-r120/build/three.module.js';
+} from '../../static/three.js/three.js-r120/build/three.module.js';
 
 import { Model } from "./Model.js";
 import { COL } from  "../COL.js";

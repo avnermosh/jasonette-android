@@ -15,14 +15,14 @@ import {Vector3 as THREE_Vector3,
         WebGLRenderer as THREE_WebGLRenderer,
         SpriteMaterial as THREE_SpriteMaterial,
         Sprite as THREE_Sprite
-       } from '../../include/three.js/three.js-r120/build/three.module.js';
+       } from '../../static/three.js/three.js-r120/build/three.module.js';
 
 import { COL } from  "../COL.js";
 import { Model } from "./Model.js";
 import { Layer } from "./Layer.js";
 import { ImageInfo } from "./ImageInfo.js";
 import "../gui/Component.js";
-import {CSS2DRenderer} from "../../include/CSS2DRenderer.js";
+import {CSS2DRenderer} from "../../static/CSS2DRenderer.js";
 import { OrbitControlsTexPane } from  "../orbitControl/OrbitControlsTexPane.js";
 import "../orbitControl/OrbitControlsUtils.js";
 import "../util/Util.js";

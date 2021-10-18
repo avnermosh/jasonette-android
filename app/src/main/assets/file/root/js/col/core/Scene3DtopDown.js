@@ -20,7 +20,7 @@ import {Vector3 as THREE_Vector3,
         WebGLRenderer as THREE_WebGLRenderer,
         AxesHelper as THREE_AxesHelper,
         AmbientLight as THREE_AmbientLight
-       } from '../../include/three.js/three.js-r120/build/three.module.js';
+       } from '../../static/three.js/three.js-r120/build/three.module.js';
 
 import { COL } from  "../COL.js";
 import { Model } from "./Model.js";

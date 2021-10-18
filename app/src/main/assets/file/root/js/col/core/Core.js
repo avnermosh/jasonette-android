@@ -1,5 +1,5 @@
 import { DirectionalLight as THREE_DirectionalLight, AmbientLight as THREE_AmbientLight
-       } from '../../include/three.js/three.js-r120/build/three.module.js';
+       } from '../../static/three.js/three.js-r120/build/three.module.js';
 
 import { COL } from  "../COL.js";
 

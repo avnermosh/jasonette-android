@@ -10,7 +10,7 @@ import { BlobInfo } from "../core/BlobInfo.js";
 import { ApiService } from "../core/ApiService.js";
 import "../core/Core.js";
 import { ImageInfo } from "../core/ImageInfo.js";
-import { ZipLoader } from "../../include/ZipLoader.module.js";
+import { ZipLoader } from "../../static/ZipLoader.module.js";
 import { PlanInfo } from "../util/PlanInfo.js";
 import { Scene3DtopDown } from "../core/Scene3DtopDown.js";
 import "../util/Util.js";

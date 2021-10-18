@@ -5,7 +5,7 @@
 ////////////////////////////////////////////////////////////////
 
 import {WebGLRenderer as THREE_WebGLRenderer
-       } from '../../include/three.js/three.js-r120/build/three.module.js';
+       } from '../../static/three.js/three.js-r120/build/three.module.js';
 
 import { COL } from  "../COL.js";
 import { SiteInfo } from "../util/SiteInfo.js";

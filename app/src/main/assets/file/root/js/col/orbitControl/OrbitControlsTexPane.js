@@ -19,7 +19,7 @@ import {Vector3 as THREE_Vector3,
         Spherical as THREE_Spherical,
         Vector2 as THREE_Vector2,
         EventDispatcher as THREE_EventDispatcher
-       } from '../../include/three.js/three.js-r120/build/three.module.js';
+       } from '../../static/three.js/three.js-r120/build/three.module.js';
 
 import { COL } from  "../COL.js";
 import { Model } from "../core/Model.js";

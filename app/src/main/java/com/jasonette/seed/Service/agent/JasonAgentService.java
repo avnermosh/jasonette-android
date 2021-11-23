@@ -4,29 +4,42 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
-
+import android.net.Uri;
 import android.util.Log;
 import android.view.View;
 import android.webkit.CookieManager;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebChromeClient;
+import android.webkit.WebResourceRequest;
+import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
-
+import com.google.android.gms.common.util.Strings;
+import com.jasonette.seed.Action.JasonMediaAction;
 import com.jasonette.seed.Core.JasonParser;
 import com.jasonette.seed.Core.JasonViewActivity;
 import com.jasonette.seed.Helper.JasonHelper;
 import com.jasonette.seed.Launcher.Launcher;
-
 import org.json.JSONArray;
 import org.json.JSONObject;
-
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.URI;
+import java.net.URL;
+import java.nio.charset.Charset;
+import java.util.AbstractMap;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -110,7 +123,6 @@ public class JasonAgentService {
                 JSONObject transaction = (JSONObject) this.agent.getTag();
 
                 if (message.has("request")) {
-                  Log.d("Warning", "foo1");
                     /***
                      1. Request: Agent making request to another agent
 
@@ -146,8 +158,6 @@ public class JasonAgentService {
                     }
 
                 } else if (message.has("response")) {
-                  Log.d("Warning", "foo2");
-                    
                     /*****************
 
                      2. Response
@@ -222,7 +232,7 @@ public class JasonAgentService {
                     }
 
                 } else if (message.has("trigger")) {
-                  Log.d("Warning", "foo3");
+                  Log.d("Verbose", "message has trigger");
                     /************************
 
                      3. Trigger
@@ -457,6 +467,47 @@ public class JasonAgentService {
                             Log.d("Warning", e.getStackTrace()[0].getMethodName() + " : " + e.toString());
                         }
                     }
+
+                    @Override
+                    public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+                        String url = request.getUrl().toString();
+                        if (url.contains("zipfile")) {
+                            Uri uri = Uri.parse(url);
+                            String server = uri.getAuthority();
+                            String path = uri.getPath();
+                            String protocol = uri.getScheme();
+                            Set<String> args = uri.getQueryParameterNames();
+
+                            // print the quesry params
+                            for (String argName : args) {
+                                String argVal = uri.getQueryParameter(argName);
+                                Log.d("Verbose", "argName: " + argName);
+                                Log.d("Verbose", "argVal: " + argVal);
+                            }
+
+                            // get the sliceBeg, sliceEnd query params
+                            String sliceBegStr = uri.getQueryParameter("sliceBeg");
+                            int sliceBeg = Integer.valueOf(sliceBegStr);
+
+                            String sliceEndStr = uri.getQueryParameter("sliceEnd");
+                            int sliceEnd = Integer.valueOf(sliceEndStr);
+
+                            byte[] byteArray = null;
+                            try {
+                                byteArray = JasonMediaAction.loadFileSlice(sliceBeg, sliceEnd);
+                            } catch (Exception e) {
+                                Log.d("Warning", e.getStackTrace()[0].getMethodName() + " : " + e.toString());
+                            }
+
+                            InputStream is4 = new ByteArrayInputStream(byteArray);
+                            WebResourceResponse webResourceResponse4 = new WebResourceResponse("application/octet-stream", "binary", is4);
+                            return webResourceResponse4;
+                        }
+
+                        return super.shouldInterceptRequest(view, request);
+                    }
+
+
                     @Override public boolean shouldOverrideUrlLoading(WebView view, String url) {
                         // resolve
                         final AtomicReference<JSONObject> notifier = new AtomicReference<>();

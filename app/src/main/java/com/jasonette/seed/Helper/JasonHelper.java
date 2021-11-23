@@ -21,6 +21,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -320,6 +321,17 @@ public class JasonHelper {
         } catch (Exception e) {
             Timber.w(e);
         }
+    }
+
+    public static byte[] readBytes(BufferedInputStream bis, int offset, int length) throws Exception {
+        ByteArrayOutputStream byteBuffer = new ByteArrayOutputStream();
+        byte[] buffer = new byte[length];
+        bis.skip(offset);
+        int numBytesRead = bis.read(buffer, 0, length);
+        if(numBytesRead == -1) {
+            throw new Exception("Error in readBytes: Failed to read byte array from file");
+        }
+        return buffer;
     }
 
     public static byte[] readBytes(InputStream inputStream) throws IOException {

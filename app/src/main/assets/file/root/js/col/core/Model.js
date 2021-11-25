@@ -65,11 +65,21 @@ class Model {
         console.log('doSetupTopDownAndTextureGui', doSetupTopDownAndTextureGui);
 
         let getCurrentUserResultAsJson = {dummy_val: 'True'};
-        if(COL.doWorkOnline)
-        {
+	try {
             let systemParamsAsJson = await this.getSystemParams();
             this.setSystemParams(systemParamsAsJson);
+	} catch(err){
+            // getSystemParams failed with exception.
+            // This indicates that the system is in offline mode (i.e. no web server)
+            // this can happen:
+            // - if there is no connection to the server (e.g. server is down, or internet is down, etc..)
+            // - if working from files within a mobile device
+            console.log('Detected offline mode.');
+            COL.doWorkOnline = false;
+	}
 
+        if(COL.doWorkOnline)
+        {
             ////////////////////////////////////////////////////////////////////////////////
             // check if the user is logged-on
             ////////////////////////////////////////////////////////////////////////////////

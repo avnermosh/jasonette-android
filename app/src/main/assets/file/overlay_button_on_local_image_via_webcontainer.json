@@ -6,7 +6,7 @@
                 "media.permissions": {
                     "type": "$media.permissions",
                     "options": {
-                        "types": "camera"
+                        "types": "all"
                     },
                     "success": {
                         "type": "$util.alert",
@@ -20,15 +20,29 @@
                     "type": "$media.pickerAndCamera",
                     "options": {
                         "edit": "true",
-                        "type": "image1"
+                        "type": "all"
                     },
                     "success": {
                         "type": "$agent.request",
                         "options": {
                             "id": "$webcontainer",
-                            "method": "window.savePhoto"
-                            // "method": "window.openImageFileButton_onChange2"
+                            "method": "window.savePhoto",
                             "params": ["{{$jason.data_uri}}"]
+                        }
+                    }
+                },
+                "media.loadZipFileHeaders": {
+                    "type": "$media.pickZipFile",
+                    "options": {
+                        "edit": "true",
+                        "type": "zipFile"
+                    },
+                    "success": {
+                        "type": "$agent.request",
+                        "options": {
+                            "id": "$webcontainer",
+                            "method": "window.callbackLoadZipFileHeaders",
+                            "params": ["{{$jason}}"]
                         }
                     }
                 }

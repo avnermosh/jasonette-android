@@ -185,7 +185,6 @@ public class JasonMediaAction {
 
     public static byte[] loadFileSlice(int sliceBeg, int sliceEnd) throws Exception {
         Log.d("Verbose", "BEG loadFileSlice");
-        Log.d("Verbose", "dirPath: " + dirPath);
 
         // sanity check - check that the file exists
         File internalFile = new File(dirPath);
@@ -195,7 +194,6 @@ public class JasonMediaAction {
             error.append(dirPath);
             throw new Exception("error occurred: " + error.toString());
         }
-        Log.d("Verbose", "foo4");
 
         String zipFileName = dirPath;
         int numBytesToRead = (int)(sliceEnd - sliceBeg + 1);

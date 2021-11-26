@@ -271,7 +271,6 @@ public class JasonAgentService {
 
 
                 } else if (message.has("href")) {
-                  Log.d("Warning", "foo4");
                     /************************************
 
                      4. Href

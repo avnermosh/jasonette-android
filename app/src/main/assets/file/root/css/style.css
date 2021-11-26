@@ -734,6 +734,31 @@ e.g. zipFile related buttons, editOverlay related buttons, topdown-settings-moda
     background-color: green;
 }
 
+.floorPlanWhiteboardClass {
+    background: #69dbce;
+    opacity: 0.5;
+    position: absolute;
+    width: 90%;
+    height: 90%;
+    left: 0;
+    top: 0;
+    cursor: move;
+    /* z-index: -1; */
+}
+
+.floorPlanWhiteboardMenuWrapperClass {
+    background: red;
+    opacity: 0.5;
+    /* background-color: transparent; */
+    /* position: absolute; */
+    /* width: 50%; */
+    /* height: 50%; */
+    /* left: 50%; */
+    /* top: 60%; */
+    cursor: move;
+    /* z-index: -1; */
+}
+
 .topDownPaneResizerClass {
     width: 40px;
     height: 40px;

@@ -1,5 +1,6 @@
 package com.jasonette.seed.Service.agent;
 
+import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
@@ -31,13 +32,16 @@ import java.io.InputStream;
 import java.net.URI;
 import java.net.URL;
 import java.nio.charset.Charset;
+import java.text.SimpleDateFormat;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
@@ -300,9 +304,32 @@ public class JasonAgentService {
                 Log.d("Warning", e.getStackTrace()[0].getMethodName() + " : " + e.toString());
             }
         }
+    }
 
+    // when loading from files in offline mode, prevent "Access to Image from origin 'null' has been blocked by CORS policy" error
+    // https://stackoverflow.com/questions/17272612/android-webview-disable-cors
+    public static class OptionsAllowResponse {
+        static final SimpleDateFormat formatter = new SimpleDateFormat("E, dd MMM yyyy kk:mm:ss", Locale.US);
 
+        @TargetApi(21)
+        static WebResourceResponse build(String encoding, InputStream inputStream) {
+            Date date = new Date();
+            final String dateString = formatter.format(date);
 
+            Map<String, String> headers = new HashMap<String, String>() {{
+                put("Connection", "close");
+                put("Content-Type", "text/plain");
+                put("Date", dateString + " GMT");
+                put("Access-Control-Allow-Origin", "*");
+                put("Access-Control-Allow-Methods", "GET, POST, DELETE, PUT, OPTIONS");
+                put("Access-Control-Max-Age", "600");
+                put("Access-Control-Allow-Credentials", "true");
+                put("Access-Control-Allow-Headers", "accept, authorization, Content-Type");
+                put("Via", "1.1 vegur");
+            }};
+
+            return new WebResourceResponse("text/plain", encoding, 200, "OK", headers, inputStream);
+        }
     }
 
     public WebView setup(final JasonViewActivity context, final JSONObject options, final String id) {
@@ -499,13 +526,12 @@ public class JasonAgentService {
                             }
 
                             InputStream is4 = new ByteArrayInputStream(byteArray);
-                            WebResourceResponse webResourceResponse4 = new WebResourceResponse("application/octet-stream", "binary", is4);
+                            WebResourceResponse webResourceResponse4 = OptionsAllowResponse.build("binary", is4);
                             return webResourceResponse4;
                         }
 
                         return super.shouldInterceptRequest(view, request);
                     }
-
 
                     @Override public boolean shouldOverrideUrlLoading(WebView view, String url) {
                         // resolve

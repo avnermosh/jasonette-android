@@ -118,6 +118,7 @@ public class JasonMediaAction {
      */
     public Intent takePhoto1(Context context) {
         //Adjust the camera in a way that specifies the storage location for taking pictures
+        Log.d("Verbose", "BEG takePhoto1");
 
         Intent chooserIntent = null;
         try {
@@ -240,6 +241,7 @@ public class JasonMediaAction {
 
 
     public void pickerAndCamera(final JSONObject action, JSONObject data, final JSONObject event, final Context context) {
+        Log.d("Verbose", "BEG pickerAndCamera");
 
         // Image picker intent
         try {
@@ -259,9 +261,7 @@ public class JasonMediaAction {
             }
 
             Intent intent;
-            // intent = takePhoto1(context);
-            intent = takeFile1(type, context);
-
+            intent = takePhoto1(context);
             // dispatchIntent method
             // 1. triggers an external Intent
             // 2. attaches a callback with all the payload so that we can pick it up where we left off when the intent returns

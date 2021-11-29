@@ -20,7 +20,7 @@
                     "type": "$media.pickerAndCamera",
                     "options": {
                         "edit": "true",
-                        "type": "all"
+                        "type": "image"
                     },
                     "success": {
                         "type": "$agent.request",

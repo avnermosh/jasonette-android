@@ -150,7 +150,21 @@ public class JasonMediaAction {
 
         Intent chooserIntent = null;
         try {
+            // avner: the file f1 is created just to get some uri1 that could be used as pickerInitialUri
+            // so that when selecting the file the beginning directory is e.g. the Download dir.
+            // Do we really need to create a file just for this?
+            // can't we just somehow specify a initialUriDirectory?
+
+            // the file "f1" was created with uri1: content://com.construction_overlay_internal.android.fileprovider/download/file22880132447064510849.zip
+            // (via the use of Environment.DIRECTORY_DOWNLOADS, in createFile3())
             File f1 = createFile3(type, context);
+
+            // com.construction_overlay_internal.android.fileprovider/download points to dir "Download/" via
+            // <external-files-path name="download" path="Download/" /> (in file_paths.xml)
+            //
+            // the authority "com.construction_overlay_internal.android.fileprovider"
+            // gives permission to reach the FILE_PROVIDER_PATHS
+            // in AndroidManifest.xml via android:name="android.support.FILE_PROVIDER_PATHS"
             Uri uri1 = FileProvider.getUriForFile(
                     context,
                     "com.construction_overlay_internal.android.fileprovider",
@@ -613,7 +627,6 @@ public class JasonMediaAction {
                 String zipFileInfoFiles_asJsonStr = gson.toJson(zipFileInfoFiles);
                 Log.d("Verbose", "zipFileInfoFiles_asJsonStr: " + zipFileInfoFiles_asJsonStr);
 
-                // File file = new File(dirPath);
                 try {
                     JSONObject ret = new JSONObject();
                     ret.put("zipFileInfoFiles_asJsonStr", zipFileInfoFiles_asJsonStr);

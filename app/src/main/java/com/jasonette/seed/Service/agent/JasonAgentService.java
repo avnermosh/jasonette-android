@@ -642,6 +642,13 @@ public class JasonAgentService {
                 settings.setJavaScriptCanOpenWindowsAutomatically(true);
                 settings.setAppCachePath(context.getCacheDir().getAbsolutePath());
                 settings.setAllowFileAccess(true);
+
+                // avner: based on https://koz.io/same-origin-policy-and-android-webview/
+                // the following line disables CORS (cross-origin-resource-sharing) restriction temporarily (for development purposes)
+                // note: although the function "shouldOverrideUrlLoading(WebView view, String url)" shows up as deprecated,
+                // without the line, I cannot run usecase2 (individual js files)
+                settings.setAllowFileAccessFromFileURLs(true);
+
                 // settings.setAppCacheEnabled(true);
                 // settings.setCacheMode(WebSettings.LOAD_DEFAULT);
                 // avner

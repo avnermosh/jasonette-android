@@ -47,5 +47,5 @@ $agent={
 };
 
 // Ensure $agent is present in the window global
-window.$agent = $agent;
+window.$agent_jasonette_android = $agent;
 

@@ -15,6 +15,11 @@ import java.util.zip.*;
 import java.util.Enumeration;
 // import java.util.Date;
 
+//avner
+//- ZipUtil.java is based on https://gist.github.com/jkelley79/06ac85c4d85f9c5d437b with additions to
+//        -- read the zip headers
+//        -- read individual files
+
 /**
  * ZipUtil is a program to provide simple zip operations such as creating a zip of a folder
  * or extracting a zip to a folder. This program utilizes the {@link java.util.zip.ZipFile} classes

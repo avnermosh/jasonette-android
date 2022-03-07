@@ -1,3 +1,7 @@
+// =========================================================
+// Copyright 2018-2022 Construction Overlay Inc.
+// =========================================================
+
 'use strict';
 
 import { COL } from  "../COL.js";
@@ -153,6 +157,8 @@ COL.core.ImageFile = {
     // ok - exifreader can read tags (e.g. orientation) from jpg files (does not work with png files)
     // based on getBuffer(), demo-exifreader.js
     this.getImageTags = function (filename, blob) {
+        // console.log('BEG getImageTags');
+        
         return new Promise(function(resolve) {
             let reader = new FileReader();
             reader.readAsArrayBuffer(blob);
@@ -225,6 +231,8 @@ COL.core.ImageFile = {
     // read the file data from blob into Uint8Array buffer in memory
     // https://stackoverflow.com/questions/35318442/how-to-pass-parameter-to-a-promise-function
     var getBuffer = function(blob) {
+        // console.log('BEG getBuffer');
+        
         return new Promise(function(resolve) {
             let reader = new FileReader();
             reader.readAsArrayBuffer(blob);

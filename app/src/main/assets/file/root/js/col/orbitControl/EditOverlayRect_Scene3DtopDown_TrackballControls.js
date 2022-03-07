@@ -1,3 +1,7 @@
+// =========================================================
+// Copyright 2018-2022 Construction Overlay Inc.
+// =========================================================
+
 'use strict';
 
 import {Raycaster as THREE_Raycaster,
@@ -39,7 +43,7 @@ class EditOverlayRect_Scene3DtopDown_TrackballControls extends THREE_EventDispat
     dispose = function () {
         console.log('BEG EditOverlayRect_Scene3DtopDown_TrackballControls::dispose()');
 
-        console.log('EditOverlayRect_Scene3DtopDown_TrackballControls before dispose', this); 
+        // console.log('EditOverlayRect_Scene3DtopDown_TrackballControls before dispose', this); 
         
         this._raycaster = null;
         this._mouse = null;
@@ -52,7 +56,7 @@ class EditOverlayRect_Scene3DtopDown_TrackballControls extends THREE_EventDispat
         this._camera = null;
         this.enableControls(false);
 
-        console.log('EditOverlayRect_Scene3DtopDown_TrackballControls after dispose', this); 
+        // console.log('EditOverlayRect_Scene3DtopDown_TrackballControls after dispose', this); 
         
     };
     

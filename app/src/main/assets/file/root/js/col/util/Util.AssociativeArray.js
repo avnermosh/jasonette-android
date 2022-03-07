@@ -1,3 +1,7 @@
+// =========================================================
+// Copyright 2018-2022 Construction Overlay Inc.
+// =========================================================
+
 'use strict';
 
 // avner: 
@@ -372,6 +376,26 @@ COL.util.AssociativeArray = function () {
             duplicated.set(keys[i],values[keys[i]]);
         return duplicated;
     };
+
+    this.getNumBytes = function () {
+        // get rough number of bytes
+        let sizeInBytes = 0;
+        let iter = this.iterator();
+        while (iter.hasNext()) {
+            let keyVal = iter.nextKeyVal();
+            let key = keyVal[0];
+            let val = keyVal[1];
+            
+            let numBytesInVal = COL.util.roughSizeOfObject(val);
+            sizeInBytes += numBytesInVal;
+
+            let numBytesInKey = COL.util.roughSizeOfObject(key);
+            sizeInBytes += numBytesInKey;
+        }
+        // console.log('sizeInBytes', sizeInBytes);
+        return sizeInBytes;
+    };
+    
 };
 
 //////////////////////////////////////

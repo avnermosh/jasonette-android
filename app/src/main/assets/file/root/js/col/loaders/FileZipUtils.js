@@ -1,3 +1,7 @@
+// =========================================================
+// Copyright 2018-2022 Construction Overlay Inc.
+// =========================================================
+
 'use strict';
 
 import { COL } from '../COL.js';
@@ -216,7 +220,9 @@ class FileZipUtils {
 
     // https://stackoverflow.com/questions/11876175/how-to-get-a-file-or-blob-from-an-object-url
     static blobUrlToBlob = async function(url) {
-        let blob = await fetch(url).then(r => r.blob());
+        let response = await fetch(url);
+        await COL.errorHandlingUtil.handleErrors(response);
+        let blob = await response.blob();
         return blob;
     };
 

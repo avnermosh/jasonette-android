@@ -1,3 +1,7 @@
+// =========================================================
+// Copyright 2018-2022 Construction Overlay Inc.
+// =========================================================
+
 'use strict';
 
 var COL = {
@@ -12,6 +16,7 @@ var COL = {
     doEnableToastr: true,
     doWorkOnline: true,
     doEnableWhiteboard: false,
+    doUseWebGL2: true,
 };
 
 COL.util = {};

@@ -1,3 +1,7 @@
+// =========================================================
+// Copyright 2018-2022 Construction Overlay Inc.
+// =========================================================
+
 'use strict';
 
 import { COL } from '../COL.js';
@@ -44,9 +48,13 @@ COL.errorHandlingUtil.bootstrap_alert_danger = function (message) {
     $('<div id="bootstrap_alert_danger" class="alert alert-danger alert-dismissible my-alerts fade show" role="alert">' + message + '<button type="button" class="close" data-dismiss="alert"><span>×</span></button></div>').appendTo($('#alert_placeholder'));
 }
 
-// let timeOutInMillisec = 8000;
-let timeOutInMillisec = 2000;
-let extendedTimeOutInMillisec = 2000;
+// let timeOutInMillisec = 2000;
+// let extendedTimeOutInMillisec = 2000;
+
+// https://stackoverflow.com/questions/35990151/toastr-js-keep-toasts-visible-indefinitely
+// make the toast sticky (show indefinitly)
+let timeOutInMillisec = 0;
+let extendedTimeOutInMillisec = 0;
 let closeButton = true;
 let closeDurationInMillisec = 1000;
 COL.errorHandlingUtil.toastrSettings = { timeOut: timeOutInMillisec,

@@ -1,3 +1,7 @@
+// =========================================================
+// Copyright 2018-2022 Construction Overlay Inc.
+// =========================================================
+
 'use strict';
 
 ////////////////////////////////////////////////////////////////
@@ -6,8 +10,10 @@
 //
 ////////////////////////////////////////////////////////////////
 
-import {WebGLRenderer as THREE_WebGLRenderer
+import {WebGLRenderer as THREE_WebGLRenderer,
        } from '../../static/three.js/three.js-r135/build/three.module.js';
+
+//        WebGLRenderer as THREE_WebGL1Renderer,
 
 import { COL } from  "../COL.js";
 import { SiteInfo } from "../util/SiteInfo.js";
@@ -45,6 +51,7 @@ class Model {
         this._zipFileInfo = {
             zipFile: null,
             zipFileName: null,
+            zipFileUrl: null,
             files: {}
         }
         this.sceneBar = undefined;
@@ -58,6 +65,58 @@ class Model {
         this.csrf_token = COL.util.getCSRFToken();
     }
 
+    getTexCanvasWrapperSize2 = function() {
+        // console.log('BEG getTexCanvasWrapperSize2');
+        let texCanvasWrapper = $('#texCanvasWrapperId');
+        let texCanvasWrapperSize = {width: texCanvasWrapper.innerWidth(),
+                                    height: texCanvasWrapper.innerHeight()};
+
+        return texCanvasWrapperSize;
+    };
+
+    setRendererTexturePane = function () {
+        if(COL.doUseWebGL2)
+        {
+            this._rendererTexturePane = new THREE_WebGLRenderer({
+                preserveDrawingBuffer: false,
+                alpha: true});
+        }
+        else
+        {
+            // force webGL1
+            this._rendererTexturePane = new THREE_WebGL1Renderer({
+                preserveDrawingBuffer: false,
+                alpha: true});
+        }
+
+        
+        let _rendererTexturePane_isWebGL2 = this._rendererTexturePane.capabilities.isWebGL2;
+        console.log('_rendererTexturePane_isWebGL2', _rendererTexturePane_isWebGL2);
+
+        console.log('window.devicePixelRatio', window.devicePixelRatio); 
+        this._rendererTexturePane.domElement.id = 'canvasTex';
+        // this._rendererTexturePane.setPixelRatio(window.devicePixelRatio);
+
+        let factor = 0.5;
+        // factor = 0.1;
+        factor = 1.0;
+        console.log('factor', factor); 
+        
+        this._rendererTexturePane.setPixelRatio(window.devicePixelRatio * factor);
+        let texCanvasWrapperSize = this.getTexCanvasWrapperSize2();
+        console.log('texCanvasWrapperSize', texCanvasWrapperSize); 
+        this._rendererTexturePane.setSize( texCanvasWrapperSize.width, texCanvasWrapperSize.height );
+        
+        this._rendererTexturePane.setClearColor(0XDBDBDB, 1); //Webgl canvas background color
+
+        let rendererTexturePaneJqueryObject = $('#' + this._rendererTexturePane.domElement.id);
+        rendererTexturePaneJqueryObject.addClass("showFullSize");
+
+        let texCanvasWrapper = $('#texCanvasWrapperId');
+        texCanvasWrapper.append(this._rendererTexturePane.domElement);
+    };
+    
+    
     initModel = async function (doSetupTopDownAndTextureGui) {
         // console.log('BEG initModel');
         // console.log('doSetupTopDownAndTextureGui', doSetupTopDownAndTextureGui);
@@ -122,10 +181,16 @@ class Model {
             // https://stackoverflow.com/questions/21548247/clean-up-threejs-webgl-contexts
             // set the _renderer3DtopDown2 as a member of Model, so that it does
             // not get disposed when disposing Layer::scene3DtopDown.
-            this._renderer3DtopDown2 = new THREE_WebGLRenderer();
-            
-            // force webGL 1
-            // this._renderer3DtopDown2 = new THREE_WebGL1Renderer();
+
+            if(COL.doUseWebGL2)
+            {
+                this._renderer3DtopDown2 = new THREE_WebGLRenderer();
+            }
+            else
+            {
+                // force webGL1
+                this._renderer3DtopDown2 = new THREE_WebGL1Renderer();
+            }
 
             let _renderer3DtopDown2_isWebGL2 = this._renderer3DtopDown2.capabilities.isWebGL2;
             console.log('_renderer3DtopDown2_isWebGL2', _renderer3DtopDown2_isWebGL2);
@@ -143,23 +208,7 @@ class Model {
             
             topDownPaneEl.appendChild(this._renderer3DtopDown2.domElement);
 
-            this._rendererTexturePane = new THREE_WebGLRenderer({
-                preserveDrawingBuffer: true,
-                alpha: true});
-
-            let _rendererTexturePane_isWebGL2 = this._rendererTexturePane.capabilities.isWebGL2;
-            console.log('_rendererTexturePane_isWebGL2', _rendererTexturePane_isWebGL2);
-
-            this._rendererTexturePane.domElement.id = 'canvasTex';
-            this._rendererTexturePane.setPixelRatio(window.devicePixelRatio);
-            this._rendererTexturePane.setClearColor(0XDBDBDB, 1); //Webgl canvas background color
-
-            let rendererTexturePaneJqueryObject = $('#' + this._rendererTexturePane.domElement.id);
-            rendererTexturePaneJqueryObject.addClass("showFullSize");
-
-            let texCanvasWrapper = $('#texCanvasWrapperId');
-            texCanvasWrapper.append(this._rendererTexturePane.domElement);
-
+            this.setRendererTexturePane();
 
             if(COL.doEnableWhiteboard)
             {
@@ -177,6 +226,7 @@ class Model {
 
             let isWebGL2 = this._renderer3DtopDown2.capabilities.isWebGL2;
             console.log('isWebGL2', isWebGL2);
+            console.log('Layer.maxNumImageBlobsInMeomry', Layer.maxNumImageBlobsInMeomry);
             
             // console.log('this._renderer3DtopDown2.capabilities', this._renderer3DtopDown2.capabilities);
             // console.log('this._renderer3DtopDown2.capabilities.maxTextureSize', this._renderer3DtopDown2.capabilities.maxTextureSize);

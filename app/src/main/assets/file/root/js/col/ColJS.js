@@ -1,3 +1,7 @@
+// =========================================================
+// Copyright 2018-2022 Construction Overlay Inc.
+// =========================================================
+
 'use strict';
 
 import { COL } from  "./COL.js";
@@ -40,6 +44,11 @@ class ColJS {
         this.texCanvasWrapper = $('<div id="texCanvasWrapperId"></div>');
         // tbd RemoveME - no such class "texCanvasWrapper" (id but not class ?) ??
         this.texCanvasWrapper.addClass("texCanvasWrapper");
+
+        const canvas1 = document.createElement('canvas');
+        canvas1.setAttribute("id", "canvas1");
+        const context = canvas1.getContext( '2d' );
+        this._$texturePaneWrapper.append(canvas1);
     };
 
     setupToolsPaneGui = async function (masterButtonGroupEl) {
@@ -540,7 +549,7 @@ class ColJS {
             $('#dropdown_site_plan_name').html(titleStr);
 
             let loggedInFlag = COL.model.getLoggedInFlag();
-            // console.log('loggedInFlag', loggedInFlag); 
+            console.log('loggedInFlag', loggedInFlag); 
 
             if(loggedInFlag) {
                 // user is logged-in (i.e. current_user.is_authenticated === true)
@@ -657,6 +666,8 @@ class ColJS {
                 // console.log('Get planInfo from the "value" of the select');
 
                 let planInfoStr = $( "#sitesId option:selected" ).val();
+                console.log('planInfoStr', planInfoStr);
+                
                 let planInfo = COL.model.getPlanInfoBySelectId_sitesLoadedFromZipFile(planInfoStr);
                 
                 ApiService.LOAD_FROM_TYPE = ApiService.API_SERVICE_TYPES.ApiServiceZip;

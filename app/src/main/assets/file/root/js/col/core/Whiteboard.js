@@ -1,3 +1,7 @@
+// =========================================================
+// Copyright 2018-2022 Construction Overlay Inc.
+// =========================================================
+
 'use strict';
 
 import {Object3D as THREE_Object3D,
@@ -17,7 +21,6 @@ import {Object3D as THREE_Object3D,
         ClampToEdgeWrapping as THREE_ClampToEdgeWrapping,
         LinearFilter as THREE_LinearFilter,
         SpriteMaterial as THREE_SpriteMaterial,
-        CanvasTexture as THREE_CanvasTexture,
         Sprite as THREE_Sprite        
        } from '../../static/three.js/three.js-r135/build/three.module.js';
 

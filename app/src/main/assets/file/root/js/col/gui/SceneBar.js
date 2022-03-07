@@ -1,3 +1,7 @@
+// =========================================================
+// Copyright 2018-2022 Construction Overlay Inc.
+// =========================================================
+
 'use strict';
 
 import { COL } from  "../COL.js";
@@ -598,6 +602,7 @@ class SceneBar {
         // - render the selected plan 
         ////////////////////////////////////////////////////////////////////////////////
 
+
         // console.log('set the selected index for the option in optgroup'); 
         if(getCurrentUserResultAsJson['selected_plan_id'])
         {
@@ -629,6 +634,20 @@ class SceneBar {
             // set the selected index for the option in optgroup to the first available plan
             let numPlans = $("#sitesId option").length;
             console.log('numPlans', numPlans);
+
+            if(numPlans == 0)
+            {
+                // no plan - load demo plan 
+                if( COL.util.isObjectValid(window.$agent_jasonette_android))
+                {
+                    // in mobile app (e.g. jasonette), 
+                    // read the file headers in the .zip file from the mobile device
+                    console.log('loadDemoDatasetFromZipfile1 '); 
+                    window.$agent_jasonette_android.trigger("media.loadDemoDatasetFromZipfile1");
+                }
+            }
+
+            
             if(numPlans > 0)
             {
                 // there is at least one plan - set to the first plan
@@ -663,7 +682,7 @@ class SceneBar {
         openZipFileButtonJqueryObject.addClass("admin-feature");
         
         zipFileOptions_admin.add(openZipFileButton);
-        
+
         if(COL.doWorkOnline)
         {
             
@@ -752,13 +771,11 @@ class SceneBar {
         openZipFileButton.onClick(async function (input) {
             console.log('BEG openZipFileButton.onClick');
 
-            console.log('COL.util.isObjectValid(window.$agent)', COL.util.isObjectValid(window.$agent));
-            
-            if( COL.util.isObjectValid(window.$agent))
+            if( COL.util.isObjectValid(window.$agent_jasonette_android))
             {
                 // in mobile app (e.g. jasonette), 
                 // read the file headers in the .zip file from the mobile device
-                window.$agent.trigger("media.loadZipFileHeaders");
+                window.$agent_jasonette_android.trigger("media.loadZipFileHeaders");
             }
         });
         
@@ -770,7 +787,26 @@ class SceneBar {
             // https://stackoverflow.com/questions/25333488/why-isnt-the-filelist-object-an-array
             let filesToOpenArray = Array.from(input.files);
             let fileToOpen = filesToOpenArray[0];
-            sceneBar.onChange_openZipFileButton(fileToOpen);
+
+            console.log('COL.util.isObjectValid(window.$agent_jasonette_ios)4', COL.util.isObjectValid(window.$agent_jasonette_ios)); 
+            if(COL.util.isObjectValid(window.$agent_jasonette_ios))
+            {
+                // In mobile app jasonette-ios, 
+                // read the file headers in the .zip file from the mobile device
+                // window.$agent_jasonette_ios.trigger("media.loadZipFileHeaders1");
+
+                console.log('fileToOpen', fileToOpen);
+                
+                let options = {"filename1": fileToOpen.name};
+                window.$agent_jasonette_ios.trigger("media.loadZipFileHeaders2", options);
+            }
+            else
+            {
+                // In:
+                // 1. native webapp, or
+                // 2. mobile app - android
+                sceneBar.onChange_openZipFileButton(fileToOpen);
+            }
         });
 
         if(COL.doWorkOnline)
@@ -931,13 +967,13 @@ class SceneBar {
                 // let sceneBar = COL.model.getSceneBar();
                 // sceneBar.disable_editOverlayRect_syncWithBackendBtn(true);
 
-                if( COL.util.isObjectValid(window.$agent))
+                if( COL.util.isObjectValid(window.$agent_jasonette_android) )
                 {
-                    // window.$agent is defined, i.e. the client is the jasonette mobile app
+                    // window.$agent_jasonette_android is defined, i.e. the client is the jasonette mobile app
                     // trigger a request to add an image from the camera or from the
                     // file system on the mobile device
                     console.log('Before trigger media.pickerAndCamera'); 
-                    window.$agent.trigger("media.pickerAndCamera");
+                    window.$agent_jasonette_android.trigger("media.pickerAndCamera");
                 }
             });
             
@@ -1194,8 +1230,8 @@ class SceneBar {
         sceneBar.disable_editOverlayRect_syncWithBackendBtn(false);
     };
 
-    // The variable zipFile is only used in native webapp.
-    // In mobile app, the zipfile info is taken from model._zipFileInfo.files
+    // The variable zipFile is only used in non-mobile webapp.
+    // In mobile app (android), the zipfile info is taken from model._zipFileInfo.files
     onChange_openZipFileButton = async function (zipFile = undefined) {
         // console.log('BEG onChange_openZipFileButton');
 
@@ -1438,38 +1474,6 @@ $(window).ready(function () {
 });
 
 
-
-function savePhotoFromImageUrl(imageUrl) {
-    console.log('BEG savePhotoFromImageUrl');
-
-    // when operating from mobile app jasonette, this function is called from jasonette
-    // after getting a photo from the camera or from the file system
-    // to add the photo to the list of overlayRect files
-    
-    console.log('imageUrl', imageUrl); 
-    let sceneBar = COL.model.getSceneBar();
-
-    // https://stackoverflow.com/questions/35940290/how-to-convert-base64-string-to-javascript-file-object-like-as-from-file-input-f
-    fetch(imageUrl)
-        .then(res => res.blob())
-        .then(blob => {
-            // https://gist.github.com/hurjas/2660489
-            let filename = COL.core.ImageFile.createFileNameWithTimestamp();
-            console.log('filename', filename);
-            
-            const file = new File([blob], filename,{ type: "image/png" })
-            // const file = new File([blob], filename,{ type: "image" })
-            
-            let filesArray = [];
-            filesArray.push(file);
-            console.log('filesArray', filesArray);
-            console.log('filesArray.length', filesArray.length);
-            
-            sceneBar.onChange_openImageFileButton(filesArray);
-        })
-};
-
-
 function callbackLoadZipFileHeaders(param) {
     console.log('BEG callbackLoadZipFileHeaders');
 
@@ -1478,19 +1482,36 @@ function callbackLoadZipFileHeaders(param) {
 
     // populate zipFileInfo with the file headers in the .zip file 
     let zipFileInfoFiles_asJson = JSON.parse( param.zipFileInfoFiles_asJsonStr );
+    console.log('zipFileInfoFiles_asJson', zipFileInfoFiles_asJson); 
 
-    // populate the fields sliceBeg, sliceEnd in zipFileInfo
-    for (const filenameFullPath of Object.keys(zipFileInfoFiles_asJson)) {
-        let zipFileInfoFile = zipFileInfoFiles_asJson[filenameFullPath];
-        zipFileInfoFile.sliceBeg = zipFileInfoFile.offsetInZipFile;
-        zipFileInfoFile.sliceEnd = zipFileInfoFile.offsetInZipFile +
-            zipFileInfoFile.headerSize +
-            zipFileInfoFile.compressedSize;
+    if(COL.util.isObjectValid(param.isJasonette_iOS))
+    {
+        console.log('In jasonette-ios'); 
+        // populate the fields in zipFileInfo
+        for (const filenameFullPath of Object.keys(zipFileInfoFiles_asJson)) {
+            let zipFileInfoFile = zipFileInfoFiles_asJson[filenameFullPath];
+            zipFileInfoFile.sliceBeg = 0;
+            zipFileInfoFile.sliceEnd = 0;
+            zipFileInfoFile.headerSize = 0;
+        }
     }
-
+    else
+    {
+        console.log('In jasonette-android'); 
+        // populate the fields sliceBeg, sliceEnd in zipFileInfo
+        for (const filenameFullPath of Object.keys(zipFileInfoFiles_asJson)) {
+            let zipFileInfoFile = zipFileInfoFiles_asJson[filenameFullPath];
+            zipFileInfoFile.sliceBeg = zipFileInfoFile.offsetInZipFile;
+            zipFileInfoFile.sliceEnd = zipFileInfoFile.offsetInZipFile +
+                zipFileInfoFile.headerSize +
+                zipFileInfoFile.compressedSize;
+        }
+    }
+    
     let zipFileInfo = {
         zipFile: null,
         zipFileName: param.dirPath,
+        zipFileUrl: null,
         files: zipFileInfoFiles_asJson };
     
     COL.model.setZipFileInfo(zipFileInfo);
@@ -1501,7 +1522,6 @@ function callbackLoadZipFileHeaders(param) {
 };
 
 // Expose savePhoto to Jasonette
-window.savePhoto = savePhotoFromImageUrl;
 window.callbackLoadZipFileHeaders = callbackLoadZipFileHeaders;
 
 export { SceneBar };

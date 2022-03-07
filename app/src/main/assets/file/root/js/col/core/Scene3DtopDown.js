@@ -1,3 +1,7 @@
+// =========================================================
+// Copyright 2018-2022 Construction Overlay Inc.
+// =========================================================
+
 'use strict';
 
 ////////////////////////////////////////////////////////////////
@@ -313,10 +317,11 @@ class Scene3DtopDown {
         this._scene2.add(lightTopDown);
 
         this.lightsTopDown.AmbientLight = new COL.core.AmbientLight(this._scene2, this._camera3DtopDown, this._renderer3DtopDown);
+        this.lightsTopDown.name = "ambientLight2";
         this.lightsTopDown.AmbientLight = "ambientLight2";
 
         this.lightsTopDown.Headlight = new COL.core.Headlight(this._scene2, this._camera3DtopDown, this._renderer3DtopDown);
-        this.lightsTopDown.Headlight = "headLight2";
+        this.lightsTopDown.Headlight.name = "headLight2";
         
         ////////////////////////////////////////////////////
         // EVENT HANDLERS
@@ -624,7 +629,7 @@ class Scene3DtopDown {
     };
 
     getScene2 = function() {
-        return this._scene2;    
+        return this._scene2;
     }
 
     getIntersectionStructureInfo = function() {
@@ -1184,9 +1189,9 @@ class Scene3DtopDown {
         // Before Dispose
         //////////////////////////////////////////////////////
 
-        console.log( "Before Dispose");
+        // console.log( "Before Dispose");
         let scene3DtopDownAsJson = this.toJSON();
-        console.log('scene3DtopDownAsJson before dispose', scene3DtopDownAsJson); 
+        // console.log('scene3DtopDownAsJson before dispose', scene3DtopDownAsJson); 
         
         //////////////////////////////////////////////////////
         // Dispose
@@ -1196,7 +1201,7 @@ class Scene3DtopDown {
 
         // dispose geometries and materials in scene
         // this.sceneTraverse();
-        console.log('BEG Scene3DtopDown:: this._scene2.traverse');
+        // console.log('BEG Scene3DtopDown:: this._scene2.traverse');
         this._scene2.traverse(function ( obj ) {
             COL.ThreejsUtil.disposeObject(obj);
         });
@@ -1253,10 +1258,10 @@ class Scene3DtopDown {
         // After Dispose
         //////////////////////////////////////////////////////
 
-        console.log( "After Dispose");
+        // console.log( "After Dispose");
 
-        let scene3DtopDownAsJson2 = this.toJSON();
-        console.log('scene3DtopDownAsJson after dispose', scene3DtopDownAsJson2); 
+        // let scene3DtopDownAsJson2 = this.toJSON();
+        // console.log('scene3DtopDownAsJson after dispose', scene3DtopDownAsJson2); 
 
     };
 };

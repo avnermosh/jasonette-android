@@ -146,7 +146,7 @@ public class JasonMediaAction {
     }
 
     public Intent takeFile1(String type, Context context) {
-        //Adjust the camera in a way that specifies the storage location for taking pictures
+        // Choose a .zip file from local storage on the device
 
         Intent chooserIntent = null;
         try {
@@ -230,6 +230,7 @@ public class JasonMediaAction {
                 ActivityCompat.requestPermissions((Activity) context, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, 101);
             }
 
+
             String type = "zipFile";
             if (action.has("options")) {
                 if (action.getJSONObject("options").has("type")) {
@@ -253,6 +254,74 @@ public class JasonMediaAction {
         }
     }
 
+    public void loadDemoDatasetFromZipfile(final JSONObject action, JSONObject data, final JSONObject event, final Context context) {
+
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                if (ContextCompat.checkSelfPermission(context, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED
+                        || ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+                    ActivityCompat.requestPermissions((Activity) context, new String[]{Manifest.permission.CAMERA}, 51);
+                }
+                ActivityCompat.requestPermissions((Activity) context, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, 101);
+            }
+
+
+            String type = "demoZipFile";
+            if (action.has("options")) {
+                if (action.getJSONObject("options").has("type")) {
+                    type = action.getJSONObject("options").getString("type");
+                }
+            }
+
+            Intent intent = null;
+////            intent = takeFile1(type, context);
+//
+//            // the callback needs to specify the class name and the method name we wish to trigger after the intent returns
+//            JSONObject callback = new JSONObject();
+//            callback.put("class", "JasonMediaAction");
+//            callback.put("method", "process");
+//
+//            JasonHelper.dispatchIntent(action, data, event, context, intent, callback);
+
+            // process(intent, action.getJSONObject("options"));
+
+            String fileName = "geographic_map_with_images.zip";
+            dirPath = "/data/user/0/com.construction_overlay_internal/" + fileName;
+            Log.d("Verbose", "dirPath: " + dirPath );
+            File internalFile = new File(dirPath);
+            if (internalFile.exists()) {
+                Log.d("Verbose", "fileName: " + fileName + ", exists.");
+            } else {
+                Log.d("Verbose", "fileName: " + fileName + ", does NOT exist.");
+            }
+
+            Map<String, ZipUtil.Zipinfo_header> zipFileInfoFiles = new HashMap<String, ZipUtil.Zipinfo_header>();
+            ZipUtil.getZip_FileHeaders(dirPath, zipFileInfoFiles);
+
+            // convert hashmap to json string
+            Gson gson = new Gson();
+            String zipFileInfoFiles_asJsonStr = gson.toJson(zipFileInfoFiles);
+            Log.d("Verbose", "zipFileInfoFiles_asJsonStr: " + zipFileInfoFiles_asJsonStr);
+
+            try {
+                JSONObject ret = new JSONObject();
+                ret.put("zipFileInfoFiles_asJsonStr", zipFileInfoFiles_asJsonStr);
+                ret.put("dirPath", dirPath);
+                ret.put("content_type", "application/zip");
+                JasonHelper.next("success", action, ret, event, context);
+            } catch (Exception e) {
+                Log.d("Warning", e.getStackTrace()[0].getMethodName() + " : " + e.toString());
+            }
+
+
+
+
+        } catch (SecurityException e) {
+            JasonHelper.permission_exception("$media.picker", context);
+        } catch (Exception e) {
+            Log.d("Warning", e.getStackTrace()[0].getMethodName() + " : " + e.toString());
+        }
+    }
 
     public void pickerAndCamera(final JSONObject action, JSONObject data, final JSONObject event, final Context context) {
         Log.d("Verbose", "BEG pickerAndCamera");
@@ -542,11 +611,18 @@ public class JasonMediaAction {
             JSONObject event = options.getJSONObject("event");
             Context context = (Context) options.get("context");
 
-            // for file picker
-            Uri uri = intent.getData();
-            if (uri == null) {
-                // for camera
-                uri = imageUri;
+            Uri uri = null;
+            if (intent != null) {
+                // for file picker
+                uri = intent.getData();
+                if (uri == null) {
+                    // for camera
+                    uri = imageUri;
+                }
+            }
+            else
+            {
+                // demoData - no need for intent
             }
 
             // handling image
@@ -586,16 +662,28 @@ public class JasonMediaAction {
                 } catch (Exception e) {
                     Log.d("Warning", e.getStackTrace()[0].getMethodName() + " : " + e.toString());
                 }
-            } else if (type.equalsIgnoreCase("zipFile")) {
+            } else if (type.equalsIgnoreCase("zipFile") || type.equalsIgnoreCase("demoZipFile")) {
                 // zip file
 
                 // example uri
                 // content://com.android.providers.downloads.documents/document/msf%3A13255
                 Log.d("Verbose", "uri0: " + uri);
 
-                String fileName = getFileName(context, uri);
+
+                String fileName = "";
                 Log.d("Verbose", "fileName: " + fileName);
+                if(type.equalsIgnoreCase("demoZipFile"))
+                {
+                    fileName = "geographic_map_with_images.zip";
+                }
+                else
+                {
+                    fileName = getFileName(context, uri);
+                }
+                Log.d("Verbose", "fileName: " + fileName);
+
                 dirPath = "/data/user/0/com.construction_overlay_internal/" + fileName;
+                Log.d("Verbose", "dirPath: " + dirPath );
                 File internalFile = new File(dirPath);
                 if (internalFile.exists()) {
                     Log.d("Verbose", "fileName: " + fileName + ", exists.");

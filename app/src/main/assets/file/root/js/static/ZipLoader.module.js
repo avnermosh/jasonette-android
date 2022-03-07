@@ -9,14 +9,12 @@
  * https://github.com/nodeca/pako/blob/master/LICENSE
  */
 
-import {Loader as THREE_Loader,
-        JSONLoader as THREE_JSONLoader,
-        Texture as THREE_Texture
-       } from './three.js/three.js-r135/build/three.module.js';
-       
 import { COL } from  "../col/COL.js";
 import "../col/core/ImageFile.js";
 
+//////////////////////////////////////////////////////////////////
+// avner: BEG common related
+//////////////////////////////////////////////////////////////////
 
 function createCommonjsModule(fn, module) {
     return module = { exports: {} }, fn(module, module.exports), module.exports;
@@ -132,6 +130,10 @@ var common_3 = common.setTyped;
 var common_4 = common.Buf8;
 var common_5 = common.Buf16;
 var common_6 = common.Buf32;
+
+//////////////////////////////////////////////////////////////////
+// avner: END common related
+//////////////////////////////////////////////////////////////////
 
 // Note: adler32 takes 12% for level 0 and 2% for level 6.
 // It isn't worth it to make additional optimizations as in original.
@@ -3349,109 +3351,130 @@ const OFFSET_OF_FIELD_EXTRA__FROM_BEGINING_OF_LOCAL_FILE = 28;
 // which may be a slice of a bigger buffer
 var parseZip = function parseZip(buffer, doSkipFileData)
 {
-    // console.log('BEG parseZip');
-    
-    var reader = new BufferReader(buffer);
-
-    const bufferSizeInBytes = buffer.byteLength;
-    // console.log('bufferSizeInBytes', bufferSizeInBytes);
-    
-    var files = {};
-    let numBytesRead = 0;
-
-    // Parse multiple zip entries in the zip file
-    while (true) {
-
-        var zipEntryBegPosition = reader.position;
-        numBytesRead = zipEntryBegPosition;
-
-        if(zipEntryBegPosition + SIGNATURE_FIELD_SIZE > bufferSizeInBytes)
-        {
-            // reading the fixed portion of the header will overflow the buffer
-            // previous files info is valid but not the current file
-            break;
-        }
+    try
+    {
+        // console.log('BEG parseZip');
         
-        var signature = reader.readBytes(4);
-        // console.log('signature', signature);
+        let reader = new BufferReader(buffer);
+
+        const bufferSizeInBytes = buffer.byteLength;
         // console.log('bufferSizeInBytes', bufferSizeInBytes);
         
-        if (signature === LOCAL_FILE_HEADER) {
+        let  files = {};
+        let numBytesRead = 0;
 
-            if(zipEntryBegPosition + LOCAL_FILE_FIXED_HEADER_SIZE > bufferSizeInBytes)
+        // Parse multiple zip entries in the zip file
+        while (true) {
+
+            let zipEntryBegPosition = reader.position;
+            numBytesRead = zipEntryBegPosition;
+
+            if(zipEntryBegPosition + SIGNATURE_FIELD_SIZE > bufferSizeInBytes)
             {
                 // reading the fixed portion of the header will overflow the buffer
                 // previous files info is valid but not the current file
                 break;
             }
-
-            // read the length of the filename field (without changing the position of the reader),
-            // just to see if we can actually read the header
-            let byteOffset = zipEntryBegPosition + OFFSET_OF_FIELD_FILENAME__FROM_BEGINING_OF_LOCAL_FILE;
-            let numBytesToRead = 2;
-            let filenameFieldLength = reader.readBytesWithoutPositionChange(byteOffset, numBytesToRead)
-
-            // read the length of the extra field (without changing the position of the reader),
-            // just to see if we can actually read the header
-            byteOffset = zipEntryBegPosition + OFFSET_OF_FIELD_EXTRA__FROM_BEGINING_OF_LOCAL_FILE;
-            let extraFieldLength = reader.readBytesWithoutPositionChange(byteOffset, numBytesToRead)
-
-            let headerSize = LOCAL_FILE_FIXED_HEADER_SIZE + filenameFieldLength + extraFieldLength;
-
-            byteOffset = zipEntryBegPosition + OFFSET_OF_FIELD_COMPRESSED_SIZE__FROM_BEGINING_OF_LOCAL_FILE;
-            let compressedSize = reader.readBytesWithoutPositionChange(byteOffset, numBytesToRead)
             
-            if(zipEntryBegPosition + headerSize + compressedSize > bufferSizeInBytes)
-            {
-                // reading the next local file (header and data) will overflow the buffer
-                // previous files info is valid but not the current file
-                break;
+            let  signature = reader.readBytes(4);
+            // console.log('signature', signature);
+            // console.log('bufferSizeInBytes', bufferSizeInBytes);
+            
+            if (signature === LOCAL_FILE_HEADER) {
+
+                if(zipEntryBegPosition + LOCAL_FILE_FIXED_HEADER_SIZE > bufferSizeInBytes)
+                {
+                    // reading the fixed portion of the header will overflow the buffer
+                    // previous files info is valid but not the current file
+                    break;
+                }
+
+                // read the length of the filename field (without changing the position of the reader),
+                // just to see if we can actually read the header
+                let byteOffset = zipEntryBegPosition + OFFSET_OF_FIELD_FILENAME__FROM_BEGINING_OF_LOCAL_FILE;
+                let numBytesToRead = 2;
+                let filenameFieldLength = reader.readBytesWithoutPositionChange(byteOffset, numBytesToRead)
+
+                // read the length of the extra field (without changing the position of the reader),
+                // just to see if we can actually read the header
+                byteOffset = zipEntryBegPosition + OFFSET_OF_FIELD_EXTRA__FROM_BEGINING_OF_LOCAL_FILE;
+                let extraFieldLength = reader.readBytesWithoutPositionChange(byteOffset, numBytesToRead)
+
+                let headerSize = LOCAL_FILE_FIXED_HEADER_SIZE + filenameFieldLength + extraFieldLength;
+
+                byteOffset = zipEntryBegPosition + OFFSET_OF_FIELD_COMPRESSED_SIZE__FROM_BEGINING_OF_LOCAL_FILE;
+                let compressedSize = reader.readBytesWithoutPositionChange(byteOffset, numBytesToRead)
+                
+                if(zipEntryBegPosition + headerSize + compressedSize > bufferSizeInBytes)
+                {
+                    // reading the next local file (header and data) will overflow the buffer
+                    // previous files info is valid but not the current file
+                    break;
+                }
+
+                // read the file header
+                let fileHeader = parseLocalFileHeader(reader);
+
+                files[fileHeader.filename] = { filename: fileHeader.filename,
+                                               offsetInZipFile: fileHeader.offset,
+                                               headerSize: fileHeader.headerSize,
+                                               compressedSize: fileHeader.compressedSize,
+                                               buffer: null };
+                
+                if(doSkipFileData)
+                {
+                    // skip by the size of the current file, to be positioned at the header of the next file
+                    // (to be ready for the next call)
+                    reader.skip(fileHeader.compressedSize);
+                }
+                else
+                {
+                    let data = parseLocalFileDataBuffer(reader,
+                                                        fileHeader.compressedSize,
+                                                        fileHeader.compression,
+                                                        fileHeader.filename);
+
+                    
+                    files[fileHeader.filename].buffer = data;
+                }
+                numBytesRead = reader.position;
+
+                continue;
             }
-
-            // read the file header
-            var fileHeader = parseLocalFileHeader(reader);
-
-            files[fileHeader.filename] = { filename: fileHeader.filename,
-                                           offsetInZipFile: fileHeader.offset,
-                                           headerSize: fileHeader.headerSize,
-                                           compressedSize: fileHeader.compressedSize,
-                                           buffer: null };
-            
-            if(doSkipFileData)
-            {
-                // skip by the size of the current file, to be positioned at the header of the next file
-                // (to be ready for the next call)
-                reader.skip(fileHeader.compressedSize);
+            else if (signature === CENTRAL_DIRECTORY) {
+                parseCentralDirectory(reader);
+                numBytesRead = reader.position;
+                continue;
             }
             else
             {
-                let data = parseLocalFileDataBuffer(reader,
-                                                    fileHeader.compressedSize,
-                                                    fileHeader.compression,
-                                                    fileHeader.filename);
-
-                
-                files[fileHeader.filename].buffer = data;
+                // should not get here
+                console.error('Failed to read the next zip entry. The signature is invalid');
+                break;
             }
-            numBytesRead = reader.position;
-
-            continue;
         }
-        else if (signature === CENTRAL_DIRECTORY) {
-            parseCentralDirectory(reader);
-            numBytesRead = reader.position;
-            continue;
+        
+        return {files: files,
+                numBytesRead: numBytesRead};
+    }
+    catch(err) {
+        console.error('err', err);
+
+        // raise a toast to indicate the failure
+        let toastTitleStr = "parseZip";
+        let msgStr = "Failed to parseZip." + err;
+        if(COL.doEnableToastr)
+        {
+            toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
         }
         else
         {
-            // should not get here
-            console.error('Failed to read the next zip entry. The signature is invalid');
-            break;
+            console.error(msgStr);
+            // alert(msgStr);
         }
+
+        throw new Error(msgStr);
     }
-    
-    return {files: files,
-            numBytesRead: numBytesRead};
 
 };
 
@@ -3628,45 +3651,46 @@ var parseCentralDirectory = function parseCentralDirectory(reader) {
     // }
 };
 
-var isPromiseSuppoted = typeof Promise === 'function';
-var PromiseLike$1 = isPromiseSuppoted ? Promise : function PromiseLike(executor) {
-    _classCallCheck(this, PromiseLike);
-
-    var callback = function callback() {};
-    var resolve = function resolve() {
-        callback();
-    };
-    executor(resolve);
-
-    return {
-        then: function then(_callback) {
-            callback = _callback;
-        }
-    };
-};
-
 var count = 0;
 var THREE = void 0;
 
 var ZipLoader = function () {
 
-    ZipLoader.unzip = async function unzip(arrayBuffer, doSkipFileData) {
+    ZipLoader.unzip = async function unzip(zipLoader, arrayBuffer, doSkipFileData) {
         // console.log('BEG unzip');
-        
-        // use byteLength to check the size
-        // const arrayBufferSizeInBytes = arrayBuffer.byteLength;
-        // console.log('arrayBufferSizeInBytes', arrayBufferSizeInBytes);
-        
-        // printing arrayBuffer to the console directly, prevents Garbage Collection and causes memory to pile up
-        // console.log('arrayBuffer', arrayBuffer);
 
-        return new PromiseLike$1(function (resolve) {
-            var zipLoader = new ZipLoader();
+        try
+        {
+            // use byteLength to check the size
+            // const arrayBufferSizeInBytes = arrayBuffer.byteLength;
+            // console.log('arrayBufferSizeInBytes', arrayBufferSizeInBytes);
+            
+            // printing arrayBuffer to the console directly, prevents Garbage Collection and causes memory to pile up
+            // console.log('arrayBuffer', arrayBuffer);
+
             let retval = parseZip(arrayBuffer, doSkipFileData);
             zipLoader.files = retval.files;
             zipLoader.numBytesRead = retval.numBytesRead;
-            resolve(zipLoader);
-        });
+            return zipLoader;
+        }
+        catch(err) {
+            console.error('err', err);
+
+            // raise a toast to indicate the failure
+            let toastTitleStr = "unzip";
+            let msgStr = "Failed to unzip." + err;
+            if(COL.doEnableToastr)
+            {
+                toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
+            }
+            else
+            {
+                console.error(msgStr);
+                // alert(msgStr);
+            }
+
+            throw new Error(msgStr);
+        }
     };
 
     function ZipLoader(url) {
@@ -3680,186 +3704,6 @@ var ZipLoader = function () {
         count++;
     }
 
-    ZipLoader.prototype.load = function load() {
-        var _this = this;
-
-        return new PromiseLike$1(function (resolve) {
-
-            var startTime = Date.now();
-            var xhr = new XMLHttpRequest();
-            xhr.open('GET', _this.url, true);
-            xhr.responseType = 'arraybuffer';
-
-            xhr.onprogress = function (e) {
-
-                _this.dispatch({
-                    type: 'progress',
-                    loaded: e.loaded,
-                    total: e.total,
-                    elapsedTime: Date.now() - startTime
-                });
-            };
-
-            xhr.onload = function () {
-
-                _this.files = parseZip(xhr.response);
-                _this.dispatch({
-                    type: 'load',
-                    elapsedTime: Date.now() - startTime
-                });
-                resolve();
-            };
-
-            xhr.send();
-        });
-    };
-
-    ZipLoader.prototype.extractAsText = function extractAsText(filename) {
-
-        var buffer = this.files[filename].buffer;
-
-        if (typeof TextDecoder !== 'undefined') {
-
-            return new TextDecoder().decode(buffer);
-        }
-
-        var str = '';
-
-        for (var i = 0, l = buffer.length; i < l; i++) {
-
-            str += String.fromCharCode(buffer[i]);
-        }
-
-        return decodeURIComponent(escape(str));
-    };
-
-    ZipLoader.prototype.extractAsJSON = function extractAsJSON(filename) {
-
-        return JSON.parse(this.extractAsText(filename));
-    };
-
-    ZipLoader.prototype.loadThreeJSON = function loadThreeJSON(filename) {
-        var _this2 = this;
-
-        var json = this.extractAsJSON(filename);
-        var dirName = filename.replace(/\/.+\.json$/, '/');
-        var pattern = '__ziploader_' + this._id + '__';
-        var regex = new RegExp(pattern);
-
-        if (!THREE_Loader.Handlers.handlers.indexOf(regex) !== -1) {
-
-            THREE_Loader.Handlers.add(regex, {
-                load: function load(filename) {
-
-                    return _this2.loadThreeTexture(filename.replace(regex, ''));
-                }
-            });
-        }
-
-        return THREE_JSONLoader.prototype.parse(json, pattern + dirName);
-    };
-
-    ZipLoader.prototype.loadThreeTexture = function loadThreeTexture(filename) {
-
-        var texture = new THREE_Texture();
-        var type = /\.jpg$/.test(filename) ? 'image/jpeg' : /\.png$/.test(filename) ? 'image/png' : /\.gif$/.test(filename) ? 'image/gif' : undefined;
-        var blob = new Blob([this.files[filename].buffer], { type: type });
-
-        var onload = function onload() {
-
-            texture.needsUpdate = true;
-            texture.image.removeEventListener('load', onload);
-            URL.revokeObjectURL(texture.image.src);
-        };
-
-        texture.image = new Image();
-        texture.image.addEventListener('load', onload);
-        texture.image.src = URL.createObjectURL(blob);
-        return texture;
-    };
-
-    ZipLoader.prototype.on = function on(type, listener) {
-
-        if (!this._listeners[type]) {
-
-            this._listeners[type] = [];
-        }
-
-        if (this._listeners[type].indexOf(listener) === -1) {
-
-            this._listeners[type].push(listener);
-        }
-    };
-
-    ZipLoader.prototype.off = function off(type, listener) {
-
-        var listenerArray = this._listeners[type];
-
-        if (!!listenerArray) {
-
-            var index = listenerArray.indexOf(listener);
-
-            if (index !== -1) {
-
-                listenerArray.splice(index, 1);
-            }
-        }
-    };
-
-    ZipLoader.prototype.dispatch = function dispatch(event) {
-
-        var listenerArray = this._listeners[event.type];
-
-        if (!!listenerArray) {
-
-            event.target = this;
-            var length = listenerArray.length;
-
-            for (var i = 0; i < length; i++) {
-
-                listenerArray[i].call(this, event);
-            }
-        }
-    };
-
-    ZipLoader.prototype.clear = function clear(filename) {
-
-        if (!!filename) {
-
-            URL.revokeObjectURL(this.files[filename].url);
-            delete this.files[filename];
-            return;
-        }
-
-        for (var key in this.files) {
-
-            URL.revokeObjectURL(this.files[key].url);
-        }
-
-        delete this.files;
-
-        if (!!THREE) {
-
-            var pattern = '__ziploader_' + this._id + '__';
-
-            THREE_Loader.Handlers.handlers.some(function (el, i) {
-
-                if (el instanceof RegExp && el.source === pattern) {
-
-                    THREE_Loader.Handlers.handlers.splice(i, 2);
-                    return true;
-                }
-            });
-        }
-    };
-
-    ZipLoader.install = function install(option) {
-
-        if (!!option.THREE) {
-
-            THREE = option.THREE;
-        }
-    };
 
     return ZipLoader;
 }();

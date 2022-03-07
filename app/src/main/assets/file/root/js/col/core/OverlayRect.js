@@ -1,3 +1,7 @@
+// =========================================================
+// Copyright 2018-2022 Construction Overlay Inc.
+// =========================================================
+
 'use strict';
 
 import {
@@ -371,41 +375,61 @@ class OverlayRect {
     setSelectedImage = function (selectedImageFilenameIndex) {
         // console.log('BEG setSelectedImage'); 
 
-        let selectedLayer = COL.model.getSelectedLayer();
-        if(COL.util.isObjectValid(selectedLayer))
+        try
         {
-            ///////////////////////////////////////////////////////////////
-            // Before setting the selectedImage
-            // persist the imageInfo (e.g. camerainfo) of the last selected image,
-            // so that if we revisit this image, we will get the same view setting
-            // of the image (e.g. zoom)
-            ///////////////////////////////////////////////////////////////
+            let selectedLayer = COL.model.getSelectedLayer();
+            if(COL.util.isObjectValid(selectedLayer))
+            {
+                ///////////////////////////////////////////////////////////////
+                // Before setting the selectedImage
+                // persist the imageInfo (e.g. camerainfo) of the last selected image,
+                // so that if we revisit this image, we will get the same view setting
+                // of the image (e.g. zoom)
+                ///////////////////////////////////////////////////////////////
+                
+                selectedLayer.saveSelectedImageCameraInfo();
+            }
             
-            selectedLayer.saveSelectedImageCameraInfo();
+            /////////////////////////////////////////////////////////////////
+            // set selectedImageFilenameIndex, and selectedImageFilename
+            /////////////////////////////////////////////////////////////////
+
+            this.setSelectedImageFilenameIndex(selectedImageFilenameIndex);
+
+            if(this._imagesNames.size() > 0)
+            {
+                // the associative array is ordered
+                let imageFilename = this._imagesNames.getKeyByIndex(selectedImageFilenameIndex);
+                this.setSelectedImageFilename(imageFilename);
+            }
+            else
+            {
+                this.setSelectedImageFilename(undefined);
+            }
+
+            // if (getImageOrientation() !== 'from-image') {
+            //     // rotate image
+            // }
+            let retVal2 = this.getImageOrientation();
+            // console.log('retVal2', retVal2); 
+        }
+        catch(err) {
+            console.error('err', err);
+
+            let toastTitleStr = "setSelectedImage";
+            let msgStr = "Failed to setSelectedImage." + err;
+            if(COL.doEnableToastr)
+            {
+                toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
+            }
+            else
+            {
+                console.error(msgStr);
+                // alert(msgStr);
+            }
+            throw new Error(msgStr);
         }
         
-        /////////////////////////////////////////////////////////////////
-        // set selectedImageFilenameIndex, and selectedImageFilename
-        /////////////////////////////////////////////////////////////////
-
-        this.setSelectedImageFilenameIndex(selectedImageFilenameIndex);
-
-        if(this._imagesNames.size() > 0)
-        {
-            // the associative array is ordered
-            let imageFilename = this._imagesNames.getKeyByIndex(selectedImageFilenameIndex);
-            this.setSelectedImageFilename(imageFilename);
-        }
-        else
-        {
-            this.setSelectedImageFilename(undefined);
-        }
-
-        // if (getImageOrientation() !== 'from-image') {
-        //     // rotate image
-        // }
-        let retVal2 = this.getImageOrientation();
-        // console.log('retVal2', retVal2); 
     };
 
     // Display the selected image in the texture pane
@@ -414,49 +438,69 @@ class OverlayRect {
     // - image info label e.g. Date Taken
     updateSelectedImageRelatedRenderring = async function (layer) {
         // console.log('BEG updateSelectedImageRelatedRenderring');
-        
-        /////////////////////////////////////////////////////////////////
-        // update the topDown pane
-        /////////////////////////////////////////////////////////////////
 
-        // if overlayRect has changed (image was added/removed, overlayRect was translated) show the overlayRectRing
-        // otherwise hide the overlayRectRing
-        
-        this.toggleRingVisibility();
-        Scene3DtopDown.render1();        
-
-        /////////////////////////////////////////////////////////////////
-        // update the texture pane
-        /////////////////////////////////////////////////////////////////
-
-        // console.log('this._meshObject.name', this._meshObject.name); 
-        
-        await this.updateTexturePane(layer);
-
-        /////////////////////////////////////////////////////////////////
-        // update layer buttons/labels related to the selected image, e.g.
-        // - the "Info" button,
-        // - the "image index out of total number of images for the overlayRect" label (e.g. 1/3)
-        /////////////////////////////////////////////////////////////////
-        
-        layer.updateLayerImageRelatedLabels();
-
-        /////////////////////////////////////////////////////////////////
-        // disable/enable viewOverlayRect related buttons (nextImageButton, previousImageButton)
-        // depending on, if the overlayRect is selected and if it has more than one image.
-        /////////////////////////////////////////////////////////////////
-
-        layer.updatePreviousPlayNextImageButtons();
-
-        if(COL.doWorkOnline)
+        try
         {
             /////////////////////////////////////////////////////////////////
-            // disable/enable editOverlayRect related buttons (openImageFileButton, editOverlayRect_deleteButton)
-            // depending on if the overlayRect is empty or not
+            // update the topDown pane
             /////////////////////////////////////////////////////////////////
 
-            layer.updateEditOverlayRectRelatedButtons();
+            // if overlayRect has changed (image was added/removed, overlayRect was translated) show the overlayRectRing
+            // otherwise hide the overlayRectRing
+            
+            this.toggleRingVisibility();
+            Scene3DtopDown.render1();        
+
+            /////////////////////////////////////////////////////////////////
+            // update the texture pane
+            /////////////////////////////////////////////////////////////////
+
+            // console.log('this._meshObject.name', this._meshObject.name); 
+            
+            await this.updateTexturePane(layer);
+
+            /////////////////////////////////////////////////////////////////
+            // update layer buttons/labels related to the selected image, e.g.
+            // - the "Info" button,
+            // - the "image index out of total number of images for the overlayRect" label (e.g. 1/3)
+            /////////////////////////////////////////////////////////////////
+            
+            layer.updateLayerImageRelatedLabels();
+
+            /////////////////////////////////////////////////////////////////
+            // disable/enable viewOverlayRect related buttons (nextImageButton, previousImageButton)
+            // depending on, if the overlayRect is selected and if it has more than one image.
+            /////////////////////////////////////////////////////////////////
+
+            layer.updatePreviousPlayNextImageButtons();
+
+            if(COL.doWorkOnline)
+            {
+                /////////////////////////////////////////////////////////////////
+                // disable/enable editOverlayRect related buttons (openImageFileButton, editOverlayRect_deleteButton)
+                // depending on if the overlayRect is empty or not
+                /////////////////////////////////////////////////////////////////
+
+                layer.updateEditOverlayRectRelatedButtons();
+            }
         }
+        catch(err) {
+            console.error('err', err);
+
+            let toastTitleStr = "updateSelectedImageRelatedRenderring";
+            let msgStr = "Failed to updateSelectedImageRelatedRenderring." + err;
+            if(COL.doEnableToastr)
+            {
+                toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
+            }
+            else
+            {
+                console.error(msgStr);
+                // alert(msgStr);
+            }
+            throw new Error(msgStr);
+        }
+        
     };
 
     updateTexturePane = async function (layer) {
@@ -569,51 +613,91 @@ class OverlayRect {
 
     nextOrPrevSelectedImage = async function (layer, doLoadNextImage) {
         // console.log('BEG incrementSelectedImage'); 
-        let selectedImageFilenameIndex;
-        if(doLoadNextImage)
+
+        try
         {
-            selectedImageFilenameIndex = (this.getSelectedImageFilenameIndex() + 1).mod1(this._imagesNames.size());
+            let selectedImageFilenameIndex;
+            if(doLoadNextImage)
+            {
+                selectedImageFilenameIndex = (this.getSelectedImageFilenameIndex() + 1).mod1(this._imagesNames.size());
+            }
+            else
+            {
+                selectedImageFilenameIndex = (this.getSelectedImageFilenameIndex() - 1).mod1(this._imagesNames.size());
+            }
+            this.setSelectedImage(selectedImageFilenameIndex);
+            await this.updateSelectedImageRelatedRenderring(layer);
         }
-        else
-        {
-            selectedImageFilenameIndex = (this.getSelectedImageFilenameIndex() - 1).mod1(this._imagesNames.size());
+        catch(err) {
+            console.error('err', err);
+
+            let toastTitleStr = "nextOrPrevSelectedImage";
+            let msgStr = "Failed to nextOrPrevSelectedImage." + err;
+            if(COL.doEnableToastr)
+            {
+                toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
+            }
+            else
+            {
+                console.error(msgStr);
+                // alert(msgStr);
+            }
+            throw new Error(msgStr);
         }
-        this.setSelectedImage(selectedImageFilenameIndex);
-        await this.updateSelectedImageRelatedRenderring(layer);
+
     };
 
     playImages = async function (layer) {
         // console.log('BEG playImages'); 
-        if(COL.util.isObjectInvalid(this._imagesNames))
+        try
         {
-            // sanity check
-            throw new Error('this._imagesNames is invalid');
-        }
-
-        let doLoadNextImage = true;
-        let iter = this._imagesNames.iterator();
-
-        let numImages = this._imagesNames.size();
-        let index = 0;
-
-        // the first image is already displayed, so we need to display (numImages-1) images
-        while (index < (numImages-1)) {
-            index++;
-            
-            if(layer.getPlayImagesState() !== Layer.PLAY_IMAGES_STATE.NONE)
+            if(COL.util.isObjectInvalid(this._imagesNames))
             {
-                // sleep for some time
-                await COL.util.sleep(OverlayRect.playImages_timeToSleepInMilliSecs);
+                // sanity check
+                throw new Error('this._imagesNames is invalid');
+            }
+
+            let doLoadNextImage = true;
+            let iter = this._imagesNames.iterator();
+
+            let numImages = this._imagesNames.size();
+            let index = 0;
+
+            // the first image is already displayed, so we need to display (numImages-1) images
+            while (index < (numImages-1)) {
+                index++;
                 
-                // play the next image
-                await this.nextOrPrevSelectedImage(layer, doLoadNextImage);
+                if(layer.getPlayImagesState() !== Layer.PLAY_IMAGES_STATE.NONE)
+                {
+                    // sleep for some time
+                    await COL.util.sleep(OverlayRect.playImages_timeToSleepInMilliSecs);
+                    
+                    // play the next image
+                    await this.nextOrPrevSelectedImage(layer, doLoadNextImage);
+                }
+                else
+                {
+                    // stop the play
+                    console.log('stop the play'); 
+                    break;
+                }
+            }
+        }
+        catch(err) {
+            console.error('err', err);
+
+            let toastTitleStr = "playImages";
+            let msgStr = "Failed to playImages." + err;
+            if(COL.doEnableToastr)
+            {
+                toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
             }
             else
             {
-                // stop the play
-                console.log('stop the play'); 
-                break;
+                console.error(msgStr);
+                // alert(msgStr);
             }
+            throw new Error(msgStr);
         }
     };
 

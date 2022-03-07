@@ -1,3 +1,7 @@
+// =========================================================
+// Copyright 2018-2022 Construction Overlay Inc.
+// =========================================================
+
 'use strict';
 
 import { DirectionalLight as THREE_DirectionalLight, AmbientLight as THREE_AmbientLight
@@ -29,6 +33,7 @@ COL.core.AmbientLight = function (scene, camera, renderer) {
 
     var _on = true;
     var _light = new THREE_AmbientLight("#808080");
+    _light.name = "ambientLight3";
     
     this.isOn = function () {
         return _on;
@@ -54,6 +59,7 @@ COL.core.AmbientLight = function (scene, camera, renderer) {
 COL.core.Headlight = function (scene, camera, renderer) {
     var _on = true;
     var _light = new THREE_DirectionalLight("#ffffff",0.5);
+    _light.name = "directionalLight";
     _light.position.set( 0, -1, 0 );
 
     this.setOn = function (on) {

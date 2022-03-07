@@ -1,3 +1,7 @@
+// =========================================================
+// Copyright 2018-2022 Construction Overlay Inc.
+// =========================================================
+
 'use strict';
 
 import {Vector3 as THREE_Vector3,
@@ -83,9 +87,11 @@ class TexturePanelPlugin {
         let far = 1000;
 
         this.texCamera = new THREE_OrthographicCamera(left, right, top, bottom, near, far);
+        this.texCamera.name = 'texCamera';
         this.texCamera.position.set( 0, 0, 80 );
         
         this.texScene = new THREE_Scene();
+        this.texScene.name = 'texScene';
 
         //////////////////////////////////////
         // Set texRenderer related parameters
@@ -319,9 +325,9 @@ class TexturePanelPlugin {
         // Before Dispose
         //////////////////////////////////////////////////////
 
-        console.log( "Before Dispose");
+        // console.log( "Before Dispose");
         let texturePanelPluginAsJson = this.toJSON();
-        console.log('texturePanelPluginAsJson before dispose', texturePanelPluginAsJson); 
+        // console.log('texturePanelPluginAsJson before dispose', texturePanelPluginAsJson); 
         
         //////////////////////////////////////////////////////
         // Dispose
@@ -344,8 +350,6 @@ class TexturePanelPlugin {
         }
 
         // this.texRenderer is not disposed because it is a member of class Model
-        console.log( "this.texRenderer.info.programs.length", this.texRenderer.info.programs.length );
-
         COL.ThreejsUtil.disposeObject(this.texLabelRenderer);
 
         // remove event listeners
@@ -370,10 +374,10 @@ class TexturePanelPlugin {
         // After Dispose
         //////////////////////////////////////////////////////
 
-        console.log( "After Dispose");
+        // console.log( "After Dispose");
 
-        let texturePanelPluginAsJson2 = this.toJSON();
-        console.log('texturePanelPluginAsJson after dispose', texturePanelPluginAsJson2); 
+        // let texturePanelPluginAsJson2 = this.toJSON();
+        // console.log('texturePanelPluginAsJson after dispose', texturePanelPluginAsJson2); 
 
     };
 
@@ -802,7 +806,13 @@ class TexturePanelPlugin {
         for (let i = this.texScene.children.length - 1; i >= 0; i--) {
             if(this.texScene.children[i].type == "Sprite")
             {
-                this.texScene.remove(this.texScene.children[i]);
+                // three js remove vs dispose
+                // https://discourse.threejs.org/t/correctly-remove-mesh-from-scene-and-dispose-material-and-geometry/5448
+                // renderer.renderLists.dispose();
+                const object = this.texScene.children[i];
+                object.geometry.dispose();
+                object.material.dispose();
+                this.texScene.remove(object);
             }
         }
         
@@ -836,7 +846,7 @@ class TexturePanelPlugin {
         this.set_camera_canvas_renderer_and_viewport2(layer, materialTexture, doRescale);        
         // this.showStickyNotes(layer);
 
-        TexturePanelPlugin.render2();
+        // TexturePanelPlugin.render2();
         
     };
 
@@ -866,6 +876,10 @@ class TexturePanelPlugin {
             let texCam2 = texturePanelPlugin.getTexCamera();
             let texLabelRenderer2 = texturePanelPlugin.getTexLabelRenderer();
 
+            // console.log('texturePanelPlugin.texRenderer.info.memory.geometries', texturePanelPlugin.texRenderer.info.memory.geometries);
+            // console.log('texturePanelPlugin.texRenderer.info.memory.textures', texturePanelPlugin.texRenderer.info.memory.textures);
+            // console.log('texturePanelPlugin.texRenderer.info.programs.length', texturePanelPlugin.texRenderer.info.programs.length);
+            
             texturePanelPlugin.texRenderer.render(texScene2, texCam2);
             
             if(COL.model.isStickyNotesEnabled())

@@ -1,3 +1,7 @@
+// =========================================================
+// Copyright 2018-2022 Construction Overlay Inc.
+// =========================================================
+
 'use strict';
 
 import { COL } from  "../COL.js";
@@ -14,6 +18,85 @@ import "../util/Util.js";
 import "../util/Util.AssociativeArray.js";
 import "../util/ErrorHandlingUtil.js";
 import { FileZipUtils } from "./FileZipUtils.js";
+
+// ///////////////////////////////////////////////////////////////////////////////////////
+// BEG try4 - using promise-with-jasonette 
+// https://igomobile.de/2017/03/06/wkwebview-return-a-value-from-native-code-to-javascript/
+// ///////////////////////////////////////////////////////////////////////////////////////
+
+// object for storing references to our promise-objects
+var promises = {}
+
+// generates a unique id, not obligator a UUID
+function generateUUID() {
+    var d = new Date().getTime();
+    var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        var r = (d + Math.random()*16)%16 | 0;
+        d = Math.floor(d/16);
+        // return (c=='x' ? r : (r&amp;amp;amp;amp;amp;amp;0x3|0x8)).toString(16);
+        return (c=='x') ? r : "foo2";
+        // return "foo1";
+    });
+    // return uuid;
+};
+
+function generateUUID_uuidv4() {
+  return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
+    (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
+  );
+}
+
+// this funciton is called by native methods
+// @param promiseId - id of the promise stored in global variable promises
+function resolvePromise(promiseId, data, error) {
+    // console.log('BEG resolvePromise');
+    // console.log('promiseId', promiseId); 
+    // console.log('data', data); 
+
+    if (error){
+        promises[promiseId].reject(data);
+
+    } else{
+        promises[promiseId].resolve(data);
+    }
+    // remove referenfe to stored promise
+    delete promises[promiseId];
+}
+
+function extractZipFile_native_ios(filePath2) {
+    var promise = new Promise(function(resolve, reject) {
+        // we generate a unique id to reference the promise later
+        // from native function
+        var promiseId = generateUUID_uuidv4();
+        // save reference to promise in the global variable
+        promises[promiseId] = {resolve, reject};
+        
+        try {
+            // call native function
+            
+            let params = {"promiseId": promiseId,
+                          "filePath": filePath2};
+
+            // readFileHandler
+            // ->
+            // extractZipFileHandler
+            
+            window.$agent_jasonette_ios.trigger("extractZipFileHandler", params);
+            // window.$agent_jasonette_ios
+        }
+        catch(exception) {
+            alert(exception);
+        }
+        
+    });
+    
+    return promise;
+    
+}
+
+// ///////////////////////////////////////////////////////////////////////////////////////
+// END try4 - using promise-with-jasonette 
+// ///////////////////////////////////////////////////////////////////////////////////////
 
 class FileZip_withJson {
 
@@ -591,8 +674,10 @@ class FileZip_withJson {
         return retVal;
     };
 
-    loadFilesFromZipFileInfoIntoBlobs = async function () {
-        // console.log('BEG loadFilesFromZipFileInfoIntoBlobs');
+    
+    
+    loadFilesFromZipFileInfoIntoBlobs_via_ZipLoader = async function () {
+        console.log('BEG loadFilesFromZipFileInfoIntoBlobs_via_ZipLoader');
 
         // /////////////////////////////////////////////////////////////
         // Load files from zip-file-info into blobs
@@ -662,7 +747,7 @@ class FileZip_withJson {
 
             let fileType = COL.util.getFileTypeFromFilename(filenameFullPath);
             let fileInfo = zipFileInfo.files[filenameFullPath];
-            
+            let contentType = FileZip_withJson.getContentTypeFromFilename(filenameFullPath);
             switch(fileType) {
                 case undefined:
                     // e.g. skip directory names
@@ -676,63 +761,63 @@ class FileZip_withJson {
                     {
                         break;
                     }
-                    else
-                    {
-                        // separate to 2 groups:
-                        // a. floor plan images e.g. xxx_ground1.jpg
-                        // b. all other images e.g. IMG_6399.jpg
+                    // else
+                    // {
+                    //     // separate to 2 groups:
+                    //     // a. floor plan images e.g. xxx_ground1.jpg
+                    //     // b. all other images e.g. IMG_6399.jpg
 
-                        // tbd - regex to match the floor plan images e.g. ground1... ?
-                        let re2 = /^image.*\.jpg$/;
-                        let overlayRectImageRegexMatched = filename.match(re2);
+                    //     // tbd - regex to match the floor plan images e.g. ground1... ?
+                    //     let re2 = /^image.*\.jpg$/;
+                    //     let overlayRectImageRegexMatched = filename.match(re2);
 
-                        if(overlayRectImageRegexMatched) {
-                            // do not load the actual image
+                    //     if(overlayRectImageRegexMatched) {
+                    //         // do not load the actual image
                             
-                            // Create a placeholder blobInfo, add blobInfo to imageInfo, add imageInfo to planImagesInfo
-                            let blobInfo = new BlobInfo({filenameFullPath: filenameFullPath, blobUrl: undefined, isDirty: true});
-                            let imageInfo = new ImageInfo({filename: filename, blobInfo: blobInfo});
-                            planImagesInfo.set(filename, imageInfo);
-                        }
-                        else {
-                            // load the actual image
-                            if (fileInfo.url) {
-                                // the blob is already in memory. Create a blobInfo from the blob, add blobInfo to imageInfo, add imageInfo to planImagesInfo
-                                let blobInfo = new BlobInfo({filenameFullPath: filenameFullPath, blobUrl: fileInfo.url, isDirty: true});
-                                let imageInfo = new ImageInfo({filename: filename, blobInfo: blobInfo});
-                                planImagesInfo.set(filename, imageInfo);
-                            }
-                            else {
-                                // the blob is not yet in memory. Extract the image
-                                let blobUrl = await this.getImageBlobUrlFromZipFile(filenameFullPath, planImagesInfo);
-                                // get the blob from the blobUrl
-                                // https://stackoverflow.com/questions/11876175/how-to-get-a-file-or-blob-from-an-object-url
-                                let response = await fetch(blobUrl);
-                                await COL.errorHandlingUtil.handleErrors(response);
-                                let blob = await response.blob();
+                    //         // Create a placeholder blobInfo, add blobInfo to imageInfo, add imageInfo to planImagesInfo
+                    //         let blobInfo = new BlobInfo({filenameFullPath: filenameFullPath, blobUrl: undefined, isDirty: true});
+                    //         let imageInfo = new ImageInfo({filename: filename, blobInfo: blobInfo});
+                    //         planImagesInfo.set(filename, imageInfo);
+                    //     }
+                    //     else {
+                    //         // load the actual image
+                    //         if (fileInfo.url) {
+                    //             // the blob is already in memory. Create a blobInfo from the blob, add blobInfo to imageInfo, add imageInfo to planImagesInfo
+                    //             let blobInfo = new BlobInfo({filenameFullPath: filenameFullPath, blobUrl: fileInfo.url, isDirty: true});
+                    //             let imageInfo = new ImageInfo({filename: filename, blobInfo: blobInfo});
+                    //             planImagesInfo.set(filename, imageInfo);
+                    //         }
+                    //         else {
+                    //             // the blob is not yet in memory. Extract the image
+                    //             let blobUrl = await this.getImageBlobUrlFromZipFile(filenameFullPath, planImagesInfo);
+                    //             // get the blob from the blobUrl
+                    //             // https://stackoverflow.com/questions/11876175/how-to-get-a-file-or-blob-from-an-object-url
+                    //             let response = await fetch(blobUrl);
+                    //             await COL.errorHandlingUtil.handleErrors(response);
+                    //             let blob = await response.blob();
 
-                                let pathElements = COL.util.getPathElements(fileInfo.filename);
-                                let extension = pathElements['extension'];
+                    //             let pathElements = COL.util.getPathElements(fileInfo.filename);
+                    //             let extension = pathElements['extension'];
 
-                                let imageTags = { filename: fileInfo.filename,
-                                                  imageOrientation: -1 };
-                                if(extension === 'jpg')
-                                {
-                                    imageTags = await COL.core.ImageFile.getImageTags(fileInfo.filename, blob);
-                                }
+                    //             let imageTags = { filename: fileInfo.filename,
+                    //                               imageOrientation: -1 };
+                    //             if(extension === 'jpg')
+                    //             {
+                    //                 imageTags = await COL.core.ImageFile.getImageTags(fileInfo.filename, blob);
+                    //             }
                                 
-                                let blobInfo = new BlobInfo({filenameFullPath: filenameFullPath, blobUrl: fileInfo.url, isDirty: true});
-                                let imageInfo = new ImageInfo({filename: filename,
-                                                               imageTags: imageTags,
-                                                               blobInfo: blobInfo});
-                                planImagesInfo.set(filename, imageInfo);
-                            }
-                        }
-                        break;
-                    }
+                    //             let blobInfo = new BlobInfo({filenameFullPath: filenameFullPath, blobUrl: fileInfo.url, isDirty: true});
+                    //             let imageInfo = new ImageInfo({filename: filename,
+                    //                                            imageTags: imageTags,
+                    //                                            blobInfo: blobInfo});
+                    //             planImagesInfo.set(filename, imageInfo);
+                    //         }
+                    //     }
+                    //     break;
+                    // }
                 }
                 case "json": {
-                    await FileZip_withJson.extractAsBlobUrl( fileInfo, 'text/plain' );
+                    await FileZip_withJson.extractAsBlobUrl( fileInfo, contentType );
                     
                     let blobInfo = new BlobInfo({filenameFullPath: filenameFullPath,
                                                  blobUrl: fileInfo.url,
@@ -1024,8 +1109,8 @@ class FileZip_withJson {
         // imagesInfo.printKeysAndValues();
         
         $(document).trigger("SceneLayerAdded", [layer0, COL.model.getLayers().size()]);
-        console.log('layer0', layer0);
-        console.log('layer0.planInfo', layer0.planInfo);
+        // console.log('layer0', layer0);
+        // console.log('layer0.planInfo', layer0.planInfo);
 
         let matchPattern = layer0.planInfo.siteId + ":" + layer0.planInfo.id + ":" + layer0.planInfo.siteName + ":" + layer0.planInfo.name;
         
@@ -1039,12 +1124,43 @@ class FileZip_withJson {
         
         return true;
     };
+
+    
+    static getContentTypeFromFilename = function (filename) {
+        let fileType = COL.util.getFileTypeFromFilename(filename);
+        let contentType;
+        switch(fileType) {
+            case "jpg": {
+                contentType = 'image/jpeg';
+                break;
+            }
+            case "png": {
+                contentType = 'image/png';
+                break;
+            }
+            case "json": {
+                contentType = 'application/json';
+                // contentType = 'text/plain';
+                break;
+            }
+                
+            default: {
+                var msgStr = 'Error from getContentTypeFromFilename(). fileType: ' +
+                    fileType + ' is not supported';
+                throw new Error(msgStr);
+            }
+        }
+        
+        return contentType;
+    }
     
     // create blobInfo (if needed, extract blob as blob url), add to the imagesInfo or metaDataFilesInfo list, and return blobInfo
     // filesInfo is a placeholder for imagesInfo, or metaDataFilesInfo:
     // - When adding an image file (e.g. .jpg, .png), filesInfo === imagesInfo
     // - When adding an metaData file (e.g. .json, .txt), filesInfo === metaDataFilesInfo
     addBlobToFilesInfo = async function (filenameFullPath, filesInfo) {
+        // console.log('BEG addBlobToFilesInf1o');
+        
         try
         {
             // loop over keys
@@ -1053,18 +1169,13 @@ class FileZip_withJson {
             let filename = pathElements['filename'];
             var fileExtention = COL.util.getFileExtention(filename);
             let zipFileInfo = COL.model.getZipFileInfo();
-            let fileInfo = zipFileInfo.files[filenameFullPath];
 
-            if (fileInfo.url) {
-                // manageMemory() is NOT taking care of Model::_zipFileInfo.files (but just of Layer::_imagesInfo)
-                // as quick workaround revoke every url, so every url is loaded from the zip file from scratch
-                
-                URL.revokeObjectURL(fileInfo.url);
-                fileInfo.url = null;
-            }
-                
+            let fileInfo = null;
+            fileInfo = zipFileInfo.files[filenameFullPath];
+            
             let blobInfo;
             let fileType2 = COL.util.getFileTypeFromFilename(filename);
+            let contentType = FileZip_withJson.getContentTypeFromFilename(filename);
             switch(fileType2) {
                 case "jpg":
                 case "png": {
@@ -1079,15 +1190,7 @@ class FileZip_withJson {
                     else {
                         
                         // the url does not exist
-                        let fileType = 'image/png';
-                        if(fileExtention === "png") {
-                            fileType = 'image/png';
-                        }
-                        else {
-                            fileType = 'image/jpeg';
-                        }
-
-                        await FileZip_withJson.extractAsBlobUrl( fileInfo, fileType );
+                        await FileZip_withJson.extractAsBlobUrl( fileInfo, contentType );
 
                         blobInfo = new BlobInfo({filenameFullPath: filenameFullPath,
                                                  blobUrl: fileInfo.url,
@@ -1101,7 +1204,9 @@ class FileZip_withJson {
                                           imageOrientation: -1 };
                         if(extension === 'jpg')
                         {
-                            let blob = await fetch(blobInfo.blobUrl).then(r => r.blob());
+                            let response = await fetch(blobInfo.blobUrl);
+                            await COL.errorHandlingUtil.handleErrors(response);
+                            let blob = await response.blob();
                             imageTags = await COL.core.ImageFile.getImageTags(fileInfo.filename, blob);
                         }
 
@@ -1113,7 +1218,7 @@ class FileZip_withJson {
                     break;
                 }
                 case "json": {
-                    await FileZip_withJson.extractAsBlobUrl( fileInfo, 'text/plain' );
+                    await FileZip_withJson.extractAsBlobUrl( fileInfo, contentType );
 
                     blobInfo = new BlobInfo({filenameFullPath: filenameFullPath,
                                              blobUrl: fileInfo.url,
@@ -1139,33 +1244,92 @@ class FileZip_withJson {
 
     getImageBlobUrlFromZipFile = async function (imageFilenameFullPath, imagesInfo) {
         // console.log('BEG getImageBlobUrlFromZipFile');
-        
-        let zipFileInfo = COL.model.getZipFileInfo();
-        if(!zipFileInfo.files[imageFilenameFullPath])
+
+        try
         {
-            // console.log('zipFileInfo.files', zipFileInfo.files); 
-            let msgStr = 'zipFileInfo.files[imageFilenameFullPath] is undefined. imageFilename: ' + imageFilenameFullPath;
-            throw msgStr;
+            let zipFileInfo = COL.model.getZipFileInfo();
+            let fileInfo1 = null;
+            let blobInfo = null;
+            fileInfo1 = zipFileInfo.files[imageFilenameFullPath];
+            if(!fileInfo1)
+            {
+                // console.log('zipFileInfo.files', zipFileInfo.files); 
+                let msgStr = 'fileInfo1 is undefined. imageFilename: ' + imageFilenameFullPath;
+                throw msgStr;
+            }
+
+            // The file is not yet in memory, but its offset is stored in memory.
+            // Load the file from the zip file into memory and render
+            // unzip the image files (that were skipped in the initial load)
+
+            // tbd - set doReadArrayBufferInChunks, if the zip file size passes a threshold (500 MB?)
+
+            let sliceBeg = fileInfo1.offsetInZipFile;
+            let sliceEnd = sliceBeg +
+                fileInfo1.headerSize +
+                fileInfo1.compressedSize;
+            
+            // console.log('imageFilenameFullPath', imageFilenameFullPath); 
+            let doSkipFileData = false;
+            await FileZip_withJson.loadFromZipFile(sliceBeg, sliceEnd, doSkipFileData, imageFilenameFullPath);
+
+            // {
+            //     console.log('imagesInfo.size()', imagesInfo.size()); 
+            //     let iter = imagesInfo.iterator();
+            //     let numBlobUrls = 0;
+            //     while (iter.hasNext()) {
+            //         let imageInfo = iter.next();
+    	    //         let blobInfo = imageInfo.blobInfo;
+
+            //         if(COL.util.isObjectValid(blobInfo) && COL.util.isObjectValid(blobInfo.blobUrl)) {
+            //             numBlobUrls ++;
+            //         }
+            //     }
+            //     // console.log('numBlobUrls', numBlobUrls); 
+            // }
+
+            // before...
+            // console.log('fileInfo1', fileInfo); 
+            
+            // let zipFileInfoSizeInBytes1 = COL.util.roughSizeOfObject(zipFileInfo);
+            // console.log('zipFileInfoSizeInBytes1', COL.util.numberWithCommas(zipFileInfoSizeInBytes1));
+
+            blobInfo = await COL.model.fileZip.addBlobToFilesInfo(imageFilenameFullPath, imagesInfo);
+
+            // after...
+
+            // console.log('fileInfo2', fileInfo);
+
+            // let zipFileInfoSizeInBytes2 = COL.util.roughSizeOfObject(zipFileInfo);
+            // console.log('zipFileInfoSizeInBytes2', COL.util.numberWithCommas(zipFileInfoSizeInBytes2));
+            
+
+            // // retval has large size because it has the decoded file.buffer ~20MB
+            // // but retval is a local variable so the size does not persist beyond this function...
+            // let retvalSizeInBytes2 = COL.util.roughSizeOfObject(retval);
+            // console.log('retvalSizeInBytes2', COL.util.numberWithCommas(retvalSizeInBytes2)); 
+
+            return blobInfo.blobUrl;
         }
+        catch(err) {
+            console.error('err', err);
 
-        // The file is not yet in memory, but its offset is stored in memory.
-        // Load the file from the zip file into memory and render
-        // unzip the image files (that were skipped in the initial load)
+            // raise a toast to indicate the failure
+            let toastTitleStr = "getImageBlobUrlFromZipFile";
+            let msgStr = "Failed to getImageBlobUrlFromZipFile." + err;
+            if(COL.doEnableToastr)
+            {
+                toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
+            }
+            else
+            {
+                console.error(msgStr);
+                // alert(msgStr);
+            }
 
-        // tbd - set doReadArrayBufferInChunks, if the zip file size passes a threshold (500 MB?)
-
-        let sliceBeg = zipFileInfo.files[imageFilenameFullPath].offsetInZipFile;
-        let sliceEnd = sliceBeg +
-            zipFileInfo.files[imageFilenameFullPath].headerSize +
-            zipFileInfo.files[imageFilenameFullPath].compressedSize;
+            throw new Error(msgStr);
+        }
         
-        let doSkipFileData = false;
-        let zipLoaderForSlice = await FileZip_withJson.loadFromZipFile(sliceBeg, sliceEnd, doSkipFileData);
-        let fileInfo = zipLoaderForSlice.files[imageFilenameFullPath];
-        zipFileInfo.files[imageFilenameFullPath].buffer = fileInfo.buffer;
-        
-        let blobInfo = await COL.model.fileZip.addBlobToFilesInfo(imageFilenameFullPath, imagesInfo);
-        return blobInfo.blobUrl;
     };
 
 
@@ -1179,78 +1343,294 @@ class FileZip_withJson {
         return false;
     }
 
-    // Loads slice from the zip file
+    // Loads slice from the zip file in pure webapp or in jasonette_android
     static getZipFileSlice = async function(sliceBeg, sliceEnd)
     {
-        // console.log('BEG getZipFileSlice');
-
-        let zipFileInfo = COL.model.getZipFileInfo();
-        let zipFile = zipFileInfo.zipFile;
-        let zipFileName = zipFileInfo.zipFileName;
-        
-        let blobSlice = null;
-        
-        if( COL.util.isObjectInvalid(window.$agent) )
+        try
         {
-            // in native webapp
-            blobSlice = zipFile.slice(sliceBeg, sliceEnd);
-        }
-        else
-        {
-            // in mobile app (e.g. jasonette-android)
-
-            const queryParams = new URLSearchParams({
-                sliceBeg: sliceBeg,
-                sliceEnd: sliceEnd
-            });
-
-            // create the query params string with sliceBeg, sliceEnd
-            let queryParamsStr = queryParams.toString();
-
-            // e.g. "sliceBeg=0&sliceEnd=5000"
-            console.log('queryParamsStr: ', queryParamsStr);
+            const zipFileInfo = COL.model.getZipFileInfo();
+            let zipFile = zipFileInfo.zipFile;
+            let zipFileName = zipFileInfo.zipFileName;
+            let zipFileUrl = zipFileInfo.zipFileUrl;
             
-            // create the url string
-            let url = COL.model.getUrlBase() + 'zipfile?' + queryParamsStr;
-            let response = await fetch(url);
-            // console.log('response.status', response.status); 
+            let blobSlice = null;
 
-            await COL.errorHandlingUtil.handleErrors(response);
-            blobSlice = await response.blob();
+            if( COL.util.isObjectInvalid(window.$agent_jasonette_android) )
+            {
+                // in non-mobile webapp
+                try
+                {
+                    blobSlice = zipFile.slice(sliceBeg, sliceEnd);
+                    
+                    if(blobSlice.size == 0)
+                    {
+                        throw new Error("blob size is 0");
+                    }
+                }
+                catch(err) {
+                    console.log('zipFile', zipFile);
+                    console.error('err', err);
+
+                    // raise a toast to indicate the failure
+                    let toastTitleStr = "foo7";
+                    let msgStr = "Failed to foo7." + err;
+                    if(COL.doEnableToastr)
+                    {
+                        toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
+                    }
+                    else
+                    {
+                        console.error(msgStr);
+                    }
+
+                    throw new Error(msgStr);
+                }
+            }
+            else
+            {
+                // in mobile app jasonette-android
+
+                let queryParams = new URLSearchParams({
+                    sliceBeg: sliceBeg,
+                    sliceEnd: sliceEnd
+                });
+
+                // create the query params string with sliceBeg, sliceEnd
+                let queryParamsStr = queryParams.toString();
+
+                // e.g. "sliceBeg=0&sliceEnd=5000"
+                // console.log('queryParamsStr: ', queryParamsStr);
+                
+                // create the url string
+                let url = COL.model.getUrlBase() + 'zipfile?' + queryParamsStr;
+                let response = await fetch(url);
+                // console.log('response.status', response.status); 
+
+                await COL.errorHandlingUtil.handleErrors(response);
+                blobSlice = await response.blob();
+            }
+            return blobSlice;
         }
-        return blobSlice;
+        catch(err) {
+            console.error('err', err);
+
+            // raise a toast to indicate the failure
+            let toastTitleStr = "getZipFileSlic1e";
+            let msgStr = "Failed to getZipFileSlic1e." + err;
+            if(COL.doEnableToastr)
+            {
+                toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
+            }
+            else
+            {
+                console.error(msgStr);
+                // alert(msgStr);
+            }
+
+            throw new Error(msgStr);
+        }
+        
     };
+
+
+    // https://stackoverflow.com/questions/16245767/creating-a-blob-from-a-base64-string-in-javascript
+
+    static b64toBlob = function(filenameInZipFile, b64Data, contentType='', sliceSize=512)
+    {
+        try
+        {
+            const byteCharacters = atob(b64Data);
+
+            const byteArrays = [];
+            for (let offset = 0; offset < byteCharacters.length; offset += sliceSize) {
+                const slice = byteCharacters.slice(offset, offset + sliceSize);
+
+                const byteNumbers = new Array(slice.length);
+                for (let i = 0; i < slice.length; i++) {
+                    byteNumbers[i] = slice.charCodeAt(i);
+                }
+
+                const byteArray = new Uint8Array(byteNumbers);
+                byteArrays.push(byteArray);
+            }
+            const blob = new Blob(byteArrays, {type: contentType});
+
+            // const byteNumbers2 = new Array(byteCharacters);
+            // const byteArray2 = new Uint8Array(byteNumbers2);
+            // const blob = new Blob(byteArray2, {type: contentType});
+            
+            return blob;
+            
+        }
+        catch(err) {
+            console.error('err', err);
+
+            console.log('filenameInZipFile', filenameInZipFile); 
+            console.log('b64Data', b64Data);
+
+            
+            // raise a toast to indicate the failure
+            let toastTitleStr = "b64toBlob";
+            let msgStr = "Failed to b64toBlob. " + err;
+            if(COL.doEnableToastr)
+            {
+                toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
+            }
+            else
+            {
+                console.error(msgStr);
+                // alert(msgStr);
+            }
+
+            throw new Error(msgStr);
+        }
+    }
     
-    // Loads blob slice (optionally the entire blob) from the zip file, and reads it into the layer
-    static loadFromZipFile = async function (sliceBeg, sliceEnd, doSkipFileData) {
-        // console.log('BEG loadFromZipFile');
+    // Loads slice from the zip file in jasonette_ios
+    static getZipFileSlice_native_ios = async function(filenameInZipFile)
+    {
+        try
+        {
+            // in mobile app jasonette-ios
+            const zipFileInfo = COL.model.getZipFileInfo();
+            let zipFile = zipFileInfo.zipFile;
+            let zipFileName = zipFileInfo.zipFileName;
+            let zipFileUrl = zipFileInfo.zipFileUrl;
+            
+            if(COL.util.isObjectInvalid(window.$agent_jasonette_ios))
+            {
+                // sanity check
+                throw new Error("window.$agent_jasonette_ios is invalid");
+            }
 
-        let blobSlice = await FileZip_withJson.getZipFileSlice(sliceBeg, sliceEnd);
+            // console.log('foo3 111');
 
-        // https://developer.mozilla.org/en-US/docs/Web/API/Blob/arrayBuffer
-        // read the array buffer (blob.arrayBuffer() is newer than readAsArrayBuffer())
+            // console.log('window', window);
+            // console.log('window.webview', window.webview); 
 
-        let blobSliceArrayBuffer = await blobSlice.arrayBuffer();
-        // console.log('blobSliceArrayBuffer.byteLength', blobSliceArrayBuffer.byteLength);
-        // let dataView = new DataView(blobSliceArrayBuffer);
+            // /////////////////////////////////////////////////////////////
+            // // try4 - using promise-with-jasonette 
+            // /////////////////////////////////////////////////////////////
+
+            // console.log('Before try4444444');
+            let blob = null;
+
+            // console.log('filenameInZipFile', filenameInZipFile);
+            
+            let zipFileEntry_base64Encoded = await extractZipFile_native_ios(filenameInZipFile);
+            // console.log('extractZipFile_native_ios zipFileEntry_base64Encoded', zipFileEntry_base64Encoded);
+
+            let contentType = FileZip_withJson.getContentTypeFromFilename(filenameInZipFile);
+            blob = FileZip_withJson.b64toBlob(filenameInZipFile, zipFileEntry_base64Encoded, contentType);
+
+            return blob;
+        }
+        catch(err) {
+            console.error('err', err);
+
+            // raise a toast to indicate the failure
+            let toastTitleStr = "getZipFileSlice_native_ios";
+            let msgStr = "Failed to getZipFileSlice_native_ios. " + err;
+            if(COL.doEnableToastr)
+            {
+                toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
+            }
+            else
+            {
+                console.error(msgStr);
+                // alert(msgStr);
+            }
+
+            throw new Error(msgStr);
+        }
         
-        ApiService.LOAD_FROM_TYPE = ApiService.API_SERVICE_TYPES.ApiServiceZip;
-        // console.log('blobSlice.size', blobSlice.size);
-        let zipLoader = await ZipLoader.unzip( blobSliceArrayBuffer, doSkipFileData );
-        
-        return zipLoader;
     };
 
-    // this function is called for the native webapp. (in case of mobile webapp
-    // loading the zip file headers is done by trigerring a call to jasonette).
-    loadZipfileHeaders = async function (zipFile) {
-        // console.log('BEG loadZipfileHeaders'); 
 
+    // Loads blob slice (optionally the entire blob) from the zip file, and reads it into the layer
+    static loadFromZipFile = async function (sliceBeg, sliceEnd, doSkipFileData, filenameInZipFile = undefined) {
+        // console.log('BEG loadFromZipFil1e');
+        try
+        {
+            let zipFileInfo = COL.model.getZipFileInfo();
+
+            if( COL.util.isObjectInvalid(window.$agent_jasonette_ios) )
+            {
+                // in non-mobile webapp, or in mobile app jasonette-android
+                let blobSlice = await FileZip_withJson.getZipFileSlice(sliceBeg, sliceEnd);
+
+                // console.log('blobSlice.size', COL.util.numberWithCommas(blobSlice.size)); 
+
+                // https://developer.mozilla.org/en-US/docs/Web/API/Blob/arrayBuffer
+                // read the array buffer (blob.arrayBuffer() is newer than readAsArrayBuffer())
+
+                let blobSliceArrayBuffer = await blobSlice.arrayBuffer();
+                // console.log('blobSliceArrayBuffer.byteLength', blobSliceArrayBuffer.byteLength);
+                // let dataView = new DataView(blobSliceArrayBuffer);
+                
+                ApiService.LOAD_FROM_TYPE = ApiService.API_SERVICE_TYPES.ApiServiceZip;
+
+                // console.log('doSkipFileData', doSkipFileData);
+                var zipLoader = new ZipLoader();
+                await ZipLoader.unzip( zipLoader, blobSliceArrayBuffer, doSkipFileData );
+                if(COL.util.isObjectValid(filenameInZipFile)) {
+                    zipFileInfo.files[filenameInZipFile].buffer = zipLoader.files[filenameInZipFile].buffer;
+                }
+                
+                // let zipLoaderSizeInBytes0 = COL.util.roughSizeOfObject(zipLoader);
+                // console.log('zipLoaderSizeInBytes0', COL.util.numberWithCommas(zipLoaderSizeInBytes0));
+                return zipLoader;
+            }
+            else
+            {
+                // in mobile app jasonette-ios
+                let blobSlice = await FileZip_withJson.getZipFileSlice_native_ios(filenameInZipFile);
+
+                let blobSliceArrayBuffer = await blobSlice.arrayBuffer();
+                // console.log('blobSliceArrayBuffer.byteLength', blobSliceArrayBuffer.byteLength);
+                
+                ApiService.LOAD_FROM_TYPE = ApiService.API_SERVICE_TYPES.ApiServiceZip;
+                
+                zipFileInfo.files[filenameInZipFile].buffer = blobSliceArrayBuffer;
+            }
+        }
+        catch(err) {
+            console.error('err', err);
+
+            // raise a toast to indicate the failure
+            let toastTitleStr = "loadFromZipFil1e";
+            let msgStr = "Failed to loadFromZipFil1e." + err;
+            if(COL.doEnableToastr)
+            {
+                toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
+            }
+            else
+            {
+                console.error(msgStr);
+                // alert(msgStr);
+            }
+
+            throw new Error(msgStr);
+        }
+        
+    };
+
+    // this function is called for the non-mobile webapp.
+    // (in case of mobile webapp loading the zip file headers is done
+    //  by trigerring a call to jasonette).
+    loadZipfileHeaders_nonMobile = async function (zipFile) {
+        console.log('BEG loadZipfileHeaders_nonMobile'); 
+
+        let retval;
         // store the zip file object. It is used for reading specific files 
         // individually from the zip file, later on
+
+        let zipFileUrl = URL.createObjectURL(zipFile);
+        
         let zipFileInfo = {
             zipFile: zipFile,
             zipFileName: zipFile.name,
+            zipFileUrl: zipFileUrl,
             files: {} };
         
         COL.model.setZipFileInfo(zipFileInfo);
@@ -1266,35 +1646,37 @@ class FileZip_withJson {
         let sliceBeg = 0;
 
         let numTotalBytesRead = 0;
-        while(numTotalBytesRead < zipFile.size)
-        {
+        while(numTotalBytesRead < zipFile.size) {
             let sliceEnd = (sliceBeg + MAX_BLOB_SLICE_SIZE_IN_BYTES < zipFile.size) ?
                 sliceBeg + MAX_BLOB_SLICE_SIZE_IN_BYTES :
                 zipFile.size;
 
-            let zipLoader = await FileZip_withJson.loadFromZipFile(sliceBeg, sliceEnd, doSkipFileData);
-            if(zipLoader.numBytesRead == 0)
+            // no need to specify the parameter filenameInZipFile to loadFromZipFil1e()
+            // as it is only used for jasonette_ios, and this function (loadZipfileHeaders_nonMobile)
+            // is not used in jasonette_ios.
+            let retval = await FileZip_withJson.loadFromZipFile(sliceBeg, sliceEnd, doSkipFileData);
+            if(retval.numBytesRead == 0)
             {
                 // nothing was read in the last slice, i.e. we reached the last zip entry
                 break;
             }
 
-            // loop over the zipLoader.files
+            // loop over the retval.files
             // calc the absolute file offset from the relative offset to the blobSlice
-            for (const filenameFullPath of Object.keys(zipLoader.files)) {
-                zipLoader.files[filenameFullPath].offsetInZipFile += sliceBeg;
-                zipFileInfo.files[filenameFullPath] = zipLoader.files[filenameFullPath];
+            for (const filenameFullPath of Object.keys(retval.files)) {
+                retval.files[filenameFullPath].offsetInZipFile += sliceBeg;
+                zipFileInfo.files[filenameFullPath] = retval.files[filenameFullPath];
             }
             
-            sliceBeg += zipLoader.numBytesRead;
-            numTotalBytesRead += zipLoader.numBytesRead;
+            sliceBeg += retval.numBytesRead;
+            numTotalBytesRead += retval.numBytesRead;
         }
-        
+    
     };
     
     // Loads the zip file, and reads it into the layer.
     // The zip file is loaded in slices.
-    // The variable zipFile is only used in native webapp.
+    // The variable zipFile is only used in non-mobile webapp.
     // In mobile app, the zipfile info is taken from model._zipFileInfo.files
     openSingleZipFile = async function (zipFile) {
         console.log('BEG openSingleZipFile'); 
@@ -1305,9 +1687,9 @@ class FileZip_withJson {
         let toastTitleStr = "Load from zip file";
         try{
 
-            if( COL.util.isObjectInvalid(window.$agent) )
+            if( COL.util.isObjectInvalid(window.$agent_jasonette_android) && COL.util.isObjectInvalid(window.$agent_jasonette_ios) )
             {
-                // in native app
+                // in non-mobile webapp
                 if (!(zipFile instanceof File)) {
                     console.error("Error from openSingleZipFile(): the parameter 'zipFile' must be a File instance.");
                     throw new Error('Error from openSingleZipFile');
@@ -1325,9 +1707,9 @@ class FileZip_withJson {
                 }
 
                 // load the zip file headers
-                console.time("time loadZipfileHeaders");
-                await this.loadZipfileHeaders(zipFile);
-                console.timeEnd("time loadZipfileHeaders");
+                console.time("time loadZipfileHeaders_nonMobile");
+                await this.loadZipfileHeaders_nonMobile(zipFile);
+                console.timeEnd("time loadZipfileHeaders_nonMobile");
             }
             else
             {
@@ -1337,9 +1719,9 @@ class FileZip_withJson {
             
             FileZipUtils.filenamesFailedToLoad = [];
 
-            console.time("time loadFilesFromZipFileInfoIntoBlobs");
-            await this.loadFilesFromZipFileInfoIntoBlobs();
-            console.timeEnd("time loadFilesFromZipFileInfoIntoBlobs");
+            console.time("time loadFilesFromZipFileInfoIntoBlobs_via_ZipLoader");
+            await this.loadFilesFromZipFileInfoIntoBlobs_via_ZipLoader();
+            console.timeEnd("time loadFilesFromZipFileInfoIntoBlobs_via_ZipLoader");
 
             await this.validateVersionAndExtractSitesInfo();
             
@@ -1391,7 +1773,6 @@ class FileZip_withJson {
     };
 
     static addNewPlan = async function (planInfo) {
-        console.log('BEG addNewPlan'); 
 
         let getSiteByNameResultAsJson = await COL.model.getSiteByName(planInfo.siteName);
 
@@ -1416,9 +1797,9 @@ class FileZip_withJson {
     };
 
     // extractAsBlobUrl fills-in fileInfo.buffer, (fileInfo points to an entry in zipFileInfo.files[xxx])
-    static extractAsBlobUrl = async function (fileInfo, type) {
+    static extractAsBlobUrl = async function (fileInfo, contentType) {
         // console.log('BEG extractAsBlobUrl');
-
+        
         if (fileInfo.url) {
             return fileInfo.url;
         }
@@ -1426,30 +1807,69 @@ class FileZip_withJson {
         if(COL.util.isObjectInvalid(fileInfo.buffer)) {
             // get the buffer
             await FileZip_withJson.readZipEntryData(fileInfo.filename);
-            if(COL.util.isObjectInvalid(fileInfo.buffer)) {
-                throw new Error("Failed to read the buffer for file: " + fileInfo.filename);
-            }
         }
         
-        var blob = new Blob([fileInfo.buffer], { type: type });
-        fileInfo.url = URL.createObjectURL(blob);
+        if(COL.util.isObjectValid(fileInfo.buffer)) {
+            var blob = new Blob([fileInfo.buffer], { type: contentType });
+            fileInfo.url = URL.createObjectURL(blob);
+            // after creating the blobUrl we can clear fileInfo.buffer
+            fileInfo.buffer = null;
+        }
+        else
+        {
+            throw new Error("Error from extractAsBlobUrl: Failed to read the buffer for file: " + fileInfo.filename);
+        }
+        
         return;
     };
 
     // Load the image file data from the zip file as blob into memory
     static readZipEntryData = async function (filename) {
-        // console.log('BEG readZipEntryData');
         
         let zipFileInfo = COL.model.getZipFileInfo();
         let zipFileInfoFile = zipFileInfo.files[filename];
+        console.log('zipFileInfo.files[filename]', zipFileInfo.files[filename]); 
         let sliceBeg = zipFileInfo.files[filename].offsetInZipFile;
         let sliceEnd = sliceBeg +
             zipFileInfo.files[filename].headerSize +
             zipFileInfo.files[filename].compressedSize;
 
         let doSkipFileData = false;
-        let zipLoaderForSlice = await FileZip_withJson.loadFromZipFile(sliceBeg, sliceEnd, doSkipFileData);
-        zipFileInfo.files[filename].buffer = zipLoaderForSlice.files[filename].buffer;
+        await FileZip_withJson.loadFromZipFile(sliceBeg, sliceEnd, doSkipFileData, filename);
+        
+        // zipFileInfo.files[filename].buffer = null;
+        
+        // let fileType = COL.util.getFileTypeFromFilename(filename);
+        // console.log('fileType', fileType);
+        // console.log('zipFileInfo.files[filename]', zipFileInfo.files[filename]);
+        // if(fileType == "json")
+        // {
+        //     let retval1 = await FileZip_withJson.loadFromZipFil1e(sliceBeg, sliceEnd, doSkipFileData, filename);
+        //     zipFileInfo.files[filename].buffer = retval1.files[filename].buffer;
+        // }
+        // else
+        // {
+        //     console.log('foo1'); 
+        // }
+
+
+        // {
+        //     // sanity check - count the number of entries with valid "fileInfo.buffer" in zipFileInfo.files
+        //     let numValidBuffers = 0;
+
+        //     for (const [key, value] of Object.entries(zipFileInfo.files)) {
+        //         // console.log(key, value);
+        //         let fileInfo2 = value;
+        //         if(COL.util.isObjectValid(fileInfo2.buffer)) {
+        //             console.log('fileInfo2', fileInfo2);
+        //             numValidBuffers++;
+        //         }
+        //     }
+            
+        //     console.log('numValidBuffers in zipFileInfo.files', numValidBuffers); 
+        // }
+        // console.log('foo1'); 
+        
     };
 
     static addNewSitePlan = function (siteId, planInfo) {
@@ -1490,5 +1910,8 @@ class FileZip_withJson {
     };
 
 };
+
+window.resolvePromise = resolvePromise;
+FileZip_withJson.zipLibrary = "ZipLoader";
 
 export { FileZip_withJson };

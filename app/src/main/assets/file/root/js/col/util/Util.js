@@ -1,3 +1,7 @@
+// =========================================================
+// Copyright 2018-2022 Construction Overlay Inc.
+// =========================================================
+
 'use strict';
 
 import { COL } from '../COL.js';
@@ -408,3 +412,82 @@ COL.util.getCSRFToken = function () {
         return null
     }
 };
+
+// https://discourse.threejs.org/t/to-get-array-of-all-meshes/17458
+// https://stackoverflow.com/questions/40017796/make-javascript-local-variable-to-global-for-recursive-loops
+COL.util.countNumberOfObjects = function (object) {
+
+    function fn1(object)
+    {
+        let child;
+        for (let i = 0; i < object.children.length; i++) {
+            child = object.children[i];
+
+            // Calls this function again if the child has children
+            if (child.children) {
+                fn1(child);
+            }
+            // Logs if this child last in recursion
+            else {
+                // console.log('Reached bottom1 with: ', child.name);
+                numObjects++;
+            }
+        }
+        // console.log('Reached bottom2 with: ', object.name);
+        numObjects++;
+    }
+
+    var numObjects = 0;
+    fn1(object);
+    return numObjects;
+};
+
+// https://www.edureka.co/community/86198/how-to-get-the-size-of-a-javascript-object
+COL.util.roughSizeOfObject = function (object) {
+
+    var objectList = [];
+    var stack = [ object ];
+    var bytes = 0;
+
+    while ( stack.length ) {
+
+        // let stackLength = stack.length;
+        // console.log('stackLength', stackLength); 
+        
+        var value = stack.pop();
+
+        if ( typeof value === 'boolean' ) {
+            bytes += 4;
+        }
+        else if ( typeof value === 'string' ) {
+            bytes += value.length * 2;
+        }
+        else if ( typeof value === 'number' ) {
+            bytes += 8;
+        }
+        else if
+            (
+                // avner: "objectList.indexOf( value ) === -1" means no match, i.e.
+                // the object is not in objectList already (to prevent close-cycles ??
+                typeof value === 'object'
+                    && objectList.indexOf( value ) === -1
+            )
+        {
+            objectList.push( value );
+
+            for( var i in value ) {
+                let val1 = value[ i ];
+                // console.log('val1', val1); 
+
+                stack.push( val1 );
+            }
+        }
+    }
+    return bytes;
+};
+
+
+// https://stackoverflow.com/questions/2901102/how-to-print-a-number-with-commas-as-thousands-separators-in-javascript
+COL.util.numberWithCommas = function (x) {
+    return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}

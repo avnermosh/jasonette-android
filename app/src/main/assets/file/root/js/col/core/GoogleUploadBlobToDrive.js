@@ -1,3 +1,7 @@
+// =========================================================
+// Copyright 2018-2022 Construction Overlay Inc.
+// =========================================================
+
 // upload.js, from https://github.com/googledrive/cors-upload-sample
 // Contributors Steve Bazyl, Mike Procopio, Jeffrey Posnick, Renaud Sauvain
 // License: Apache 2.0 http://www.apache.org/licenses/LICENSE-2.0

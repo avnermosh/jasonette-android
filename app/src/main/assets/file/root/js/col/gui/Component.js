@@ -370,6 +370,10 @@ COL.component.ToggleButton = function (flags) {
 
     var _this = this;
     var _on = this.flag("on");
+    if(_on)
+    {
+        this.$.addClass("col-toggle-on");
+    }
     var _toggleCallback = null;
 
     /* NOTE: the callback specified with onToggle() is not called if the 'ev' 
@@ -407,6 +411,41 @@ COL.component.ToggleButton = function (flags) {
     this.$.click(function (event) {
         _this.toggle(null, event);
     });
+
+    this._disabled = function (doDisable) {
+        if(COL.doUseBootstrap)
+        {
+            // disables the button (e.g. when hovering the hand is not shown and the button cannot be clicked on)
+            this.$.attr("disabled", doDisable);
+
+            if(doDisable)
+            {
+                // tints the button with grey to indicate that it is disabled
+                this.$.addClass("ui-button-disabled");
+
+                // hide the tooltip before disabling the button, so that the tooltip doesn't stay permanently
+                // (note that when the button is disabled, the tooltip will not show when hovering over the button, until the button is enabled again)
+                // (to show the tooltip, we would need a wrapper around the button... )
+                // (see https://getbootstrap.com/docs/4.1/components/tooltips/#disabled-elements)
+                this.$.tooltip('hide');
+            }
+            else
+            {
+                // removes the tint for button to indicate that it is enabled
+                this.$.removeClass("ui-button-disabled");
+            }
+        }
+        else
+        {
+            // using jquery-ui
+            // https://api.jqueryui.com/tooltip/#method-close
+            // if (doDisable) this.$.uitooltip("close");
+            if (doDisable) this.$.tooltip("close");
+            // this.$.uibutton({disabled: doDisable});
+            this.$.button({disabled: doDisable});
+        }
+    };
+    
 };
 
 COL.extend(COL.component.Button, COL.component.ToggleButton);

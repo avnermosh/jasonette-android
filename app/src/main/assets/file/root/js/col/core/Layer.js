@@ -771,15 +771,7 @@ class Layer {
 
             let toastTitleStr = "setSelectedOverlayRect";
             let msgStr = "Failed to setSelectedOverlayRect." + err;
-            if(COL.doEnableToastr)
-            {
-                toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
-            }
-            else
-            {
-                console.error(msgStr);
-                // alert(msgStr);
-            }
+            toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
             throw new Error(msgStr);
         }
         
@@ -975,19 +967,10 @@ class Layer {
 
             let toastTitleStr = "playImagesInSelectedOverlayRect";
             let msgStr = "Failed to playImagesInSelectedOverlayRect." + err;
-            if(COL.doEnableToastr)
-            {
-                console.trace();
-                let consoleStack = err.stack;
-                console.log('consoleStack', consoleStack); 
-                
-                toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
-            }
-            else
-            {
-                console.error(msgStr);
-                // alert(msgStr);
-            }
+            console.trace();
+            let consoleStack = err.stack;
+            console.log('consoleStack', consoleStack); 
+            toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
             throw new Error(msgStr);
         }
     };
@@ -1031,15 +1014,7 @@ class Layer {
 
             let toastTitleStr = "playImagesInAllOverlayRects";
             let msgStr = "Failed to playImagesInAllOverlayRects." + err;
-            if(COL.doEnableToastr)
-            {
-                toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
-            }
-            else
-            {
-                console.error(msgStr);
-                // alert(msgStr);
-            }
+            toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
             throw new Error(msgStr);
         }
         
@@ -1109,16 +1084,7 @@ class Layer {
             // raise a toast to indicate the failure
             let toastTitleStr = "getImageBlobUrl";
             let msgStr = "Failed to getImageBlobUrl." + err;
-            if(COL.doEnableToastr)
-            {
-                toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
-            }
-            else
-            {
-                console.error(msgStr);
-                // alert(msgStr);
-            }
-
+            toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
             throw new Error(msgStr);
         }
         
@@ -1206,7 +1172,7 @@ class Layer {
                     // find zipFileInfo.files entries with substring mostAncientImageFilename
                     // e.g. "IMG_20190319_163544" in "234/567/IMG_20190319_163544"
 
-                    let zipFileInfo = COL.model.getZipFileInfo();
+                    let zipFileInfo = COL.model.getSelectedZipFileInfo();
 
                     let filenames_inZipFileInfo = Object.keys(zipFileInfo.files);
                     let filenamesToClean_inZipFileInfo = filenames_inZipFileInfo.filter(function (filename) {
@@ -1265,20 +1231,99 @@ class Layer {
             // raise a toast to indicate the failure
             let toastTitleStr = "manageMemory";
             let msgStr = "Failed to manageMemory." + err;
-            if(COL.doEnableToastr)
-            {
-                toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
-            }
-            else
-            {
-                console.error(msgStr);
-                // alert(msgStr);
-            }
-
+            toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
             throw new Error(msgStr);
         }
     };
 
+    
+    checkPossibleMemoryLeakAndReportImageCounter = function () {
+        if( (imageCountTotal % imageCountTotal_numFilesBetweenReporting) == 0 )
+        {
+            // // // --------------------------------------------------------------
+            // // // Size of imageInfoVec
+            // let imagesInfoSizeInBytes2 = this._imagesInfo.getNumBytes();
+            // console.log('imagesInfoSizeInBytes2', COL.util.numberWithCommas(imagesInfoSizeInBytes2));
+            
+            // // // --------------------------------------------------------------
+            // // // Size of zipFileInfo
+            
+            // console.log('imageCountTotal', imageCountTotal); 
+            // let zipFileInfo = COL.model.getSelectedZipFileInfo();
+            // let zipFileInfoSizeInBytes = COL.util.roughSizeOfObject(zipFileInfo);
+            // console.log('zipFileInfoSizeInBytes', COL.util.numberWithCommas(zipFileInfoSizeInBytes)); 
+
+            // --------------------------------------------------------------
+            // Size of texScene
+
+            // let imagesInfoSizeInBytes1 = COL.util.roughSizeOfObject(this._imagesInfo);
+            // console.log('imagesInfoSizeInBytes1', imagesInfoSizeInBytes1);
+
+            // let texturePlugin = this.getTexturePanelPlugin();
+            // let texScene = texturePlugin.getTexScene();
+
+            // let texSceneSizeInBytes = COL.util.roughSizeOfObject(texScene);
+            // console.log('texSceneSizeInBytes', COL.util.numberWithCommas(texSceneSizeInBytes)); 
+            
+            // // --------------------------------------------------------------
+            // // Num objects in texScene
+
+            // let numObjects_in_texScene = COL.util.countNumberOfObjects(texScene);
+            // console.log('numObjects_in_texScene', numObjects_in_texScene);
+
+            // // --------------------------------------------------------------
+            // // Size of scene3DtopDown_scene
+            // let scene3DtopDown = this.getScene3DtopDown();
+            // let scene3DtopDown_scene = scene3DtopDown.getScene2();
+
+            // let scene3DtopDown_scene_SizeInBytes = COL.util.roughSizeOfObject(scene3DtopDown_scene);
+            // console.log('scene3DtopDown_scene_SizeInBytes', COL.util.numberWithCommas(scene3DtopDown_scene_SizeInBytes));                
+            
+            // // --------------------------------------------------------------
+            // // Num objects in scene3DtopDown_scene
+            // let numObjects_in_scene3DtopDown_scene = COL.util.countNumberOfObjects(scene3DtopDown_scene);
+            // console.log('numObjects_in_scene3DtopDown_scene', numObjects_in_scene3DtopDown_scene);
+
+
+            // {
+            //     // sanity check - count the number of entries with valid "fileInfo.buffer" in zipFileInfo.files
+            //     let numValidBuffers = 0;
+            //     let numValidObjectUrls = 0;
+
+            //     for (const [key, value] of Object.entries(zipFileInfo.files)) {
+            //         // console.log(key, value);
+            //         let fileInfo2 = value;
+            //         if(COL.util.isObjectValid(fileInfo2.buffer)) {
+            //             console.log('fileInfo2.filename1', fileInfo2.filename);
+            //             numValidBuffers++;
+            //         }
+            //         if(COL.util.isObjectValid(fileInfo2.url)) {
+            //             // console.log('fileInfo2.filename2', fileInfo2.filename);
+            //             numValidObjectUrls++;
+            //         }
+            //     }
+            
+            //     console.log('numValidBuffers in zipFileInfo.files', numValidBuffers); 
+            //     console.log('numValidObjectUrls in zipFileInfo.files', numValidObjectUrls); 
+            // }
+            
+            
+            // --------------------------------------------------------------
+            // toast with counter
+
+            // remove the previous toast if it exists
+            // https://stackoverflow.com/questions/41040911/find-and-clear-a-toast-toastr
+            toastr.clear();
+
+            let toastTitleStr = "Image counter";
+            let msgStr = "imageCountTotal: " + imageCountTotal;
+            // msgStr += "COL.errorHandlingUtil.toastrSettings.timeOut: " + COL.errorHandlingUtil.toastrSettings.timeOut;
+            toastr.success(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
+            
+        }
+        imageCountTotal++;
+    };
+    
     loadTheSelectedImageAndRender = async function () {
         // console.log('BEG loadTheSelectedImageAndRender');
 
@@ -1373,93 +1418,7 @@ class Layer {
             
             await this.loadOverlayTextureFromFile(blobUrl);
 
-            {
-                if( (imageCountTotal % imageCountTotal_numFilesBetweenReporting) == 0 )
-                {
-
-                    // // // --------------------------------------------------------------
-                    // // // Size of imageInfoVec
-                    // let imagesInfoSizeInBytes2 = this._imagesInfo.getNumBytes();
-                    // console.log('imagesInfoSizeInBytes2', COL.util.numberWithCommas(imagesInfoSizeInBytes2));
-                    
-                    // // // --------------------------------------------------------------
-                    // // // Size of zipFileInfo
-                    
-                    // console.log('imageCountTotal', imageCountTotal); 
-                    // let zipFileInfo = COL.model.getZipFileInfo();
-                    // let zipFileInfoSizeInBytes = COL.util.roughSizeOfObject(zipFileInfo);
-                    // console.log('zipFileInfoSizeInBytes', COL.util.numberWithCommas(zipFileInfoSizeInBytes)); 
-
-                    // --------------------------------------------------------------
-                    // Size of texScene
-
-                    // let imagesInfoSizeInBytes1 = COL.util.roughSizeOfObject(this._imagesInfo);
-                    // console.log('imagesInfoSizeInBytes1', imagesInfoSizeInBytes1);
-
-                    // let texturePlugin = this.getTexturePanelPlugin();
-                    // let texScene = texturePlugin.getTexScene();
-
-                    // let texSceneSizeInBytes = COL.util.roughSizeOfObject(texScene);
-                    // console.log('texSceneSizeInBytes', COL.util.numberWithCommas(texSceneSizeInBytes)); 
-                    
-                    // // --------------------------------------------------------------
-                    // // Num objects in texScene
-
-                    // let numObjects_in_texScene = COL.util.countNumberOfObjects(texScene);
-                    // console.log('numObjects_in_texScene', numObjects_in_texScene);
-
-                    // // --------------------------------------------------------------
-                    // // Size of scene3DtopDown_scene
-                    // let scene3DtopDown = this.getScene3DtopDown();
-                    // let scene3DtopDown_scene = scene3DtopDown.getScene2();
-
-                    // let scene3DtopDown_scene_SizeInBytes = COL.util.roughSizeOfObject(scene3DtopDown_scene);
-                    // console.log('scene3DtopDown_scene_SizeInBytes', COL.util.numberWithCommas(scene3DtopDown_scene_SizeInBytes));                
-                    
-                    // // --------------------------------------------------------------
-                    // // Num objects in scene3DtopDown_scene
-                    // let numObjects_in_scene3DtopDown_scene = COL.util.countNumberOfObjects(scene3DtopDown_scene);
-                    // console.log('numObjects_in_scene3DtopDown_scene', numObjects_in_scene3DtopDown_scene);
-
-
-                    // {
-                    //     // sanity check - count the number of entries with valid "fileInfo.buffer" in zipFileInfo.files
-                    //     let numValidBuffers = 0;
-                    //     let numValidObjectUrls = 0;
-
-                    //     for (const [key, value] of Object.entries(zipFileInfo.files)) {
-                    //         // console.log(key, value);
-                    //         let fileInfo2 = value;
-                    //         if(COL.util.isObjectValid(fileInfo2.buffer)) {
-                    //             console.log('fileInfo2.filename1', fileInfo2.filename);
-                    //             numValidBuffers++;
-                    //         }
-                    //         if(COL.util.isObjectValid(fileInfo2.url)) {
-                    //             // console.log('fileInfo2.filename2', fileInfo2.filename);
-                    //             numValidObjectUrls++;
-                    //         }
-                    //     }
-                    
-                    //     console.log('numValidBuffers in zipFileInfo.files', numValidBuffers); 
-                    //     console.log('numValidObjectUrls in zipFileInfo.files', numValidObjectUrls); 
-                    // }
-                    
-                    
-                    // --------------------------------------------------------------
-                    // toast with counter
-
-                    // remove the previous toast if it exists
-                    // https://stackoverflow.com/questions/41040911/find-and-clear-a-toast-toastr
-                    toastr.clear();
-
-                    let toastTitleStr = "Image counter";
-                    let msgStr = "imageCountTotal: " + imageCountTotal;
-                    // msgStr += "COL.errorHandlingUtil.toastrSettings.timeOut: " + COL.errorHandlingUtil.toastrSettings.timeOut;
-                    toastr.success(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
-                    
-                }
-                imageCountTotal++;
-            }
+            // checkPossibleMemoryLeakAndReportImageCounter();
         }
         catch(err) {
             console.error('err', err);
@@ -1467,16 +1426,7 @@ class Layer {
             // raise a toast to indicate the failure
             let toastTitleStr = "loadTheSelectedImageAndRender";
             let msgStr = "Failed to loadTheSelectedImageAndRender." + err;
-            if(COL.doEnableToastr)
-            {
-                toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
-            }
-            else
-            {
-                console.error(msgStr);
-                // alert(msgStr);
-            }
-
+            toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
             throw new Error(msgStr);
         }
         
@@ -1568,15 +1518,7 @@ class Layer {
             // raise a toast to indicate the failure
             let toastTitleStr = "updateLayerImageRelatedRenderring";
             let msgStr = "Failed to updateLayerImageRelatedRenderring." + err;
-            if(COL.doEnableToastr)
-            {
-                toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
-            }
-            else
-            {
-                console.error(msgStr);
-                // alert(msgStr);
-            }
+            toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
         }
     };
 
@@ -2464,28 +2406,12 @@ class Layer {
         if(syncStatus)
         {
             let msgStr = "Succeeded to sync";
-            if(COL.doEnableToastr)
-            {
-                toastr.success(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
-            }
-            else
-            {
-                console.log(msgStr);
-                // alert(msgStr);
-            }
+            toastr.success(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
         }
         else
         {
             let msgStr = "Failed to sync: <br />" + failureSyncMsg;
-            if(COL.doEnableToastr)
-            {
-                toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
-            }
-            else
-            {
-                console.error(msgStr);
-                // alert(msgStr);
-            }
+            toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
         }
 
         return syncStatus;
@@ -2932,28 +2858,12 @@ class Layer {
         if(syncStatus)
         {
             msgStr = "Succeeded to reconcile inconcitencies";
-            if(COL.doEnableToastr)
-            {
-                toastr.success(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
-            }
-            else
-            {
-                console.log(msgStr);
-                // alert(msgStr);
-            }
+            toastr.success(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
         }
         else
         {
             msgStr = "Failed to reconcile inconcitencies: " + msgStr1;
-            if(COL.doEnableToastr)
-            {
-                toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
-            }
-            else
-            {
-                console.error(msgStr);
-                // alert(msgStr);
-            }
+            toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
         }
     };
 
@@ -3094,16 +3004,7 @@ class Layer {
             let toastTitleStr = "loadOverlayTextureFromFile";
             let msgStr = 'Failed to loadOverlayTextureFromFile, while trying to load from THREE_TextureLoader.loadAsync. textureFileUrl: ' + textureFileUrl + ', err: ' + err;
             // let msgStr = 'Failed to loadOverlayTextureFromFile. err: ' + err;
-            if(COL.doEnableToastr)
-            {
-                toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
-            }
-            else
-            {
-                console.error(msgStr);
-                // alert(msgStr);
-            }
-
+            toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
             throw new Error(msgStr);
         }
     };
@@ -3302,15 +3203,7 @@ class Layer {
             // raise a toast to indicate the failure
             let toastTitleStr = "Dispose Layer";
             let msgStr = "Failed to dispose the layer.";
-            if(COL.doEnableToastr)
-            {
-                toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
-            }
-            else
-            {
-                console.error(msgStr);
-                // alert(msgStr);
-            }
+            toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
         }
         
     };

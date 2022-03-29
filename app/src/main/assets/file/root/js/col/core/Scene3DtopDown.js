@@ -361,9 +361,6 @@ class Scene3DtopDown {
         {
             this.initializeEditTopDownOverlayControl();
         }
-
-        
-        // console.log('END initScene3DtopDown'); 
     };
 
 

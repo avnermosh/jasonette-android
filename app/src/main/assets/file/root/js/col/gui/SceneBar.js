@@ -12,6 +12,7 @@ import { Layer } from "../core/Layer.js";
 import { Model } from "../core/Model.js";
 import { Scene3DtopDown } from "../core/Scene3DtopDown.js";
 import { EditOverlayRect_Scene3DtopDown_TrackballControls } from "../orbitControl/EditOverlayRect_Scene3DtopDown_TrackballControls.js";
+import { ZipFileInfo } from "../core/ZipFileInfo.js";
 
 
 class SceneBar {
@@ -28,7 +29,7 @@ class SceneBar {
 
         iconPath = iconDir + "/0278-play2.png";
         this._playImagesInAllOverlayRectsButton = new component.ToggleButton({
-            id: "playImagesInAllOverlayRectsButton",
+            id: "playImagesInAllOverlayRectsButtonId",
             tooltip: "Play images in all overlayRects",
             icon: iconPath,
             on: false
@@ -40,6 +41,7 @@ class SceneBar {
         
         iconPath = iconDir + "/0303-loop2.png";
         this._reloadPageButton = new component.Button({
+            id: "reloadPageButtonId",
             tooltip: "Reload site",
             icon: iconPath,
             multiple: true
@@ -602,7 +604,6 @@ class SceneBar {
         // - render the selected plan 
         ////////////////////////////////////////////////////////////////////////////////
 
-
         // console.log('set the selected index for the option in optgroup'); 
         if(getCurrentUserResultAsJson['selected_plan_id'])
         {
@@ -619,15 +620,14 @@ class SceneBar {
             
             // https://stackoverflow.com/questions/5090103/javascript-regexp-dynamic-generation-from-variables
             // e.g. "id":"3"
-            let matchPattern = '\\"id\\"\\:\\"' + selected_plan_id + '\\"'; 
-            let optionIndex = this.findOptionIndexBySubstrInVal(matchPattern);
-            if(COL.util.isObjectValid(optionIndex))
-            {
-                $('#sitesId')[0].selectedIndex = optionIndex;
+            let matchPattern = '\\"id\\"\\:\\"' + selected_plan_id + '\\"';
+            let optionIndex = this.findPlanInSiteplanMenu(matchPattern);
 
-                // render the selected plan
-                await COL.colJS.onSitesChanged();
-            }
+            // mark the plan in the siteplan menu
+            $('#sitesId')[0].selectedIndex = optionIndex;
+
+            // render the selected plan
+            await COL.colJS.onSitesChanged();
         }
         else
         {
@@ -635,19 +635,6 @@ class SceneBar {
             let numPlans = $("#sitesId option").length;
             console.log('numPlans', numPlans);
 
-            if(numPlans == 0)
-            {
-                // no plan - load demo plan 
-                if( COL.util.isObjectValid(window.$agent_jasonette_android))
-                {
-                    // in mobile app (e.g. jasonette), 
-                    // read the file headers in the .zip file from the mobile device
-                    console.log('loadDemoDatasetFromZipfile1 '); 
-                    window.$agent_jasonette_android.trigger("media.loadDemoDatasetFromZipfile1");
-                }
-            }
-
-            
             if(numPlans > 0)
             {
                 // there is at least one plan - set to the first plan
@@ -856,52 +843,26 @@ class SceneBar {
                     // raise a toast
                     //////////////////////////////////////////////////////
                     
-                    if(COL.doEnableToastr)
+                    if(retval)
                     {
-                        if(retval)
-                        {
-                            let msgStr = "Succeeded to sync: " + syncZipSitesWithWebServer_statusStr;
-                            toastr.success(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
+                        let msgStr = "Succeeded to sync: " + syncZipSitesWithWebServer_statusStr;
+                        toastr.success(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
 
-                            let msgStr1 = toastTitleStr + ': ' + msgStr;
-                            console.log('msgStr1', msgStr1); 
-                            // alert(msgStr1);
-                        }
-                        else
-                        {
-                            let msgStr = "Failed to sync:" + syncZipSitesWithWebServer_statusStr;
-                            toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
-                        }
+                        let msgStr1 = toastTitleStr + ': ' + msgStr;
+                        console.log('msgStr1', msgStr1); 
+                        // alert(msgStr1);
                     }
                     else
                     {
-                        if(retval)
-                        {
-                            let msgStr = "Succeeded to sync: " + syncZipSitesWithWebServer_statusStr;
-                            console.log(msgStr);
-                            // alert(msgStr);
-                        }
-                        else
-                        {
-                            let msgStr = "Failed to sync:" + syncZipSitesWithWebServer_statusStr;
-                            console.error(msgStr);
-                            // alert(msgStr);
-                        }
+                        let msgStr = "Failed to sync:" + syncZipSitesWithWebServer_statusStr;
+                        toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
                     }
                 }
                 catch(err) {
                     console.error('Error from _syncFromZipFileToWebServerButton:', err);
 
                     let msgStr = "Failed to sync. " + err;
-                    if(COL.doEnableToastr)
-                    {
-                        toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
-                    }
-                    else
-                    {
-                        console.error(msgStr);
-                        // alert(msgStr);
-                    }
+                    toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
 
                     // enable the button
                     let sceneBar = COL.model.getSceneBar();
@@ -1031,15 +992,7 @@ class SceneBar {
                 catch(err) {
                     let toastTitleStr = "Split overlayRect";
                     let msgStr = "Failed to split the overlayRect. " + err;
-                    if(COL.doEnableToastr)
-                    {
-                        toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
-                    }
-                    else
-                    {
-                        console.error(msgStr);
-                        // alert(msgStr);
-                    }
+                    toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
                 }
 
                 // enable the button
@@ -1127,15 +1080,7 @@ class SceneBar {
                 
                 let toastTitleStr = "Play images in all overlayRects";
                 let msgStr = "Failed to play images in all overlayRects. " + err;
-                if(COL.doEnableToastr)
-                {
-                    toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
-                }
-                else
-                {
-                    console.error(msgStr);
-                    // alert(msgStr);
-                }
+                toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
             }
 
             // reset the play button 
@@ -1215,15 +1160,7 @@ class SceneBar {
 
             let toastTitleStr = "Open image file";
             let msgStr = "Failed to open the image. " + err;
-            if(COL.doEnableToastr)
-            {
-                toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
-            }
-            else
-            {
-                console.error(msgStr);
-                // alert(msgStr);
-            }
+            toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
         }
 
         // enable editOverlayRect_syncWithBackendBtn
@@ -1231,7 +1168,8 @@ class SceneBar {
     };
 
     // The variable zipFile is only used in non-mobile webapp.
-    // In mobile app (android), the zipfile info is taken from model._zipFileInfo.files
+    // In mobile app (android), the zipfile info is taken from model._selectedZipFileInfo
+    // (therefore, for mobile app the value of zipFile is 'undefined' and it does not make any impact)
     onChange_openZipFileButton = async function (zipFile = undefined) {
         // console.log('BEG onChange_openZipFileButton');
 
@@ -1315,25 +1253,35 @@ class SceneBar {
     getEditOverlayRectButton = function () {
         return this._editOverlayRectButton;
     }
-    
-    findOptionIndexBySubstrInVal = function (matchPattern) {
-        // console.log('BEG findOptionIndexBySubstrInVal'); 
-        let matchPatternRE = new RegExp(matchPattern);
 
-        // let numPlans = $("#sitesId option").length;
-        // console.log('numPlans', numPlans);
-        
-        // let sitePlans = $("#sitesId option");
-        // console.log('sitePlans', sitePlans);
-        
-        let optionsMatched = $("#sitesId option").filter(function() {
-            return $(this).val().match(matchPatternRE)
-        });
+    findPlanInSiteplanMenu = function (matchPattern) {
+        console.log('BEG findPlanInSiteplanMenu');
 
-        let optionIndex = undefined;
-        if(optionsMatched.length >= 1)
+        // Initially point to "no-site"
+        let optionIndex = 0;
+        if(COL.util.isObjectValid(matchPattern))
         {
-            optionIndex = optionsMatched[0].index;
+            // // print the optgroup options values
+            // console.log('$("#sitesId option")', $("#sitesId option"));
+            // let numPlans = $("#sitesId option").length;
+            // for(let i = 0; i < numPlans; i++){
+            //     let option = $('#sitesId')[0][i];
+            //     console.log('option.value', option.value); 
+            // }
+            // print the option index (within the option-group) and value
+            // console.log('sitesId selected option index', $("#sitesId option:selected").index());
+            // console.log('sitesId selected option value', $("#sitesId option:selected").val());
+            
+            // try to match the substring of the site-plan-id (matchPattern) in '#sitesId option'
+            let matchPatternRE = new RegExp(matchPattern);
+            let optionsMatched = $("#sitesId option").filter(function() {
+                return $(this).val().match(matchPatternRE)
+            });
+
+            if(optionsMatched.length >= 1)
+            {
+                optionIndex = optionsMatched[0].index;
+            }
         }
         return optionIndex;
     };
@@ -1388,11 +1336,8 @@ class SceneBar {
 
     disableNextAndPreviousImageButtons = function (doDisable) {
         // console.log('BEG disableNextAndPreviousImageButtons'); 
-        let previousImageButton = COL.colJS.previousImageButton;
-        previousImageButton.disabled(doDisable);
-
-        let nextImageButton = COL.colJS.nextImageButton;
-        nextImageButton.disabled(doDisable);
+        COL.colJS.previousImageButton.disabled(doDisable);
+        COL.colJS.nextImageButton.disabled(doDisable);
     };
 
     // * Utility function to make a component automatically disabled if the scene doesn't contains layers
@@ -1474,6 +1419,37 @@ $(window).ready(function () {
 });
 
 
+function savePhotoFromImageUrl(imageUrl) {
+    console.log('BEG savePhotoFromImageUrl');
+
+    // when operating from mobile app jasonette, this function is called from jasonette
+    // after getting a photo from the camera or from the file system
+    // to add the photo to the list of overlayRect files
+    
+    console.log('imageUrl', imageUrl); 
+    let sceneBar = COL.model.getSceneBar();
+
+    // https://stackoverflow.com/questions/35940290/how-to-convert-base64-string-to-javascript-file-object-like-as-from-file-input-f
+    fetch(imageUrl)
+        .then(res => res.blob())
+        .then(blob => {
+            // https://gist.github.com/hurjas/2660489
+            let filename = COL.core.ImageFile.createFileNameWithTimestamp();
+            console.log('filename', filename);
+            
+            const file = new File([blob], filename,{ type: "image/png" })
+            // const file = new File([blob], filename,{ type: "image" })
+            
+            let filesArray = [];
+            filesArray.push(file);
+            console.log('filesArray', filesArray);
+            console.log('filesArray.length', filesArray.length);
+            
+            sceneBar.onChange_openImageFileButton(filesArray);
+        })
+};
+
+
 function callbackLoadZipFileHeaders(param) {
     console.log('BEG callbackLoadZipFileHeaders');
 
@@ -1508,13 +1484,13 @@ function callbackLoadZipFileHeaders(param) {
         }
     }
     
-    let zipFileInfo = {
-        zipFile: null,
-        zipFileName: param.dirPath,
-        zipFileUrl: null,
-        files: zipFileInfoFiles_asJson };
+    let zipFileInfo = new ZipFileInfo({zipFile: null,
+                                       zipFileName: param.colZipPath,
+                                       zipFileUrl: null,
+                                       files: zipFileInfoFiles_asJson});
     
-    COL.model.setZipFileInfo(zipFileInfo);
+    COL.model.setZipFilesInfo(zipFileInfo);
+    COL.model.setSelectedZipFileInfo(zipFileInfo);
 
     // load the rest of the zip file (e.g. individual files within the .zip file)
     let sceneBar = COL.model.getSceneBar();
@@ -1523,5 +1499,6 @@ function callbackLoadZipFileHeaders(param) {
 
 // Expose savePhoto to Jasonette
 window.callbackLoadZipFileHeaders = callbackLoadZipFileHeaders;
+window.savePhotoFromImageUrl = savePhotoFromImageUrl;
 
 export { SceneBar };

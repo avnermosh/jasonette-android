@@ -37,7 +37,7 @@ class ColJS {
     };
 
     setupTexturePaneGui = function () {
-        this._$texturePaneWrapper = $('<div id="texture-pane-wrapper"></div>');
+        this._$texturePaneWrapper = $('<div id="texturePaneWrapperId"></div>');
         // tbd RemoveME - no such class "texturePaneWrapper"??
         this._$texturePaneWrapper.addClass("texturePaneWrapper");
 
@@ -51,7 +51,7 @@ class ColJS {
         this._$texturePaneWrapper.append(canvas1);
     };
 
-    setupToolsPaneGui = async function (masterButtonGroupEl) {
+    setupToolsPaneGui = async function (floorplanButtonGroupEl) {
         var _$border = $('<div id="col-tools-pane-border"></div>');
 
         _$border.css({
@@ -64,15 +64,13 @@ class ColJS {
 
         let iconPath = iconDir + "/0182-power.png";
         console.log('iconPath', iconPath); 
-        this.masterButton = new COL.component.ToggleButton({
-            id: "masterButtonId",
+        this.floorPlanToggleButton = new COL.component.ToggleButton({
+            id: "floorPlanToggleButtonId",
             tooltip: "Master button",
             icon: iconPath,
             on: true
         });
-
-        let masterButton = $(this.masterButton.$);
-        masterButton.addClass("ui-button");
+        $(this.floorPlanToggleButton.$).addClass("ui-button");
         
         this.imageIndexInOverlayRectLabel = new COL.component.Label({
             id: "imageIndexInOverlayRectLabelId",
@@ -81,21 +79,6 @@ class ColJS {
         let imageIndexInOverlayRectLabel = $(this.imageIndexInOverlayRectLabel.$);
         imageIndexInOverlayRectLabel.addClass("ui-button");
 
-        // --------------------------------------------------------------
-
-        // playImagesInSelectedOverlayRect -> onOffMode
-        
-        iconPath = iconDir + "/0183-switch.png";
-        this.onOffModeButton = new COL.component.ToggleButton({
-            id: "onOffModeBtnId",
-            tooltip: "Offline / Online mode",
-            icon: iconPath,
-            on: false
-        });
-
-        let onOffModeButton_jqueryObj = $(this.onOffModeButton.$);
-        onOffModeButton_jqueryObj.addClass("ui-button");
-        
         // --------------------------------------------------------------
 
         iconPath = iconDir + "/0313-arrow-left.png";
@@ -129,6 +112,38 @@ class ColJS {
         });
         $(this.nextImageButton.$).addClass("ui-button");
 
+        // --------------------------------------------------------------
+
+        // playImagesInSelectedOverlayRect -> onOffMode
+        
+        iconPath = iconDir + "/0183-switch.png";
+        this.onOffModeButton = new COL.component.ToggleButton({
+            id: "onOffModeBtnId",
+            tooltip: "Offline / Online mode",
+            icon: iconPath,
+            on: false
+        });
+
+        let onOffModeButton_jqueryObj = $(this.onOffModeButton.$);
+        onOffModeButton_jqueryObj.addClass("ui-button");
+
+
+        // --------------------------------------------------------------
+
+        iconPath = iconDir + "/0006-pencil.png";
+        this.makeShiftButton = new COL.component.ToggleButton({
+            id: "makeShiftBtnId",
+            tooltip: "Makeshift button - for experimentation of new features",
+            icon: iconPath,
+            on: false
+        });
+
+        let makeShiftButton_jqueryObj = $(this.makeShiftButton.$);
+        makeShiftButton_jqueryObj.addClass("ui-button");
+
+
+
+
         this._topDownPaneWrapper.append(this._topDownPane);
         if(COL.doEnableWhiteboard)
         {
@@ -138,45 +153,46 @@ class ColJS {
         
         this._$texturePaneWrapper.appendTo('#grid-container1');
 
-        let masterButtonGroupJqueryElement = $('#masterButtonGroupId');
-        masterButtonGroupJqueryElement.append(this.masterButton.$);
-        masterButtonGroupJqueryElement.append(this.onOffModeButton.$);
-        masterButtonGroupJqueryElement.append(this.previousImageButton.$);
-        masterButtonGroupJqueryElement.append(this.playImagesInSelectedOverlayRectButton.$);
-        masterButtonGroupJqueryElement.append(this.nextImageButton.$);
-        masterButtonGroupJqueryElement.append(this.imageIndexInOverlayRectLabel.$);
+        let floorplanButtonGroupJqueryElement = $('#floorplanButtonGroupId');
+        floorplanButtonGroupJqueryElement.append(this.floorPlanToggleButton.$);
+        floorplanButtonGroupJqueryElement.append(this.previousImageButton.$);
+        floorplanButtonGroupJqueryElement.append(this.playImagesInSelectedOverlayRectButton.$);
+        floorplanButtonGroupJqueryElement.append(this.nextImageButton.$);
+        floorplanButtonGroupJqueryElement.append(this.imageIndexInOverlayRectLabel.$);
         if(COL.doEnableWhiteboard)
         {
-            masterButtonGroupJqueryElement.append(this._floorPlanWhiteboardMenu);
+            floorplanButtonGroupJqueryElement.append(this._floorPlanWhiteboardMenu);
         }
+        floorplanButtonGroupJqueryElement.append(this.onOffModeButton.$);
+        floorplanButtonGroupJqueryElement.append(this.makeShiftButton.$);
 
         let spinnerEl_jqueryObj = $('<div id="cssLoaderId" class="loader loader-default"></div>');
-        masterButtonGroupJqueryElement.append(spinnerEl_jqueryObj);
+        floorplanButtonGroupJqueryElement.append(spinnerEl_jqueryObj);
         
         if (COL.util.isTouchDevice())
         {
-            // tbd - remove the function onClick_masterButtonGroupEl
-            // masterButtonGroupEl.addEventListener( 'click', onClick_masterButtonGroupEl, {capture: false, passive: false} );
-            masterButtonGroupEl.addEventListener( 'touchstart', onTouchstart_masterButtonGroupEl, {capture: false, passive: false} );
-            masterButtonGroupEl.addEventListener( 'touchmove', onTouchmove_masterButtonGroupEl, {capture: false, passive: false} );
+            // tbd - remove the function onClick_floorplanButtonGroupEl
+            // floorplanButtonGroupEl.addEventListener( 'click', onClick_floorplanButtonGroupEl, {capture: false, passive: false} );
+            floorplanButtonGroupEl.addEventListener( 'touchstart', onTouchstart_floorplanButtonGroupEl, {capture: false, passive: false} );
+            floorplanButtonGroupEl.addEventListener( 'touchmove', onTouchmove_floorplanButtonGroupEl, {capture: false, passive: false} );
 
             // added catch-all 'click', at element grid-container1 to prevent an iOS side-effect of scaling-the-page when double-touching
-            // function onClick_masterButtonGroupEl(event) {
-            //     console.log('BEG onClick_masterButtonGroupEl111111111111111');
+            // function onClick_floorplanButtonGroupEl(event) {
+            //     console.log('BEG onClick_floorplanButtonGroupEl111111111111111');
 
             //     // // prevent from trickling the event, when touching, which causes, in iOS to zoom the entire page
             //     // event.preventDefault();
             // }
             
-            function onTouchstart_masterButtonGroupEl(event) {
-                console.log('BEG ------------------ onTouchstart_masterButtonGroupEl');
+            function onTouchstart_floorplanButtonGroupEl(event) {
+                console.log('BEG ------------------ onTouchstart_floorplanButtonGroupEl');
 
                 // // prevent from trickling the event, when touching and dragging, which causes a side effect of refreshing the page
                 // event.preventDefault();
             }
 
-            function onTouchmove_masterButtonGroupEl(event) {
-                console.log('BEG onTouchmove_masterButtonGroupEl');
+            function onTouchmove_floorplanButtonGroupEl(event) {
+                console.log('BEG onTouchmove_floorplanButtonGroupEl');
 
                 // prevent from trickling the event, when touching and dragging, which causes a side effect of refreshing the page
                 event.preventDefault();
@@ -186,7 +202,7 @@ class ColJS {
         if(COL.doUseBootstrap)
         {
             let divImageInfoEl = '<div id="divImageInfoId"><button id="buttonImageInfoId">Image Info</button></div>';
-            masterButtonGroupJqueryElement.append(divImageInfoEl);
+            floorplanButtonGroupJqueryElement.append(divImageInfoEl);
 
             // where the imageInfo is displayed
             this.imageInfoElement = $('<span id="imageInfoElementId"></span>');
@@ -227,11 +243,10 @@ class ColJS {
         this._topDownPane.addClass("topDownPaneClass");
 
         this.setTopDownResizer();
-        
-        this.masterButton.onClick(function (event) {
-            console.log('BEG masterButton.onClick');
-            
-            COL.colJS.toggleSceneBarAndTopDownPane(COL.colJS.masterButton.isOn());
+
+        this.floorPlanToggleButton.onClick(function (event) {
+            console.log('BEG floorPlanToggleButton.onClick');
+            COL.colJS.toggleSceneBarAndTopDownPane(COL.colJS.floorPlanToggleButton.isOn());
         });
 
         this.onOffModeButton.onClick(async function() {
@@ -244,7 +259,7 @@ class ColJS {
                 if(isOnMode)
                 {
                     console.log('Directing11111111111111111111111111 to https://192.168.1.75'); 
-                    window.location.href = "https://192.168.1.75/index";
+                    window.location.href = "https://192.168.1.80/index";
                 }
                 else
                 {
@@ -287,6 +302,21 @@ class ColJS {
             // // update the buttons: previousImageButton, nextImageButton, play Buttons to their default state
             // // (e.g. enable if selectedOverlayRect is defined and has more than 1 image)
             // selectedLayer.updatePreviousPlayNextImageButtons();
+        });
+
+        this.makeShiftButton.onClick(async function() {
+            // console.log('BEG makeShiftButton.onClick');
+
+            try {
+                // with every click set the layer to undefined (the layer can be set again by selecting a layer from the combo box).
+                console.log('set layer to undefined');
+                await COL.model.setSelectedLayer(undefined);
+                
+            }
+            catch(err) {
+                console.error('err', err);
+                console.error('Error in makeShiftButton()');
+            }
         });
 
         this.previousImageButton.onClick(async function() {
@@ -389,17 +419,17 @@ class ColJS {
     initColJS = async function () {
         // console.log('BEG ColJS::initColJS');
 
-        let masterButtonGroupEl = document.getElementById('masterButtonGroupId');
-        // console.log('masterButtonGroupEl', masterButtonGroupEl); 
+        let floorplanButtonGroupEl = document.getElementById('floorplanButtonGroupId');
+        // console.log('floorplanButtonGroupEl', floorplanButtonGroupEl); 
         let doSetupTopDownAndTextureGui = false;
-        if(COL.util.isObjectValid(masterButtonGroupEl))
+        if(COL.util.isObjectValid(floorplanButtonGroupEl))
         {
-            // the masterButtonGroupEl exists, i.e. the main page is view_sites.html
+            // the floorplanButtonGroupEl exists, i.e. the main page is view_sites.html
             doSetupTopDownAndTextureGui = true;
         }
         else
         {
-            // the masterButtonGroupEl does not exists. This can happen if the html page is e.g. admin_view_groups.html
+            // the floorplanButtonGroupEl does not exists. This can happen if the html page is e.g. admin_view_groups.html
             // where the site buttons are not created and not presented
         }
         // console.log('doSetupTopDownAndTextureGui', doSetupTopDownAndTextureGui);
@@ -411,7 +441,7 @@ class ColJS {
             this.setupTopDownPaneGui();
 
             // set the top row of buttons
-            await this.setupToolsPaneGui(masterButtonGroupEl);
+            await this.setupToolsPaneGui(floorplanButtonGroupEl);
         }
         
         COL.model = new Model(doSetupTopDownAndTextureGui);
@@ -420,7 +450,7 @@ class ColJS {
         // add catch-all 'click' eventListener, at the top-element grid-container1
         // to prevent an iOS side-effect of scaling-the-page when double-touching
         // tbd - leave these functions until problem of "iOS side-effect of scaling-the-page when double-touching" is resolved
-        //   see section: "Fix - double-touch in iOS on master-button, causes the page to scale up"
+        //   see section: "Fix - double-touch in iOS on floorPlanToggleButton, causes the page to scale up"
         let grid_container1El = document.getElementById('grid-container1');
 
         grid_container1El.addEventListener( 'touchstart', onTouchStart_grid_container1El, {capture: false, passive: false} );
@@ -536,139 +566,136 @@ class ColJS {
 
         let planFilename = '';
         let mtlFilename = '';
+        // the SitePlanNames menu (the dropdown combo-box)
         let sitesEl = undefined;
         try {
+
+            // Clear all the toasts
+            toastr.clear();
+            
             // disable the SitePlanNames menu
             sitesEl = document.getElementById("sitesId");
             sitesEl.disabled=true;
             
             let sitePlanName = $( "#sitesId option:selected" ).text();
-            
+
             // Get the "text" of the select
             let titleStr = 'Site Plan Name: ' + sitePlanName;
             $('#dropdown_site_plan_name').html(titleStr);
 
+            // collapse the dropdown divSitePlanMenu (like clicking on the hamburger icon)
+            // $('#navbarMainMenuButtonId').click();
+            $('#navbarSupportedContent15Id').removeClass("show");
+            
+            let optionIndex = $('#sitesId')[0].selectedIndex;
+            if(optionIndex == 0)
+            {
+                await COL.model.setSelectedLayer(undefined);
+                // enable the SitePlanNames menu
+                sitesEl.disabled=false;
+                return;
+            }
+
+            // Get the the selected option "value"
+            let planInfoStr = $( "#sitesId option:selected" ).val();
+            if(!COL.util.IsValidJsonString(planInfoStr)) {
+                throw new Error('planInfoStr json string is invalid');
+            }
+            
+            // ///////////////////////////////
+            // Get planInfo from the "value" of the select
+            // ///////////////////////////////
+            
+            let planInfoDict = JSON.parse(planInfoStr);
+            let planInfo = new PlanInfo({id: planInfoDict.id,
+                                         name: planInfoDict.name,
+                                         url: planInfoDict.url,
+                                         planFilename: planInfoDict.plan_filename,
+                                         siteId: planInfoDict.site_id,
+                                         siteName: planInfoDict.site_name,
+                                         files: planInfoDict.files,
+                                         zipFileName: planInfoDict.zipFileName});
+
+            console.log('planInfoDict', planInfoDict);
+            
             let loggedInFlag = COL.model.getLoggedInFlag();
-            console.log('loggedInFlag', loggedInFlag); 
+            // console.log('loggedInFlag', loggedInFlag);
 
-            if(loggedInFlag) {
-                // user is logged-in (i.e. current_user.is_authenticated === true)
-
-                let planInfoStr = $( "#sitesId option:selected" ).val();
-                // console.log('planInfoStr', planInfoStr); 
-                let planInfo = undefined;
-                if(COL.util.IsValidJsonString(planInfoStr)) {
-                    // ///////////////////////////////
-                    // planInfoStr is valid
-                    // Get planInfo from webServer (user is logged-in)
-                    // ///////////////////////////////
-                    // console.log('Get planInfo from webServer');
-                    
-                    // Get the "value" of the select
-
-                    let planInfoTmp = JSON.parse(planInfoStr);
-                    planInfo = new PlanInfo({id: planInfoTmp.id,
-                                             name: planInfoTmp.name,
-                                             url: planInfoTmp.url,
-                                             planFilename: planInfoTmp.plan_filename,
-                                             siteId: planInfoTmp.site_id,
-                                             siteName: planInfoTmp.site_name,
-                                             files: planInfoTmp.files});
-                    // console.log('planInfo1', planInfo); 
-                    
-                    ApiService.LOAD_FROM_TYPE = ApiService.API_SERVICE_TYPES.APIServiceMultiFile;
-
-                    planFilename = planInfo.planFilename;
-
-                    let layerName = Layer.CreateLayerName(planInfo);
-                    let layer = COL.model.getLayerByName(layerName);
-
-                    if(COL.util.isObjectInvalid(layer))
-                    {
-                        layer = COL.model.createLayer(planInfo);
-
-                        {
-                            // "https://192.168.1.75/avner/img/168/188/IMG_20190429_084610.jpg"
-                            // let queryUrl = this.getUrlBase() + 'api/v1_2/get_site_by_name/' + siteName;
-                            let general_metadata_filename = 'general_metadata.json';
-
-
-                            // let blobUrl = await layer.getImageBlobUrl(general_metadata_filename);
-                            // let response = await fetch(blobUrl);
-                            // await COL.errorHandlingUtil.handleErrors(response);
-                            // let blob = await response.blob();
-                            // imageTags = await COL.core.ImageFile.getImageTags(imageInfo.filename, blob);
-
-                            
-                            let queryUrl = COL.model.getUrlBase() + COL.model.getUrlImagePathBase() +
-                                '/' + planInfo.siteId + '/' +
-                                planInfo.id + '/' + general_metadata_filename;
-                            
-                            let response = await fetch(queryUrl);
-                            await COL.errorHandlingUtil.handleErrors(response);
-                            let dataAsJson = await response.json();
-                            // console.log('dataAsJson', dataAsJson);
-                            layer.setGeneralMetadata(dataAsJson);
-                        }
-                        
-                        let layerGeneralMetadata = layer.getGeneralMetadata();
-                        // console.log('layerGeneralMetadata', layerGeneralMetadata);
-                        // console.log('layerGeneralMetadata.generalInfo.modelVersion', layerGeneralMetadata.generalInfo.modelVersion); 
-                        await COL.loaders.CO_ObjectLoader.loadLayerJson_fromWebServer(layer, planInfo);
-
-                        COL.model.addLayer(layer);
-
-                        // COL.model.printLayersInfo2();
-                        COL.model.setSelectedLayer(layer);
-
-                        $(document).trigger("SceneLayerAdded", [layer, COL.model.getLayers().size()]);
-                    }
-                    else
-                    {
-                        COL.model.setSelectedLayer(layer);
-                    }
-
-                    Scene3DtopDown.render1();
-
-                    // tbd - make an api call to the web server to set user.selected_plan_id
-                    // http://localhost/api/v1_2/set_selected_plan_id
-
-                    let dataAsJson = await COL.colJS.set_selected_plan_id(planInfo.id);
-                    // console.log('dataAsJson', dataAsJson);
-
-                    this.oldPlanInfoStr = planInfoStr;
-                }
-                else {
-                    // ///////////////////////////////
-                    // planInfoStr is invalid
-                    // Get planInfo from planInfoLoadedFromZipFile (user is logged-in)
-                    // ///////////////////////////////
-                    
-                    // console.log('planInfoStr', planInfoStr); 
-                    // console.log('Get planInfo from planInfoLoadedFromZipFile');
-                    
-                    planInfo = COL.model.getPlanInfoBySelectId_sitesLoadedFromZipFile(planInfoStr);
-                    // console.log('planInfo2', planInfo); 
-
-                    ApiService.LOAD_FROM_TYPE = ApiService.API_SERVICE_TYPES.ApiServiceZip;
-
-                    let layer = COL.model.getLayerByPlanInfo(planInfo);
-                    COL.model.setSelectedLayer(layer);
-                }
+            if( COL.util.isObjectInvalid(planInfo.zipFileName) &&
+               (loggedInFlag || (planInfo.siteName == "demo_site")) )
+            {
+                // ///////////////////////////////
+                // user is logged-in (i.e. current_user.is_authenticated === true), or
+                // user is logged-off and site is demo_site
+                // planInfo is not from zip (i.e. from webserver)
+                // Get planInfo from webServer
+                // ///////////////////////////////
+                // console.log('Get planInfo from webServer');
                 
+                // console.log('planInfo1', planInfo); 
+                
+                ApiService.LOAD_FROM_TYPE = ApiService.API_SERVICE_TYPES.APIServiceMultiFile;
+
+                planFilename = planInfo.planFilename;
+
+                let layerName = Layer.CreateLayerName(planInfo);
+                let layer = COL.model.getLayerByName(layerName);
+
+                if(COL.util.isObjectInvalid(layer))
+                {
+                    // the layer is not yet in memory
+                    layer = COL.model.createLayer(planInfo);
+
+                    // "https://192.168.1.75/avner/img/168/188/general_metadata.json"
+                    let general_metadata_filename = 'general_metadata.json';
+                    let queryUrl = COL.model.getUrlBase() + COL.model.getUrlImagePathBase() +
+                        '/' + planInfo.siteId + '/' +
+                        planInfo.id + '/' + general_metadata_filename;
+                    
+                    let response = await fetch(queryUrl);
+                    await COL.errorHandlingUtil.handleErrors(response);
+                    let dataAsJson = await response.json();
+                    // console.log('dataAsJson', dataAsJson);
+                    layer.setGeneralMetadata(dataAsJson);
+                    
+                    let layerGeneralMetadata = layer.getGeneralMetadata();
+                    await COL.loaders.CO_ObjectLoader.loadLayerJson_fromWebServer(layer, planInfo);
+
+                    COL.model.addLayer(layer);
+
+                    await COL.model.setSelectedLayer(layer);
+
+                    $(document).trigger("SceneLayerAdded", [layer, COL.model.getLayers().size()]);
+                }
+                else
+                {
+                    // the layer already exist in memory
+                    await COL.model.setSelectedLayer(layer);
+                }
+
+                Scene3DtopDown.render1();
+
+                if(loggedInFlag)
+                {
+                    // the user may not be logged-in, in the case of demo_site, 
+                    let dataAsJson = await COL.colJS.set_selected_plan_id(planInfo.id);
+                }
+
+                // save the previous selection so it can be reverted to if the next selection fails.
+                this.oldPlanInfoStr = planInfoStr;
             }
             else {
-                // user is logged-off
-
                 // ///////////////////////////////
-                // Get planInfo from the "value" of the select
+                // user is logged-in - planInfo is from zip
+                // or
+                // user is logged-off - planInfo is from zip (i.e. not demo_plan)
+                //   (demo_plan the only plan that logged-off user can load from the web server)
                 // ///////////////////////////////
-                // console.log('Get planInfo from the "value" of the select');
-
-                let planInfoStr = $( "#sitesId option:selected" ).val();
-                console.log('planInfoStr', planInfoStr);
                 
-                let planInfo = COL.model.getPlanInfoBySelectId_sitesLoadedFromZipFile(planInfoStr);
+                // Update the selectedZipFileInfo
+                let zipFilesInfo = COL.model.getZipFilesInfo();
+                let zipFileInfo = zipFilesInfo.getByKey(planInfo.zipFileName);
+                COL.model.setSelectedZipFileInfo(zipFileInfo);
                 
                 ApiService.LOAD_FROM_TYPE = ApiService.API_SERVICE_TYPES.ApiServiceZip;
 
@@ -678,8 +705,7 @@ class ColJS {
                     // sanity check
                     throw new Error('layer is invalid');
                 }
-                
-                COL.model.setSelectedLayer(layer);
+                await COL.model.setSelectedLayer(layer);
             }
             
             // enable the SitePlanNames menu
@@ -710,16 +736,7 @@ class ColJS {
             // raise a toast to indicate the failure
             let toastTitleStr = "Load site from web server";
             let msgStr = "Failed.";
-            if(COL.doEnableToastr)
-            {
-                toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
-            }
-            else
-            {
-                let msgStr1 = msgStr + ". " + toastTitleStr;
-                console.error(msgStr1);
-                // alert(msgStr1);
-            }
+            toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
 
             // revert to the previous selection
             document.getElementById('sitesId').value=this.oldPlanInfoStr;
@@ -864,16 +881,42 @@ class ColJS {
         // console.log('BEG toggleSceneBarAndTopDownPane');
         
         let sceneBar = document.getElementById('col-scenebarId');
+        let editOptionsGroup = document.getElementById('editOptionsId');
+        let playImagesInAllOverlayRectsButtonEl = document.getElementById('playImagesInAllOverlayRectsButtonId');
+        
+        
         let _topDownPaneWrapper1 = document.getElementById('topDownPaneWrapperId');
         if(isOn) {
-            // show the scenebar buttons and the topDown pane
-            sceneBar.style.display = "";
+            // show the topDown pane
             _topDownPaneWrapper1.style.display = "";
+
+            // show the scenebar buttons
+            // sceneBar.style.display = "";
+
+            if(COL.util.isObjectValid(editOptionsGroup))
+            {
+                // editOptionsGroup can be invalid if not logged-in
+
+                // show the editOptionsGroup buttons
+                editOptionsGroup.style.display = "";
+            }
+            playImagesInAllOverlayRectsButtonEl.style.display = "";
         }
         else {
-            // hide the scenebar buttons and the topDown pane
-            sceneBar.style.display = "none";
+            // hide the topDown pane
             _topDownPaneWrapper1.style.display = "none";
+
+            // hide the scenebar buttons
+            // sceneBar.style.display = "none";
+
+            if(COL.util.isObjectValid(editOptionsGroup))
+            {
+                // editOptionsGroup can be invalid if not logged-in
+
+                // hide the editOptionsGroup buttons
+                editOptionsGroup.style.display = "none";
+            }
+            playImagesInAllOverlayRectsButtonEl.style.display = "none";
         }
     };
 

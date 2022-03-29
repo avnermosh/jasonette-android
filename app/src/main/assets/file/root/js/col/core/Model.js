@@ -16,8 +16,6 @@ import {WebGLRenderer as THREE_WebGLRenderer,
 //        WebGLRenderer as THREE_WebGL1Renderer,
 
 import { COL } from  "../COL.js";
-import { SiteInfo } from "../util/SiteInfo.js";
-import { PlanInfo } from "../util/PlanInfo.js";
 import { Scene3DtopDown } from "./Scene3DtopDown.js";
 // import { Whiteboard } from "./Whiteboard.js";
 import "../util/Util.js";
@@ -45,15 +43,10 @@ class Model {
         this.minZipVersion = undefined;
         this.fileZip = undefined;
         this._urlBase = window.location.origin + '/';
-        this._sitesInfo = new COL.util.AssociativeArray();
         this._layers = new COL.util.AssociativeArray();
         this._selectedLayer = null;
-        this._zipFileInfo = {
-            zipFile: null,
-            zipFileName: null,
-            zipFileUrl: null,
-            files: {}
-        }
+        this._zipFilesInfo = new COL.util.AssociativeArray();
+        this._selectedZipFileInfo = undefined;
         this.sceneBar = undefined;
         this.isUserLoggedIn = false;
         this._renderer3DtopDown2 = undefined;
@@ -231,6 +224,14 @@ class Model {
             // console.log('this._renderer3DtopDown2.capabilities', this._renderer3DtopDown2.capabilities);
             // console.log('this._renderer3DtopDown2.capabilities.maxTextureSize', this._renderer3DtopDown2.capabilities.maxTextureSize);
 
+            if(!COL.doWorkOnline && COL.util.isObjectValid(window.$agent_jasonette_android))
+            {
+                // in mobile app (e.g. jasonette-android), and offline mode
+                // load canned demo siteplan.
+                // in online mode, the demo_site is loaded from the webserver)
+                window.$agent_jasonette_android.trigger("media.loadDemoZipFileHeaders");
+            }
+
             await this.sceneBar.renderSelectedPlan(getCurrentUserResultAsJson);
         }
 
@@ -335,12 +336,20 @@ class Model {
         return dataAsJson;
     };
 
-    getZipFileInfo = function () {
-        return this._zipFileInfo;
+    getZipFilesInfo = function () {
+        return this._zipFilesInfo;
     };
 
-    setZipFileInfo = function (zipFileInfo) {
-        this._zipFileInfo = zipFileInfo;
+    setZipFilesInfo= function (zipFileInfo) {
+        this._zipFilesInfo.set(zipFileInfo.zipFileName, zipFileInfo);
+    };
+
+    getSelectedZipFileInfo = function () {
+        return this._selectedZipFileInfo;
+    };
+
+    setSelectedZipFileInfo = function (zipFileInfo) {
+        this._selectedZipFileInfo = zipFileInfo;
     };
 
     getModelVersion = function () {
@@ -446,9 +455,9 @@ class Model {
         this._layers.set(layer.name, layer);
     };
 
-    selectLayerByName = function (layerName) {
+    selectLayerByName = async function (layerName) {
         let layer = this._layers.getByKey(layerName);
-        this.setSelectedLayer(layer);
+        await this.setSelectedLayer(layer);
     };
 
     removeLayerByName = function (name) {
@@ -479,42 +488,72 @@ class Model {
     };
 
     setSelectedLayer = async function (layer) {
-        // console.log('BEG setSelectedLayer'); 
+        console.log('BEG setSelectedLayer'); 
 
         ////////////////////////////////////////////////////////////////////////////////
         // Setup the new selectedLayer
         ////////////////////////////////////////////////////////////////////////////////
 
+        this._selectedLayer = layer;
+        
         if(COL.util.isObjectInvalid(layer))
         {
-            // sanity check
-            throw new Error('layer is invalid');
-        }
-        this._selectedLayer = layer;
+            // unselect the layer
 
-        await this._selectedLayer.updateLayerImageRelatedRenderring();
-        if(COL.doWorkOnline)
+            if(COL.colJS.floorPlanToggleButton.isOn())
+            {
+	        // toggle to hide the topDownPane
+                document.getElementById('floorPlanToggleButtonId').click();
+            }
+
+            // disable the floorPlanToggleButton
+            COL.colJS.floorPlanToggleButton.disabled(true);
+
+            $("#texturePaneWrapperId").hide();
+
+            // mark the plan in the siteplan menu to the "No sites selected"
+            $('#sitesId')[0].selectedIndex = 0;
+
+        }
+        else
         {
+            // show the topDownPane
+            $("#topDownPaneWrapperId").show();
+            $("#texturePaneWrapperId").show();
+
+            // enable the floorPlanToggleButton
+            COL.colJS.floorPlanToggleButton.disabled(false);
+
+            if(!COL.colJS.floorPlanToggleButton.isOn())
+            {
+	        // toggle to show the topDownPane
+                document.getElementById('floorPlanToggleButtonId').click();
+            }
+
+            await this._selectedLayer.updateLayerImageRelatedRenderring();
+            if(COL.doWorkOnline)
+            {
+                ////////////////////////////////////////////////////////////////////////////////
+                // Sync the buttons in the scenebar to the state of the layer.
+                // For example, if the new selectedLayer is in edit mode
+                // make the editOverlayRect button in the scenbar reflect that.
+                // (the scenbar maybe out of sync if the previous select layer was not in editing mode)
+                ////////////////////////////////////////////////////////////////////////////////
+
+                let sceneBar = this.getSceneBar();
+                sceneBar.sync_editOverlayRectButton_toStateOf_selectedLayerEditOverlayRectFlag();
+            }
+
             ////////////////////////////////////////////////////////////////////////////////
-            // Sync the buttons in the scenebar to the state of the layer.
-            // For example, if the new selectedLayer is in edit mode
-            // make the editOverlayRect button in the scenbar reflect that.
-            // (the scenbar maybe out of sync if the previous select layer was not in editing mode)
+            // Adjust the camera, canvas, renderer, and viewport1 to the selected topDown pane
             ////////////////////////////////////////////////////////////////////////////////
 
-            let sceneBar = this.getSceneBar();
-            sceneBar.sync_editOverlayRectButton_toStateOf_selectedLayerEditOverlayRectFlag();
+            let scene3DtopDown = this._selectedLayer.getScene3DtopDown();
+            // Set doRescale so that the camera position is restored from the layer.json file
+            let doRescale = false;
+            scene3DtopDown.set_camera_canvas_renderer_and_viewport1(doRescale);
+            $(document).trigger("SceneLayerSelected", [this._selectedLayer]);
         }
-
-        ////////////////////////////////////////////////////////////////////////////////
-        // Adjust the camera, canvas, renderer, and viewport1 to the selected topDown pane
-        ////////////////////////////////////////////////////////////////////////////////
-
-        let scene3DtopDown = this._selectedLayer.getScene3DtopDown();
-        // Set doRescale so that the camera position is restored from the layer.json file
-        let doRescale = false;
-        scene3DtopDown.set_camera_canvas_renderer_and_viewport1(doRescale);
-        $(document).trigger("SceneLayerSelected", [this._selectedLayer]);
         
     };
 
@@ -524,16 +563,6 @@ class Model {
     
     getLayers = function () {
         return this._layers;
-    };
-
-    getSitesInfo = function () {
-        // console.log('BEG getSitesInfo'); 
-        return this._sitesInfo;
-    };
-
-    setSitesInfo = function (sitesInfo) {
-        // console.log('BEG setSitesInfo'); 
-        this._sitesInfo = sitesInfo;
     };
 
     getSiteByName = async function (siteName) {
@@ -555,116 +584,6 @@ class Model {
         return dataAsJson;
     };
     
-    getPlanInfoBySiteIdAndPlanId = function (siteId, planId) {
-        // console.log('BEG getPlanInfoBySiteIdAndPlanId'); 
-
-        let planInfo = undefined;
-        let foundPlanInfo = false;
-
-        let iter = this._sitesInfo.iterator();
-        while (iter.hasNext()) {
-            let siteInfo = iter.next();
-
-            let iterPlans = siteInfo.getPlans().iterator();
-            while (iterPlans.hasNext()) {
-                let planInfo2 = iterPlans.next();
-                if((planInfo2.siteId == siteId) && (planInfo2.id == planId))
-                {
-                    foundPlanInfo = true;
-                    planInfo = planInfo2;
-                    break;
-                }
-            }
-
-            if(foundPlanInfo)
-            {
-                break;
-            }
-        }
-
-        return planInfo;
-    };
-    
-    getPlanInfoBySelectId_sitesLoadedFromZipFile = function (selectIdStr) {
-        // console.log('BEG getPlanInfoBySelectId_sitesLoadedFromZipFile'); 
-
-        // Populate planInfo2;
-        let planInfo2 = {};
-        let foundPlanInfo = false;
-
-        let iter = this._sitesInfo.iterator();
-        while (iter.hasNext()) {
-            let siteInfo = iter.next();
-
-            // let siteInfoStr = siteInfo.toString();
-            // console.log('siteInfoStr', siteInfoStr);
-            
-            let iterPlans = siteInfo.getPlans().iterator();
-            while (iterPlans.hasNext()) {
-                planInfo2 = iterPlans.next();
-                let planInfo2_val = planInfo2.siteId + ":" + planInfo2.id + ":" + planInfo2.siteName + ":" + planInfo2.name;
-                
-                if(COL.util.isStringInvalid(selectIdStr))
-                {
-                    // selectIdStr is invalid. Get the first planInfo
-                    foundPlanInfo = true;
-                    break;
-                }
-                else
-                {
-                    // selectIdStr is defined. Get planInfo that matches selectIdStr
-                    if(planInfo2_val === selectIdStr)
-                    {
-                        foundPlanInfo = true;
-                        break;
-                    }
-                }
-            }
-
-            if(foundPlanInfo)
-            {
-                break;
-            }
-        }
-
-        let planInfo = "";
-        if(foundPlanInfo)
-        {
-            let siteId;
-            if(planInfo2.newSiteId)
-            {
-                siteId = planInfo2.newSiteId;
-            }
-            else
-            {
-                siteId = planInfo2.siteId;
-            }
-            
-            let planId;
-            if(planInfo2.newPlanId)
-            {
-                planId = planInfo2.newPlanId;
-            }
-            else
-            {
-                planId = planInfo2.id;
-            }
-
-            planInfo = new PlanInfo({id: planId,
-                                     name: planInfo2.name,
-                                     url: planInfo2.url,
-                                     planFilename: planInfo2.planFilename,
-                                     siteId: siteId,
-                                     siteName: planInfo2.siteName,
-                                     files: planInfo2.files});
-        }
-        else
-        {
-            planInfo = undefined;
-        }
-
-        return planInfo;
-    };
     
     /**
      * Removes the object from memory
@@ -716,49 +635,6 @@ class Model {
         this.setModelVersion( parseFloat(systemParamsAsJson['modelVersion']) )
         this.setMinZipVersion( parseFloat(systemParamsAsJson['minZipVersion']) );
     }
-    
-    
-    createSiteInfoFromJson = function (siteInfo_asJson, modelVersionInZipFile) {
-        console.log('BEG createSiteInfoFromJson');
-
-        // console.log('siteInfo_asJson', siteInfo_asJson); 
-
-        // console.log('modelVersionInZipFile', modelVersionInZipFile); 
-
-        let siteInfo;
-        switch(modelVersionInZipFile) {
-            case 1.1: {
-                siteInfo = new SiteInfo({siteId: siteInfo_asJson.id,
-                                         siteName: siteInfo_asJson.name,
-                                         plans: new COL.util.AssociativeArray()});
-                
-                for (let planName in siteInfo_asJson.plans) {
-                    let planInfo2 = siteInfo_asJson.plans[planName];
-                    let planInfo = new PlanInfo({id: planInfo2.id,
-                                                 name: planInfo2.name,
-                                                 url: planInfo2.url,
-                                                 planFilename: planInfo2.plan_filename,
-                                                 siteId: planInfo2.site_id,
-                                                 siteName: planInfo2.site_name,
-                                                 files: planInfo2.files});
-                    siteInfo.addPlan(planName, planInfo);
-                }
-                
-                break;
-            }
-            default: {
-                console.error('modelVersionInZipFile: ' + modelVersionInZipFile + ', is not supported');
-                break;
-            }
-        }
-
-        // console.log('siteInfo_asJson.id', siteInfo_asJson.id);
-        // let siteInfoStr = siteInfo.toString();
-        // console.log('siteInfoStr', siteInfoStr); 
-        
-        return siteInfo;
-    };
-    
 };
 
 export { Model };

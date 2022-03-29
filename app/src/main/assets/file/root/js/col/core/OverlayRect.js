@@ -418,15 +418,7 @@ class OverlayRect {
 
             let toastTitleStr = "setSelectedImage";
             let msgStr = "Failed to setSelectedImage." + err;
-            if(COL.doEnableToastr)
-            {
-                toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
-            }
-            else
-            {
-                console.error(msgStr);
-                // alert(msgStr);
-            }
+            toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
             throw new Error(msgStr);
         }
         
@@ -489,15 +481,7 @@ class OverlayRect {
 
             let toastTitleStr = "updateSelectedImageRelatedRenderring";
             let msgStr = "Failed to updateSelectedImageRelatedRenderring." + err;
-            if(COL.doEnableToastr)
-            {
-                toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
-            }
-            else
-            {
-                console.error(msgStr);
-                // alert(msgStr);
-            }
+            toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
             throw new Error(msgStr);
         }
         
@@ -633,15 +617,7 @@ class OverlayRect {
 
             let toastTitleStr = "nextOrPrevSelectedImage";
             let msgStr = "Failed to nextOrPrevSelectedImage." + err;
-            if(COL.doEnableToastr)
-            {
-                toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
-            }
-            else
-            {
-                console.error(msgStr);
-                // alert(msgStr);
-            }
+            toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
             throw new Error(msgStr);
         }
 
@@ -688,15 +664,7 @@ class OverlayRect {
 
             let toastTitleStr = "playImages";
             let msgStr = "Failed to playImages." + err;
-            if(COL.doEnableToastr)
-            {
-                toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
-            }
-            else
-            {
-                console.error(msgStr);
-                // alert(msgStr);
-            }
+            toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
             throw new Error(msgStr);
         }
     };

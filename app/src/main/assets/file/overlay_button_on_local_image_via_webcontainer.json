@@ -26,7 +26,7 @@
                         "type": "$agent.request",
                         "options": {
                             "id": "$webcontainer",
-                            "method": "window.savePhoto",
+                            "method": "window.savePhotoFromImageUrl",
                             "params": ["{{$jason.data_uri}}"]
                         }
                     }

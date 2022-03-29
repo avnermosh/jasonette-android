@@ -13,7 +13,6 @@ var COL = {
     model: null,
     y0: 1.1,
     doUseBootstrap: true,
-    doEnableToastr: true,
     doWorkOnline: true,
     doEnableWhiteboard: false,
     doUseWebGL2: true,

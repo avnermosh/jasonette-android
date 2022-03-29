@@ -333,29 +333,13 @@ class FileZipUtils {
             
             let msgStr = "Succeeded to save";
             let toastTitleStr = "Save from webserver to zip file";
-            if(COL.doEnableToastr)
-            {
-                toastr.success(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
-            }
-            else
-            {
-                console.log(msgStr);
-                // alert(msgStr);
-            }
+            toastr.success(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
         }
         catch(err) {
             console.error('err', err);
             let msgStr = "Failed to save. " + err;
             let toastTitleStr = "Save from webserver to zip file";
-            if(COL.doEnableToastr)
-            {
-                toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
-            }
-            else
-            {
-                console.error(msgStr);
-                // alert(msgStr);
-            }
+            toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
         }
     };
 

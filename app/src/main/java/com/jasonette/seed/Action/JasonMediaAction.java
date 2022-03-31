@@ -1,5 +1,7 @@
 package com.jasonette.seed.Action;
 
+// import static java.lang.Thread.sleep;
+
 import android.Manifest;
 import android.app.Activity;
 import android.content.Context;

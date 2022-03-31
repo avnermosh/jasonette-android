@@ -46,7 +46,7 @@
                         }
                     }
                 },
-                "media.loadDemoDatasetFromZipfile1": {
+                "media.loadDemoZipFileHeaders": {
                     "type": "$media.loadDemoDatasetFromZipfile",
                     "options": {
                         "edit": "true",
@@ -61,7 +61,6 @@
                         }
                     }
                 }
-
             }
         },
         "body": {

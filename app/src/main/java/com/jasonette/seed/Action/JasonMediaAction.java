@@ -47,7 +47,7 @@ public class JasonMediaAction {
 
     // https://developpaper.com/android-webview-supports-input-file-to-enable-camera-photo-selection/
     public static Uri imageUri;
-    public static String dirPath;
+    public static String colZipPath;
 
     /**********************************
      *
@@ -197,23 +197,33 @@ public class JasonMediaAction {
         return photo;
     }
 
-
-    public static byte[] loadFileSlice(int sliceBeg, int sliceEnd) throws Exception {
+    public static byte[] loadFileSlice(String zipFileName, Context context, int sliceBeg, int sliceEnd) throws Exception {
         Log.d("Verbose", "BEG loadFileSlice");
 
-        // sanity check - check that the file exists
-        File internalFile = new File(dirPath);
-        if (!internalFile.exists()) {
-            StringBuilder error = new StringBuilder();
-            error.append("File does not exist: ");
-            error.append(dirPath);
-            throw new Exception("error occurred: " + error.toString());
+        InputStream zipInputStream;
+        if(zipFileName.startsWith("file/")) {
+            // load from internal asset (filename is in variable colZipPath)
+            zipInputStream = context.getAssets().open(colZipPath);
+            // int size = zipInputStream.available();
+        }
+        else
+        {
+            // load from external storage (filename is in variable colZipPath)
+
+            // sanity check - check that the file exists
+            File internalFile = new File(colZipPath);
+            if (!internalFile.exists()) {
+                StringBuilder error = new StringBuilder();
+                error.append("File does not exist: ");
+                error.append(colZipPath);
+                throw new Exception("error occurred: " + error.toString());
+            }
+            zipInputStream = new FileInputStream(colZipPath);
         }
 
-        String zipFileName = dirPath;
         int numBytesToRead = (int)(sliceEnd - sliceBeg + 1);
         byte[] byteArray = new byte[numBytesToRead];
-        byteArray = ZipUtil.extractZipEntryData_toArrayBuffer(zipFileName, sliceBeg, numBytesToRead, byteArray);
+        byteArray = ZipUtil.extractZipEntryData_toArrayBuffer(zipInputStream, sliceBeg, numBytesToRead, byteArray);
         return byteArray;
     }
 
@@ -257,7 +267,7 @@ public class JasonMediaAction {
     public void loadDemoDatasetFromZipfile(final JSONObject action, JSONObject data, final JSONObject event, final Context context) {
 
         try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 if (ContextCompat.checkSelfPermission(context, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED
                         || ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
                     ActivityCompat.requestPermissions((Activity) context, new String[]{Manifest.permission.CAMERA}, 51);
@@ -285,18 +295,12 @@ public class JasonMediaAction {
 
             // process(intent, action.getJSONObject("options"));
 
-            String fileName = "geographic_map_with_images.zip";
-            dirPath = "/data/user/0/com.construction_overlay_internal/" + fileName;
-            Log.d("Verbose", "dirPath: " + dirPath );
-            File internalFile = new File(dirPath);
-            if (internalFile.exists()) {
-                Log.d("Verbose", "fileName: " + fileName + ", exists.");
-            } else {
-                Log.d("Verbose", "fileName: " + fileName + ", does NOT exist.");
-            }
-
+            // Android ZipFile open internal asset zip file
+            // e.g. file/demo_site3.zip
+            String fileName = "demo_site3.zip";
+            colZipPath = "file/" + fileName;
             Map<String, ZipUtil.Zipinfo_header> zipFileInfoFiles = new HashMap<String, ZipUtil.Zipinfo_header>();
-            ZipUtil.getZip_FileHeaders(dirPath, zipFileInfoFiles);
+            ZipUtil.getZip_FileHeaders(colZipPath, context, zipFileInfoFiles);
 
             // convert hashmap to json string
             Gson gson = new Gson();
@@ -306,8 +310,10 @@ public class JasonMediaAction {
             try {
                 JSONObject ret = new JSONObject();
                 ret.put("zipFileInfoFiles_asJsonStr", zipFileInfoFiles_asJsonStr);
-                ret.put("dirPath", dirPath);
+                ret.put("colZipPath", colZipPath);
                 ret.put("content_type", "application/zip");
+                // tbd - this sleep is needed for loading the demo dataset - why ??
+                // sleep(500);
                 JasonHelper.next("success", action, ret, event, context);
             } catch (Exception e) {
                 Log.d("Warning", e.getStackTrace()[0].getMethodName() + " : " + e.toString());
@@ -674,24 +680,25 @@ public class JasonMediaAction {
                 Log.d("Verbose", "fileName: " + fileName);
                 if(type.equalsIgnoreCase("demoZipFile"))
                 {
-                    fileName = "geographic_map_with_images.zip";
+                    fileName = "demo_site3.zip";
+                    colZipPath = "file/" + fileName;
                 }
                 else
                 {
                     fileName = getFileName(context, uri);
+                    colZipPath = "/data/user/0/com.construction_overlay_internal/" + fileName;
                 }
                 Log.d("Verbose", "fileName: " + fileName);
+                Log.d("Verbose", "colZipPath: " + colZipPath);
 
-                dirPath = "/data/user/0/com.construction_overlay_internal/" + fileName;
-                Log.d("Verbose", "dirPath: " + dirPath );
-                File internalFile = new File(dirPath);
+                File internalFile = new File(colZipPath);
                 if (internalFile.exists()) {
                     Log.d("Verbose", "fileName: " + fileName + ", exists.");
                 } else {
                     Log.d("Verbose", "fileName: " + fileName + ", does NOT exist.");
                     // save the file to internal storage
                     try (InputStream ins = context.getContentResolver().openInputStream(uri)) {
-                        File dest = new File(dirPath);
+                        File dest = new File(colZipPath);
                         try (OutputStream os = new FileOutputStream(dest)) {
                             byte[] buffer = new byte[4096];
                             int length;
@@ -708,8 +715,8 @@ public class JasonMediaAction {
                 }
 
                 Map<String, ZipUtil.Zipinfo_header> zipFileInfoFiles = new HashMap<String, ZipUtil.Zipinfo_header>();
-                ZipUtil.getZip_FileHeaders(dirPath, zipFileInfoFiles);
 
+                ZipUtil.getZip_FileHeaders(colZipPath, context, zipFileInfoFiles);
                 // convert hashmap to json string
                 Gson gson = new Gson();
                 String zipFileInfoFiles_asJsonStr = gson.toJson(zipFileInfoFiles);
@@ -718,7 +725,7 @@ public class JasonMediaAction {
                 try {
                     JSONObject ret = new JSONObject();
                     ret.put("zipFileInfoFiles_asJsonStr", zipFileInfoFiles_asJsonStr);
-                    ret.put("dirPath", dirPath);
+                    ret.put("colZipPath", colZipPath);
                     ret.put("content_type", "application/zip");
                     JasonHelper.next("success", action, ret, event, context);
                 } catch (Exception e) {

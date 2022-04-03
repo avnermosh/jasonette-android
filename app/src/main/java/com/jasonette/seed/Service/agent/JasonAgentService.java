@@ -3,6 +3,7 @@ package com.jasonette.seed.Service.agent;
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.graphics.Color;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import android.net.Uri;
@@ -27,6 +28,7 @@ import com.jasonette.seed.Launcher.Launcher;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import java.io.ByteArrayInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -312,7 +314,7 @@ public class JasonAgentService {
         static final SimpleDateFormat formatter = new SimpleDateFormat("E, dd MMM yyyy kk:mm:ss", Locale.US);
 
         @TargetApi(21)
-        static WebResourceResponse build(String encoding, InputStream inputStream) {
+        static WebResourceResponse build(String encoding, InputStream inputStream) throws Exception {
             Date date = new Date();
             final String dateString = formatter.format(date);
 
@@ -328,7 +330,14 @@ public class JasonAgentService {
                 put("Via", "1.1 vegur");
             }};
 
-            return new WebResourceResponse("text/plain", encoding, 200, "OK", headers, inputStream);
+            if(inputStream != null)
+            {
+                return new WebResourceResponse("text/plain", encoding, 200, "OK", headers, inputStream);
+            }
+            else
+            {
+                throw new Exception("inputStream is null");
+            }
         }
     }
 
@@ -443,11 +452,61 @@ public class JasonAgentService {
                       Log.d("Warning", "The certificate is not yet valid.");
                       break;
                       }
-                      handler.proceed();                      
+                      handler.proceed();
                     }
 
-                    
+                    @Override public void onPageStarted(WebView view, String url, Bitmap favicon) {
+                        super.onPageStarted(view, url, favicon);
+                        Log.d("Verbose", "BEG onPageStarted 111");
+
+                        // Inject agent.js
+                        try {
+                            String injection_script = JasonHelper.read_file("agent", context);
+                            String interface_script = "$agent.interface.postMessage = function(r) { JASON.postMessage(JSON.stringify(r)); };";
+                            String injection_custom_script = JasonHelper.read_file("file/custom.js", context);
+
+                            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.KITKAT) {
+                                view.evaluateJavascript(injection_script + " " + interface_script + " " + injection_custom_script, null);
+                            } else {
+                                view.loadUrl("javascript:" + injection_script + " " + interface_script + " " + injection_custom_script);
+                            }
+
+                            if (pending.has(id)) {
+                                JSONObject q = pending.getJSONObject(id);
+                                JSONObject jason_request;
+                                if (q.has("jason_request")) {
+                                    jason_request = q.getJSONObject("jason_request");
+                                } else {
+                                    jason_request = null;
+                                }
+                                JSONObject agent_request;
+                                if (q.has("agent_request")) {
+                                    agent_request = q.getJSONObject("agent_request");
+                                } else {
+                                    agent_request = null;
+                                }
+                                request(jason_request, agent_request, context);
+                                pending.remove(id);
+                            }
+
+                            if (pending_injections.has(id)) {
+                                inject(pending_injections.getJSONObject(id), context);
+                                pending_injections.remove(id);
+                            }
+
+                            // only set state to rendered if it's not about:blank
+                            if (!url.equalsIgnoreCase("about:blank")) {
+                                JSONObject payload = (JSONObject)view.getTag();
+                                payload.put("state", "rendered");
+                                view.setTag(payload);
+                            }
+                        } catch (Exception e) {
+                            Log.d("Warning", e.getStackTrace()[0].getMethodName() + " : " + e.toString());
+                        }
+                    }
+
                     @Override public void onPageFinished(WebView view, final String url) {
+                        // Log.d("Verbose", "BEG onPageFinished");
                         // Inject agent.js
                         try {
                             String injection_script = JasonHelper.read_file("agent", context);
@@ -518,16 +577,28 @@ public class JasonAgentService {
                             String sliceEndStr = uri.getQueryParameter("sliceEnd");
                             int sliceEnd = Integer.valueOf(sliceEndStr);
 
-                            byte[] byteArray = null;
+                            String zipFileName = uri.getQueryParameter("zipFileName");
+                            Log.d("Verbose", "zipFileName: " + zipFileName);
+                            JasonMediaAction.colZipPath = zipFileName;
+
                             try {
-                                byteArray = JasonMediaAction.loadFileSlice(sliceBeg, sliceEnd);
+                                byte[] byteArray = JasonMediaAction.loadFileSlice(zipFileName, context, sliceBeg, sliceEnd);
+                                InputStream is4 = new ByteArrayInputStream(byteArray);
+                                WebResourceResponse webResourceResponse4 = OptionsAllowResponse.build("binary", is4);
+                                return webResourceResponse4;
+                            } catch (IOException e) {
+                                if (!(e instanceof FileNotFoundException)) {
+                                    Log.e("Error", "Error occurred while loading a file (returning a 404).", e);
+                                }
+                                // Results in a 404.
+                                return new WebResourceResponse("text/plain", "UTF-8", null);
                             } catch (Exception e) {
                                 Log.d("Warning", e.getStackTrace()[0].getMethodName() + " : " + e.toString());
+                                e.printStackTrace();
+                                // Results in a 404.
+                                return new WebResourceResponse("text/plain", "UTF-8", null);
                             }
 
-                            InputStream is4 = new ByteArrayInputStream(byteArray);
-                            WebResourceResponse webResourceResponse4 = OptionsAllowResponse.build("binary", is4);
-                            return webResourceResponse4;
                         }
 
                         return super.shouldInterceptRequest(view, request);
@@ -753,6 +824,8 @@ public class JasonAgentService {
         request(jason_request, null, context);
     }
     public void request(final JSONObject jason_request, final JSONObject agent_request, Context context) {
+        // Log.d("Verbose", "BEG JasonAgentService::request" );
+
         try {
 
             /*****************************

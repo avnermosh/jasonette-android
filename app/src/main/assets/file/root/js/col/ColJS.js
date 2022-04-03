@@ -420,7 +420,7 @@ class ColJS {
         // console.log('BEG ColJS::initColJS');
 
         let floorplanButtonGroupEl = document.getElementById('floorplanButtonGroupId');
-        // console.log('floorplanButtonGroupEl', floorplanButtonGroupEl); 
+        // console.log('floorplanButtonGroupEl', floorplanButtonGroupEl);
         let doSetupTopDownAndTextureGui = false;
         if(COL.util.isObjectValid(floorplanButtonGroupEl))
         {

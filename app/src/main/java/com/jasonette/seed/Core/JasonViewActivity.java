@@ -822,6 +822,7 @@ public class JasonViewActivity extends AppCompatActivity implements ActivityComp
     ;
 
     private void final_call(final JSONObject action, final JSONObject data, final JSONObject event, final Context context) {
+        // Log.d("Verbose", "BEG JasonViewActivity::final_call");
 
         try {
             if (action.toString().equalsIgnoreCase("{}")) {

@@ -1,6 +1,8 @@
 package com.jasonette.seed.Helper;
 
+import android.content.Context;
 import android.os.Build;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
@@ -293,20 +295,40 @@ public class ZipUtil {
         return Arrays.stream(items).anyMatch(inputStr::contains);
     }
 
-    public static int getZip_FileHeaders(String zipfile, Map<String, Zipinfo_header> zipFileInfoFiles) {
+    public static int getZip_FileHeaders(String zipFileName, Context context, Map<String, Zipinfo_header> zipFileInfoFiles) throws Exception {
         int retcode = 0;
         try {
-            ZipFile zip = new ZipFile(zipfile);
-            Enumeration<? extends ZipEntry> items = zip.entries();
+
+            InputStream zipInputStream;
+            if(zipFileName.startsWith("file/")) {
+                // load from internal asset (filename is in variable colZipPath)
+                zipInputStream = context.getAssets().open(zipFileName);
+                // int size = zipInputStream.available();
+            }
+            else
+            {
+                // load from external storage (filename is in variable zipFileName)
+
+                // sanity check - check that the file exists
+                File internalFile = new File(zipFileName);
+                if (!internalFile.exists()) {
+                    StringBuilder error = new StringBuilder();
+                    error.append("File does not exist: ");
+                    error.append(zipFileName);
+                    throw new Exception("error occurred: " + error.toString());
+                }
+                zipInputStream = new FileInputStream(zipFileName);
+            }
+
+            // is = new FileInputStream(path + zipname);
+            ZipInputStream zipIs = new ZipInputStream(new BufferedInputStream(zipInputStream));
+            // ZipInputStream zipIs;
+            ZipEntry zipentry = null;
 
             // https://stackoverflow.com/questions/7046951/how-can-i-find-the-file-offset-of-a-zipfile-entry-in-java
             long offsetInZipFile = 0;
 
-            /*
-                iterate through the zipfile
-            */
-            while (items.hasMoreElements()) {
-                ZipEntry zipentry = items.nextElement();
+            while ((zipentry = zipIs.getNextEntry()) != null) {
                 printMsg("Extracting header for: " + zipentry.getName());
 
                 // get header
@@ -330,8 +352,9 @@ public class ZipUtil {
                 }
                 offsetInZipFile += (zipentryHeaderSize + zipentryFileDataSize);
 
-            } // end while hasMoreElements
-            zip.close();
+                zipIs.closeEntry();
+            }
+            zipIs.close();
             System.out.println(zipFileInfoFiles);
 
         } catch (IOException e) {
@@ -346,8 +369,8 @@ public class ZipUtil {
         int retcode = 0;
 
         try {
-            ZipFile zip = new ZipFile(zipfile);
-            Enumeration<? extends ZipEntry> items = zip.entries();
+            ZipFile zipFile = new ZipFile(zipfile);
+            Enumeration<? extends ZipEntry> items = zipFile.entries();
 
             // https://stackoverflow.com/questions/7046951/how-can-i-find-the-file-offset-of-a-zipfile-entry-in-java
             long offsetInZipFile = 0;
@@ -392,7 +415,7 @@ public class ZipUtil {
                             return ZIPUTIL_ERROR;
                         }
 
-                        if (extractZipEntryData(zip, filepath, zipentry) == ZIPUTIL_ERROR) {
+                        if (extractZipEntryData(zipFile, filepath, zipentry) == ZIPUTIL_ERROR) {
                             printError("Failed to extractZipEntryData for: " + filepath);
                             return ZIPUTIL_ERROR;
                         }
@@ -403,7 +426,7 @@ public class ZipUtil {
                 offsetInZipFile += (zipentryHeaderSize + zipentryFileDataSize);
 
             } // end while hasMoreElements
-            zip.close();
+            zipFile.close();
 
         } catch (IOException e) {
             printError(e.toString());
@@ -441,10 +464,9 @@ public class ZipUtil {
         }
     }
 
-    public static byte[] extractZipEntryData_toArrayBuffer(String dirPath1, int sliceBeg, int numBytesToRead, byte[] byteArray) throws Exception {
+    public static byte[] extractZipEntryData_toArrayBuffer(InputStream inputStream, int sliceBeg, int numBytesToRead, byte[] byteArray) throws Exception {
         // int retcode = 0;
         try {
-            InputStream inputStream = new FileInputStream(dirPath1);
             BufferedInputStream bis = new BufferedInputStream(inputStream);
             // bis.skip(sliceBeg);
             byteArray = JasonHelper.readBytes(bis, sliceBeg, numBytesToRead);
@@ -458,7 +480,7 @@ public class ZipUtil {
 
     }
 
-    public static int extractZipEntryData(@NonNull ZipFile zip, String filepath, ZipEntry zipentry) {
+    public static int extractZipEntryData(@NonNull ZipFile zipFile, String filepath, ZipEntry zipentry) {
         int retcode = 0;
         try {
             int bytesread = 0;
@@ -466,9 +488,9 @@ public class ZipUtil {
 
             CheckedOutputStream cos = new CheckedOutputStream(new FileOutputStream(filepath), new CRC32());
             BufferedOutputStream bos = new BufferedOutputStream(cos);
-            BufferedInputStream bis = new BufferedInputStream(zip.getInputStream(zipentry));
+            BufferedInputStream bis = new BufferedInputStream(zipFile.getInputStream(zipentry));
 
-            /* Read the whole file from the zip entry and write it to stored file name keeping a CRC check */
+            /* Read the whole file from the zipFile entry and write it to stored file name keeping a CRC check */
             while ((bytesread = bis.read(tmpbuffer, 0, tmpbuffer.length)) != -1) {
                 bos.write(tmpbuffer, 0, bytesread);
             }
@@ -476,7 +498,7 @@ public class ZipUtil {
             bos.flush();
             bos.close();
 
-            /* Set the last modified time of the unzipped file to the saved time in the zip */
+            /* Set the last modified time of the unzipped file to the saved time in the zipFile */
             File f = new File(filepath);
             f.setLastModified(zipentry.getTime());
 
@@ -521,8 +543,8 @@ public class ZipUtil {
         int retcode = 0;
 
         try {
-            ZipFile zip = new ZipFile(zipfile);
-            Enumeration<? extends ZipEntry> items = zip.entries();
+            ZipFile zipFile = new ZipFile(zipfile);
+            Enumeration<? extends ZipEntry> items = zipFile.entries();
 
             /*
                 iterate through the zipfile
@@ -539,7 +561,7 @@ public class ZipUtil {
 
                 if (zipentry.isDirectory() == false) {
 
-                    if (extractZipEntryData(zip, filepath, zipentry) == ZIPUTIL_ERROR) {
+                    if (extractZipEntryData(zipFile, filepath, zipentry) == ZIPUTIL_ERROR) {
                         printError("Failed to extractZipEntryData for: " + filepath);
                         return ZIPUTIL_ERROR;
                     }
@@ -548,139 +570,13 @@ public class ZipUtil {
                 } //end else
 
             } // end while hasMoreElements
-            zip.close();
+            zipFile.close();
 
         } catch (IOException e) {
             printError(e.toString());
             retcode = ZIPUTIL_ERROR;
         }
         return retcode;
-    }
-
-    /**
-     * Processes zip command and validates input arguments for each command
-     *
-     * @param operation   Int flag to indicate specified command. Currently only create or extract
-     * @param zipfile     String value of the zipfile name passed in by user to be created or extracted from
-     * @param contentpath String value of the location of the directory to either zip files from or unzip the files into
-     * @return int Flag for determining success (0) versus failure (ZIPUTIL_ERROR)
-     */
-    @RequiresApi(api = Build.VERSION_CODES.N)
-    public static int processZipCmd(int operation, String zipfile, String contentpath) {
-        int retcode = 0;
-        
-        /*
-            switch on the possible zip operations....currently only create and extract
-            - for create make sure the zipfile doesn't exist but the directory|file does
-            - for extract make sure the zipfile exists but the directory/file does not
-        */
-        switch (operation) {
-            case ZIPUTIL_CREATE:
-                /* check to see if zip already exists */
-                if (checkPath(zipfile) == false) {
-                    /* check to see if content path is valid */
-                    if (checkPath(contentpath) == true) {
-                        /* build zip */
-                        printMsg("Building " + zipfile + " from " + contentpath);
-                        retcode = createZip(zipfile, contentpath);
-                    } else {
-                        /* content does not exist */
-                        printError("The source folder you attempted to create the zip from does not exist: " + contentpath + ". Please check your path is correct.");
-                        retcode = ZIPUTIL_ERROR;
-                    }
-                } else {
-                    /* zip file already exists */
-                    printError("The zip file you attempted to create already exists: " + zipfile + ". Please check the filename is correct.");
-                    retcode = ZIPUTIL_ERROR;
-                }
-                break;
-            case ZIPUTIL_EXTRACT:
-            case ZIPUTIL_EXTRACT_MAIN_FILES_AND_FILE_HEADERS:
-                /* check to see if zip path exists */
-                if (checkPath(zipfile) == true) {
-
-                    // delete all contents of contentpath
-                    deleteRecursive(new File(contentpath));
-
-                    /* check to see if content path already exists */
-                    if (checkPath(contentpath) == false) {
-                        /* extract the zip */
-                        boolean success = (new File(contentpath)).mkdir();
-                        if (!success) {
-                            printError("Failed to make directory structure for " + contentpath);
-                            return ZIPUTIL_ERROR;
-                        }
-
-                        if (operation == ZIPUTIL_EXTRACT) {
-                            printMsg("Extracting " + zipfile + " to " + contentpath);
-                            retcode = extractZip(zipfile, contentpath);
-                        } else if (operation == ZIPUTIL_EXTRACT_MAIN_FILES_AND_FILE_HEADERS) {
-                            printMsg("Extracting " + zipfile + " to " + contentpath);
-                            retcode = extractZip_mainFilesAndFileHeaders(zipfile, contentpath);
-                        }
-
-                    } else {
-                        /* content already exists...inform the user*/
-                        printError("The destination folder you attempted to extract to already exists: " + contentpath + ". Please specify a different destination.");
-                        retcode = ZIPUTIL_ERROR;
-                    }
-                } else {
-                    /* zip file doesn't exist...inform the user*/
-                    printError("The zip file you attempted to extract does not exist: " + zipfile + ". Please check the filename is correct.");
-                    retcode = ZIPUTIL_ERROR;
-                }
-
-                break;
-
-            case ZIPUTIL_GET_FILE_HEADERS:
-                /* check to see if zip path exists */
-                if (checkPath(zipfile) == true) {
-                    printMsg("Get headers from: " + zipfile);
-                    Map<String, Zipinfo_header> zipFileInfoFiles = new HashMap<String, Zipinfo_header>();
-                    retcode = getZip_FileHeaders(zipfile, zipFileInfoFiles);
-
-                } else {
-                    /* zip file doesn't exist...inform the user*/
-                    printError("The zip file you attempted to extract does not exist: " + zipfile + ". Please check the filename is correct.");
-                    retcode = ZIPUTIL_ERROR;
-                }
-                break;
-
-            default:
-                /* In case more commands are added */
-                break;
-        }
-
-        return retcode;
-    }
-
-    /**
-     * Program entry function.
-     *
-     * @param args String array of arguments to the program
-     */
-    public static void main(String[] args) {
-
-        int command = 0;
-        int retcode = 0;
-
-        /* check arguments */
-        /* expecting to get back either a valid type */
-        if ((command = checkArgs(args)) == ZIPUTIL_ERROR) {
-            System.exit(ZIPUTIL_ERROR);
-        } else {
-            numprocfiles = 0;
-            /* Run the zip command (create | extract) passing the additional two arguments */
-            printMsg("ZipUtil - ");
-            retcode = processZipCmd(command, args[1], args[2]);
-            if (retcode == 0) {
-                printMsg("- Completed. Processed " + numprocfiles + " files successfully.");
-            } else {
-                printMsg("- Completed with errors. Processed " + numprocfiles + "files.");
-            }
-            System.exit(retcode);
-        }
-
     }
 
 }

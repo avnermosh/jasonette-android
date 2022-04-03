@@ -322,7 +322,7 @@ li > ul {
 /* #ebede8 */
 /* #eff1ed */
 
-#navbarMainMenuId {
+#navbarMainMenuWrapperId {
     background-color: #a0ad92;
     grid-column: 1;
     grid-row: 2;
@@ -423,9 +423,9 @@ li > ul {
 /* ---------------------------------------------------- */
 
 /* ---------------------------------------------------- */
-/* BEG masterButtonGroup - contains: */
+/* BEG floorplanButtonGroup - contains: */
 /* - contains:
-/*   - masterButtonGroup */
+/*   - floorplanButtonGroup */
 /* ---------------------------------------------------- */
 
 /* Find similar color tone */
@@ -442,7 +442,7 @@ li > ul {
 /* #f9f9f9 */
 /* #fafafa */
 
-#masterButtonGroupId {
+#floorplanButtonGroupId {
     background-color: #dddddf;
     grid-column: 2/6;
     grid-row: 2;
@@ -453,8 +453,8 @@ li > ul {
     /* height: 40px; */
 }
 
-#masterButtonId {
-    background-color: #e4e4e5;
+#floorPlanToggleButtonId {
+    /* background-color: #e4e4e5; */
     grid-column: 1;
     /* position: relative; */
     z-index: 2;
@@ -498,7 +498,7 @@ li > ul {
 }
 
 /* ---------------------- */
-/*   BEG masterButtonGroup -> image info related */
+/*   BEG floorplanButtonGroup -> image info related */
 /* ---------------------- */
 
 /* override the default settings of class .popover by providing heigher specificity */
@@ -528,7 +528,7 @@ h3.popover-header {
 }
 
 /* ---------------------- */
-/*   END masterButtonGroup -> image info related */
+/*   END floorplanButtonGroup -> image info related */
 /* ---------------------- */
 
 #cssLoaderId {
@@ -537,7 +537,7 @@ h3.popover-header {
 }
 
 /* ---------------------------------------------------- */
-/* END masterButtonGroup */
+/* END floorplanButtonGroup */
 /* ---------------------------------------------------- */
 
 /* ---------------------------------------------------- */
@@ -790,7 +790,7 @@ e.g. zipFile related buttons, editOverlay related buttons, topdown-settings-moda
 /* BEG texturePane */
 /* ---------------------------------------------------- */
 
-#texture-pane-wrapper {
+#texturePaneWrapperId {
     grid-column: 1/7;
     grid-row: 1/10;
     height: 100%;

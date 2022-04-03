@@ -45,6 +45,21 @@
                             "params": ["{{$jason}}"]
                         }
                     }
+                },
+                "media.loadDemoZipFileHeaders": {
+                    "type": "$media.loadDemoDatasetFromZipfile",
+                    "options": {
+                        "edit": "true",
+                        "type": "demoZipFile"
+                    },
+                    "success": {
+                        "type": "$agent.request",
+                        "options": {
+                            "id": "$webcontainer",
+                            "method": "window.callbackLoadZipFileHeaders",
+                            "params": ["{{$jason}}"]
+                        }
+                    }
                 }
             }
         },

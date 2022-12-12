@@ -39,6 +39,7 @@ android {
     lint {
         disable 'ResourceType'
     }
+    namespace 'com.jasonette.seed'
 }
 
 dependencies {

@@ -298,8 +298,7 @@ public class JasonMediaAction {
             // process(intent, action.getJSONObject("options"));
 
             // Android ZipFile open internal asset zip file
-            // e.g. file/demo_site3.zip
-            String fileName = "demo_site3.zip";
+            String fileName = "demo_site.zip";
             colZipPath = "file/" + fileName;
             Map<String, ZipUtil.Zipinfo_header> zipFileInfoFiles = new HashMap<String, ZipUtil.Zipinfo_header>();
             ZipUtil.getZip_FileHeaders(colZipPath, context, zipFileInfoFiles);
@@ -677,12 +676,11 @@ public class JasonMediaAction {
                 // content://com.android.providers.downloads.documents/document/msf%3A13255
                 Log.d("Verbose", "uri0: " + uri);
 
-
                 String fileName = "";
                 Log.d("Verbose", "fileName: " + fileName);
                 if(type.equalsIgnoreCase("demoZipFile"))
                 {
-                    fileName = "demo_site3.zip";
+                    fileName = "demo_site.zip";
                     colZipPath = "file/" + fileName;
                 }
                 else

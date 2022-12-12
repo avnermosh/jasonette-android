@@ -88,23 +88,23 @@ class ImageInfo extends FileInfo{
         return retVal;
     };
 
-    setCameraInfo = function(otherTexControls, otherRotationVal, otherFlipY)
+    setCameraInfo = function(otherOrbitControls, otherRotationVal, otherFlipY)
     {
         // console.log('BEG setCameraInfo');
         
-        if(COL.util.isObjectValid(otherTexControls))
+        if(COL.util.isObjectValid(otherOrbitControls))
         {
-            this.cameraInfo.cameraFrustumLeftPlane = otherTexControls.camera.left;
-            this.cameraInfo.cameraFrustumRightPlane = otherTexControls.camera.right;
-            this.cameraInfo.cameraFrustumTopPlane = otherTexControls.camera.top;
-            this.cameraInfo.cameraFrustumBottomPlane = otherTexControls.camera.bottom;
-            this.cameraInfo.cameraFrustumNearPlane = otherTexControls.camera.near;
-            this.cameraInfo.cameraFrustumFarPlane = otherTexControls.camera.far;
-            this.cameraInfo.cameraPosition.set(otherTexControls.camera.position.x,
-                                               otherTexControls.camera.position.y,
-                                               otherTexControls.camera.position.z);
-            this.cameraInfo.cameraMinZoom = otherTexControls.minZoom;
-            this.cameraInfo.cameraZoom = otherTexControls.camera.zoom;
+            this.cameraInfo.cameraFrustumLeftPlane = otherOrbitControls.camera.left;
+            this.cameraInfo.cameraFrustumRightPlane = otherOrbitControls.camera.right;
+            this.cameraInfo.cameraFrustumTopPlane = otherOrbitControls.camera.top;
+            this.cameraInfo.cameraFrustumBottomPlane = otherOrbitControls.camera.bottom;
+            this.cameraInfo.cameraFrustumNearPlane = otherOrbitControls.camera.near;
+            this.cameraInfo.cameraFrustumFarPlane = otherOrbitControls.camera.far;
+            this.cameraInfo.cameraPosition.set(otherOrbitControls.camera.position.x,
+                                               otherOrbitControls.camera.position.y,
+                                               otherOrbitControls.camera.position.z);
+            this.cameraInfo.cameraMinZoom = otherOrbitControls.minZoom;
+            this.cameraInfo.cameraZoom = otherOrbitControls.camera.zoom;
         }
         
         if(COL.util.isObjectValid(otherRotationVal))
@@ -123,7 +123,7 @@ class ImageInfo extends FileInfo{
     printImageInfo = function() {
         console.log('ImageInfo data for filename: ', this.filename);
 
-        FileInfo.prototype.printInfo.call(this)
+        // FileInfo.prototype.printInfo.call(this)
 
         let imageTagsStr = this.imageTagsToString();
         console.log('imageTagsStr', imageTagsStr);
@@ -167,9 +167,9 @@ class ImageInfo extends FileInfo{
             // {
             //     imageInfoStr += '\n' + 'imageOrientation: ' + this.imageTags.imageOrientation;
             // }
-            if(this.imageTags.dateTimeOriginal)
+            if(this.imageTags.dateCreated)
             {
-                imageInfoStr += '\n' + 'Date taken: ' + this.imageTags.dateTimeOriginal;
+                imageInfoStr += '\n' + 'Date taken: ' + this.imageTags.dateCreated;
             }
         }
 

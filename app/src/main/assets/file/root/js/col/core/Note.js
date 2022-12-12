@@ -13,22 +13,22 @@
  */
 
 import {MOUSE as THREE_MOUSE, Vector3 as THREE_Vector3
-       } from '../../static/three.js/three.js-r135/build/three.module.js';
+} from '../../static/three.js/three.js-r135/build/three.module.js';
 
-import {CSS2DObject, CSS2DRenderer} from "../../static/CSS2DRenderer.js";
+import {CSS2DObject, CSS2DRenderer} from '../../static/CSS2DRenderer.js';
 
-import { COL } from  "../COL.js";
-import { Model } from "./Model.js";
+import { COL } from  '../COL.js';
+import { Model } from './Model.js';
 
 var Note = function (noteId,
-                 noteData,
-                 noteStyle,
-                 imageFilename,
-                 index,
-                 layer,
-                 texLabelRenderer,
-                 texScene,
-                 texCamera) {
+    noteData,
+    noteStyle,
+    imageFilename,
+    index,
+    layer,
+    labelRenderer,
+    imageViewScene,
+    camera) {
 
     var _noteId = noteId;
     var _noteData = noteData;
@@ -36,43 +36,41 @@ var Note = function (noteId,
     var _imageFilename = imageFilename;
     var _index = index;
     var _layer = layer;
-    var _texLabelRenderer = texLabelRenderer;
-    var _texScene = texScene;
-    var _texCamera = texCamera;
+    var _labelRenderer = labelRenderer;
+    var _scene = imageViewScene;
+    var _camera = camera;
     
     var _selectedNote = null;
     var _hovered = null;
     var scope = this;
 
     
-    ////////////////////////////////////////////////
+    // //////////////////////////////////////////////
     // BEG add noteElement
-    ////////////////////////////////////////////////
+    // //////////////////////////////////////////////
 
     let noteElementId = _noteId;
-    let editorElementId = "editor" + index;
+    let editorElementId = 'editor' + index;
     let html = '<div id="' + editorElementId + '">';
     let noteClass = 'note';
 
     // // Get all elements with class "note"
-    // let texCanvasWrapperDirectChildren4 = document.getElementById( 'texCanvasWrapperId' ).getElementsByClassName( 'note' );
-    // console.log('texCanvasWrapperDirectChildren4', texCanvasWrapperDirectChildren4); 
-    
+    // let imageViewPaneDirectChildren4 = document.getElementById( 'imageViewPaneId' ).getElementsByClassName( 'note' );
+        
     // https://www.abeautifulsite.net/adding-and-removing-elements-on-the-fly-using-javascript
-    COL.util.addElement('texCanvasWrapperId', 'div', noteElementId, html, noteClass);
+    COL.util.addElement('imageViewPaneId', 'div', noteElementId, html, noteClass);
 
     let noteElement = document.getElementById(noteElementId);
-    if(!noteElement)
-    {
+    if(!noteElement) {
         console.error( 'noteElement is not defined for noteElementId:', noteElementId );
         return;
     }
 
     var _domElement = noteElement;
 
-    ////////////////////////////////////////////////
+    // //////////////////////////////////////////////
     // BEG set Quill
-    ////////////////////////////////////////////////
+    // //////////////////////////////////////////////
 
     let editorElement = document.getElementById(editorElementId);
 
@@ -83,13 +81,13 @@ var Note = function (noteId,
     let notes_dataAsJson = JSON.parse( _noteData );
     _quill.setContents(notes_dataAsJson);
     
-    ////////////////////////////////////////////////
+    // //////////////////////////////////////////////
     // BEG set noteElementLabel
-    ////////////////////////////////////////////////
+    // //////////////////////////////////////////////
 
     let noteElementLabel = new CSS2DObject( noteElement );
     noteElementLabel.position.set( _noteStyle.left, _noteStyle.top, 0 );
-    noteElementLabel.scale.x = 1
+    noteElementLabel.scale.x = 1;
     noteElementLabel.scale.y = 1;
     noteElementLabel.name = _noteId;
     
@@ -98,20 +96,20 @@ var Note = function (noteId,
     
     function getNoteId() {
         return _noteId;
-    };
+    }
 
     
     function getImageFilename() {
         return _imageFilename;
-    };
+    }
 
     function getStyle() {
         return _noteStyle;
-    };
+    }
     
     function getQuill() {
         return _quill;
-    };
+    }
     
     function activate() {
         _domElement.addEventListener( 'mousemove', onDocumentMouseMove1, {capture: false, passive: false} );
@@ -135,8 +133,7 @@ var Note = function (noteId,
         // event.stopPropagation();
 
         let selectedLayer = COL.model.getSelectedLayer();
-        if( !selectedLayer.getEditOverlayRectFlag() )
-        {
+        if( !selectedLayer.getEditOverlayRectFlag() ) {
             // Make the note read only
             // Disable the editing area. Not in editing mode.
 
@@ -173,14 +170,13 @@ var Note = function (noteId,
         _domElement.addEventListener( 'mousedown', onDocumentMouseMove1, {capture: false, passive: false} );
         _domElement.addEventListener( 'mousedown', onDocumentMouseUp1, {capture: false, passive: false} );
         
-    };
+    }
 
     function onDocumentMouseUp1( event ) {
         // console.log('BEG onDocumentMouseUp1'); 
 
         let layer = COL.model.getSelectedLayer();
-        if( !layer.getEditOverlayRectFlag() )
-        {
+        if( !layer.getEditOverlayRectFlag() ) {
             // Do nothing. Not in editing mode.
             return;
         }
@@ -189,8 +185,7 @@ var Note = function (noteId,
 
         let stickyNoteGroup = layer.getStickyNoteGroup();
 
-        if(!_domElement)
-        {
+        if(!_domElement) {
             console.error( '_domElement is not defined' );
             return;
         }
@@ -198,13 +193,13 @@ var Note = function (noteId,
         // The noteCss2DObject position was updated, so the top, left offsets need to be reset
         _domElement.style.top = 0;
         _domElement.style.left = 0;
-        _texLabelRenderer.render(_texScene, _texCamera);
+        _labelRenderer.render(_scene, _camera);
 
         // _domElement.addEventListener( 'mousedown', onDocumentMouseDown1, {capture: false, passive: false} );
         _domElement.removeEventListener( 'mousedown', onDocumentMouseMove1, {capture: false, passive: false} );
         _domElement.removeEventListener( 'mousedown', onDocumentMouseUp1, {capture: false, passive: false} );
         
-    };
+    }
 
 
     function calcPositionFromTranslateAttribute2( noteElement ) {
@@ -222,8 +217,7 @@ var Note = function (noteId,
         var re1 = /([-+]?[0-9]*\.?[0-9]*)px/g;
         var match1;
         var results = [];
-        while (match1 = re1.exec(noteElementStyleTransform))
-        {
+        while (match1 = re1.exec(noteElementStyleTransform)) {
             results.push(+match1[1]);    
         }
 
@@ -234,16 +228,14 @@ var Note = function (noteId,
         // get attribute transform from style, e.g.
         // top: 1px; left: -11px; -> 1 -11
         let top = 0;
-        if(noteElementStyle.top)
-        {
+        if(noteElementStyle.top) {
             let noteElementStyleTop = noteElementStyle.top;
             // top = parseInt(noteElementStyleTop);
             top = parseFloat(noteElementStyleTop);
         }
 
         let left = 0;
-        if(noteElementStyle.left)
-        {
+        if(noteElementStyle.left) {
             let noteElementStyleLeft = noteElementStyle.left;
             // left = parseInt(noteElementStyleLeft);
             left = parseFloat(noteElementStyleLeft);
@@ -263,29 +255,27 @@ var Note = function (noteId,
 
         
         let positionVec = new THREE_Vector3();
-        positionVec = _texLabelRenderer.calcPositionFromTranslateAttribute(noteCss2DObject, x2, y2);
+        positionVec = _labelRenderer.calcPositionFromTranslateAttribute(noteCss2DObject, x2, y2);
 
         // update noteCss2DObject position (later, when the on mouse up and the top, left offsets are reset)
         noteCss2DObject.position.set(positionVec.x, positionVec.y, 0.0);
         
         _noteStyle.left = positionVec.x;
         _noteStyle.top = positionVec.y;
-    };
+    }
 
     function onDocumentMouseMove1( event ) {
         // console.log('BEG onDocumentMouseMove1'); 
 
         let selectedLayer = COL.model.getSelectedLayer();
-        if( !selectedLayer.getEditOverlayRectFlag() )
-        {
+        if( !selectedLayer.getEditOverlayRectFlag() ) {
             // Do nothing. Not in editing mode.
             return;
         }
 
         event.preventDefault();
 
-        if(!_domElement)
-        {
+        if(!_domElement) {
             console.error( '_domElement is not defined' );
             return;
         }
@@ -296,10 +286,11 @@ var Note = function (noteId,
         // console.log('BEG dragElement'); 
 
         var pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
-        if (document.getElementById(elmnt.id + "header")) {
+        if (document.getElementById(elmnt.id + 'header')) {
             /* if present, the header is where you move the DIV from:*/
-            document.getElementById(elmnt.id + "header").onmousedown = dragMouseDown;
-        } else {
+            document.getElementById(elmnt.id + 'header').onmousedown = dragMouseDown;
+        }
+        else {
             /* otherwise, move the DIV from anywhere inside the DIV:*/
             elmnt.onmousedown = dragMouseDown;
             // console.log('elmnt', elmnt); 
@@ -309,8 +300,7 @@ var Note = function (noteId,
             // console.log('BEG dragMouseDown'); 
 
             let selectedLayer = COL.model.getSelectedLayer();
-            if( !selectedLayer.getEditOverlayRectFlag() )
-            {
+            if( !selectedLayer.getEditOverlayRectFlag() ) {
                 // Do nothing. Not in editing mode.
                 return;
             }
@@ -335,8 +325,8 @@ var Note = function (noteId,
             pos3 = e.clientX;
             pos4 = e.clientY;
             // set the element's new position:
-            elmnt.style.top = (elmnt.offsetTop - pos2) + "px";
-            elmnt.style.left = (elmnt.offsetLeft - pos1) + "px";
+            elmnt.style.top = (elmnt.offsetTop - pos2) + 'px';
+            elmnt.style.left = (elmnt.offsetLeft - pos1) + 'px';
         }
 
         function closeDragElement() {
@@ -350,8 +340,7 @@ var Note = function (noteId,
         // console.log('BEG onDocumentMouseCancel1'); 
 
         let selectedLayer = COL.model.getSelectedLayer();
-        if( !selectedLayer.getEditOverlayRectFlag() )
-        {
+        if( !selectedLayer.getEditOverlayRectFlag() ) {
             // Do nothing. Not in editing mode.
             return;
         }
@@ -375,12 +364,12 @@ var Note = function (noteId,
 
         // remove the note from stickyNoteGroup (also removes the noteElement from the DOM)
         let stickyNoteGroup = layer.getStickyNoteGroup();
-        stickyNoteGroup.remove(stickyNoteGroup.children[_index])
+        stickyNoteGroup.remove(stickyNoteGroup.children[_index]);
 
         // remove the note from noteArray
         let noteArray = layer.getNoteArray();
         noteArray.remove(_noteId);
-    };
+    }
 
     dragElement(_domElement);
     // deactivate();

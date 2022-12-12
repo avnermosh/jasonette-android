@@ -1,0 +1,23 @@
+{% extends "layout.html" %} {% from "_form_macros.html" import render_errors, render_field %} {% block head %} {% endblock %} {% block content1 %}
+
+<div id="admin-add-site-id">
+  <div id="admin-add-site-page-header-id" class="page-header">
+    <h2>Add New Site</h2>
+  </div>
+  <form action="{{ url_for('api.admin_add_site') }}" method="post">
+    {{ form.csrf_token }}
+    <dl> {{ render_field(form.site_name, placeholder="Site Name") }} </dl>
+    <div class="form-group row">
+      <label for="group_id" class="col">Site Group</label>
+      <select class="form-control" id="group_id" name="group_id">
+        {% for group2 in groups2 %}
+        <option value="{{group2.id}}">{{group2.group_name}}</option>
+        {% endfor %}
+      </select>
+      {{ render_errors(form.group_id) }}
+    </div>
+    <button class="btn btn-sm btn-success" type="submit">Add New Site</button>
+  </form>
+</div>
+
+{% endblock %}

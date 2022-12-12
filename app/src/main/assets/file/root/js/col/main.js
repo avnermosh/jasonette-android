@@ -4,30 +4,30 @@
 
 'use strict';
 
-import { COL } from  "./COL.js";
-import { ColJS } from "./ColJS.js";
-import { Model } from "./core/Model.js";
-import { FileZipUtils } from "./loaders/FileZipUtils.js";
+import { COL } from  './COL.js';
+import { ColJS } from './ColJS.js';
+import { Model } from './core/Model.js';
+import { FileZipUtils } from './loaders/FileZipUtils.js';
+import { ManageGUI } from './manageGUI.js';
 
 
 let doUseServiceWorker = true;
 doUseServiceWorker = false;
-if(doUseServiceWorker)
-{
+if(doUseServiceWorker) {
     // Check that service workers are supported
     if ('serviceWorker' in navigator) {
-        // Use the window load event to keep the page load performant
+    // Use the window load event to keep the page load performant
         window.addEventListener('load', () => {
-            ///////////////////////////////
+            // /////////////////////////////
             // register a service worker
-            ///////////////////////////////
+            // /////////////////////////////
 
             // 3 dirs up (("../../../sw.js")) because this script (main.js) is in /usr/src/app/web/V1/js/col
             //   and sw.js is in /usr/src/app/web/sw.js
             // flask@3fa393e88ee2:/usr/src/app/web$ ls -l /usr/src/app/web/V1/js/col/../../../sw.js
             // -rw-rw-r-- 1 flask flaskgroup 2416 Jun 24 02:18 /usr/src/app/web/V1/js/col/../../../sw.js
 
-            navigator.serviceWorker.register("../../../sw.js")
+            navigator.serviceWorker.register('../../../sw.js')
                 .then(regisration => console.log('SW Registered'))
                 .catch(console.error);
         });
@@ -68,7 +68,7 @@ function overrideEventListenerPrototypes() {
         }
         if(this.eventListenerList[a].length==0) delete this.eventListenerList[a];
     };
-};
+}
 
 async function main() {
     // console.log('BEG main');
@@ -77,20 +77,32 @@ async function main() {
     // https://www.sqlpac.com/en/documents/javascript-listing-active-event-listeners.html
     overrideEventListenerPrototypes();
     
+    // ------------------------------------------------------
+    // BEG integrateGuiMockup
+    // ------------------------------------------------------
+    
+    COL.manageGUI = new ManageGUI();
+
+    // assign variables
+    COL.paneDivs = document.querySelectorAll('.pane-div');
+    COL.buttonDivs = document.querySelectorAll('.button-div');
+    COL.clickedElements = [];
+
+    COL.manageGUI.initGui();
+
+    // ------------------------------------------------------
+    // END integrateGuiMockup
+    // ------------------------------------------------------
+
     // separate construction and intialization of COL.colJS based on:
     // https://stackoverflow.com/questions/43431550/async-await-class-constructor
     COL.colJS = new ColJS(COL.component);
 
     await COL.colJS.initColJS(COL.component);
-    // console.log('COL.model2', COL.model); 
 
     // COL.util.listAllEventListeners();
-    
-    // console.log('COL.colJS1', COL.colJS);
-    // console.log('COL111', COL);
-
     // console.log('END main');   
-};
+}
 
 main();
 

@@ -13,11 +13,11 @@
  */
 
 import { COL } from '../COL.js';
-import { Model } from "../core/Model.js";
+import { Model } from '../core/Model.js';
 
 import {Vector2 as THREE_Vector2,
-        Vector3 as THREE_Vector3,
-       } from '../../static/three.js/three.js-r135/build/three.module.js';
+    Vector3 as THREE_Vector3,
+} from '../../static/three.js/three.js-r135/build/three.module.js';
 
 
 // ipad shows as OS: MAC (for Safari), Unknown (for Chrome) ???
@@ -30,23 +30,23 @@ COL.OrbitControlsUtils = {
 COL.OrbitControlsUtils.printCameraData = function (camera) {
 
     console.log('camera: uuid, zoom:',
-                camera.uuid, ',',
-                camera.zoom
-               );
+        camera.uuid, ',',
+        camera.zoom
+    );
     
     console.log('camera: left, right, top, bottom:',
-                camera.left, ',',
-                camera.right, ',',
-                camera.top, ',',
-                camera.bottom
-               );
+        camera.left, ',',
+        camera.right, ',',
+        camera.top, ',',
+        camera.bottom
+    );
 
     let worldDirection = new THREE_Vector3();
     camera.getWorldDirection ( worldDirection );
 
     console.log('camera: position, worldDirection:',
-                camera.position, ',',
-                worldDirection);
+        camera.position, ',',
+        worldDirection);
 };
 
 // NDC_Coord (a.k.a. normalizedMouseCoord) - is normalized to [-1, 1]
@@ -89,330 +89,323 @@ COL.OrbitControlsUtils.getRotationParams = function (imageOrientation) {
         case -1:
         case 0:
         case 1:
-            {
-                // landscape
-                switch (browserDetect.OS) {
-                    case 'Linux':
-                    case 'Android':
-                    case 'Windows':
-                    case 'Mac':
-                    case 'iOS':
-                        {
-                            rotationVal = 0;
-                            flipY = true;
-                            break;
-                        }
-                    default:
-                        {
-                            // console.log('OS is not supported: ', browserDetect.OS, '. Using the default image orientation' ); 
-                            break;
-                        }
+        {
+            // landscape
+            switch (browserDetect.OS) {
+                case 'Linux':
+                case 'Android':
+                case 'Windows':
+                case 'Mac':
+                case 'iOS':
+                {
+                    rotationVal = 0;
+                    flipY = true;
+                    break;
                 }
-                break;
+                default:
+                {
+                    // console.log('OS is not supported: ', browserDetect.OS, '. Using the default image orientation' ); 
+                    break;
+                }
             }
+            break;
+        }
         case 2:
-            {
-                // landscape
-                switch (browserDetect.OS) {
-                    case 'Linux':
-                    case 'Android':
-                    case 'Windows':
-                    case 'Mac':
+        {
+            // landscape
+            switch (browserDetect.OS) {
+                case 'Linux':
+                case 'Android':
+                case 'Windows':
+                case 'Mac':
+                {
+                    switch( browserDetect.browser ) {
+                        case 'Chrome':
+                        case 'Firefox':
+                        case 'Safari':
                         {
-                            switch( browserDetect.browser )
-                            {
-                                case 'Chrome':
-                                case 'Firefox':
-                                case 'Safari':
-                                {
-                                    rotationVal = (0);
-                                    flipY = true;
-                                    break;
-                                }
-                                default:
-                                {
-                                    rotationVal = (-Math.PI);
-                                    flipY = false;
-                                    break;
-                                }
-                            }
-                            break;
-                        }
-                    case 'iOS':
-                        {
-                            rotationVal = 0;
+                            rotationVal = (0);
                             flipY = true;
                             break;
                         }
-                    default:
+                        default:
                         {
-                            // console.log('OS is not supported: ', browserDetect.OS, '. Using the default image orientation' ); 
+                            rotationVal = (-Math.PI);
+                            flipY = false;
                             break;
                         }
+                    }
+                    break;
                 }
-                break;
+                case 'iOS':
+                {
+                    rotationVal = 0;
+                    flipY = true;
+                    break;
+                }
+                default:
+                {
+                    // console.log('OS is not supported: ', browserDetect.OS, '. Using the default image orientation' ); 
+                    break;
+                }
             }
+            break;
+        }
         case 3:
-            {
-                // landscape
-                switch (browserDetect.OS) {
-                    case 'Linux':
-                    case 'Android':
-                    case 'Windows':
-                    case 'Mac':
+        {
+            // landscape
+            switch (browserDetect.OS) {
+                case 'Linux':
+                case 'Android':
+                case 'Windows':
+                case 'Mac':
+                {
+                    switch( browserDetect.browser ) {
+                        case 'Chrome':
+                        case 'Firefox':
+                        case 'Safari':
                         {
-                            switch( browserDetect.browser )
-                            {
-                                case 'Chrome':
-                                case 'Firefox':
-                                case 'Safari':
-                                {
-                                    rotationVal = (0);
-                                    flipY = true;
-                                    break;
-                                }
-                                default:
-                                {
-                                    rotationVal = (-Math.PI);
-                                    flipY = true;
-                                    break;
-                                }
-                            }
-                            break;
-                        }
-                    case 'iOS':
-                        {
-                            rotationVal = 0;
+                            rotationVal = (0);
                             flipY = true;
                             break;
                         }
-                    default:
+                        default:
                         {
-                            // console.log('OS is not supported: ', browserDetect.OS, '. Using the default image orientation' ); 
+                            rotationVal = (-Math.PI);
+                            flipY = true;
                             break;
                         }
+                    }
+                    break;
                 }
-                break;
+                case 'iOS':
+                {
+                    rotationVal = 0;
+                    flipY = true;
+                    break;
+                }
+                default:
+                {
+                    // console.log('OS is not supported: ', browserDetect.OS, '. Using the default image orientation' ); 
+                    break;
+                }
             }
+            break;
+        }
         case 4:
-            {
-                // landscape
-                switch (browserDetect.OS) {
-                    case 'Linux':
-                    case 'Android':
-                    case 'Windows':
-                    case 'Mac':
+        {
+            // landscape
+            switch (browserDetect.OS) {
+                case 'Linux':
+                case 'Android':
+                case 'Windows':
+                case 'Mac':
+                {
+                    switch( browserDetect.browser ) {
+                        case 'Chrome':
+                        case 'Firefox':
+                        case 'Safari':
                         {
-                            switch( browserDetect.browser )
-                            {
-                                case 'Chrome':
-                                case 'Firefox':
-                                case 'Safari':
-                                {
-                                    rotationVal = (0);
-                                    flipY = true;
-                                    break;
-                                }
-                                default:
-                                {
-                                    rotationVal = 0;
-                                    flipY = false;
-                                    break;
-                                }
-                            }
-                            break;
-                        }
-                    case 'iOS':
-                        {
-                            rotationVal = 0;
+                            rotationVal = (0);
                             flipY = true;
                             break;
                         }
-                    default:
+                        default:
                         {
-                            // console.log('OS is not supported: ', browserDetect.OS, '. Using the default image orientation' ); 
+                            rotationVal = 0;
+                            flipY = false;
                             break;
                         }
+                    }
+                    break;
                 }
-                break;
+                case 'iOS':
+                {
+                    rotationVal = 0;
+                    flipY = true;
+                    break;
+                }
+                default:
+                {
+                    // console.log('OS is not supported: ', browserDetect.OS, '. Using the default image orientation' ); 
+                    break;
+                }
             }
+            break;
+        }
         case 5:
-            {
-                // portrait
-                switch (browserDetect.OS) {
-                    case 'Linux':
-                    case 'Android':
-                    case 'Windows':
-                    case 'Mac':
+        {
+            // portrait
+            switch (browserDetect.OS) {
+                case 'Linux':
+                case 'Android':
+                case 'Windows':
+                case 'Mac':
+                {
+                    switch( browserDetect.browser ) {
+                        case 'Chrome':
+                        case 'Firefox':
+                        case 'Safari':
                         {
-                            switch( browserDetect.browser )
-                            {
-                                case 'Chrome':
-                                case 'Firefox':
-                                case 'Safari':
-                                {
-                                    rotationVal = (0);
-                                    flipY = true;
-                                    break;
-                                }
-                                default:
-                                {
-                                    rotationVal = (-Math.PI / 2);
-                                    flipY = false;
-                                    break;
-                                }
-                            }
-                            break;
-                        }
-                    case 'iOS':
-                        {
-                            rotationVal = 0;
+                            rotationVal = (0);
                             flipY = true;
                             break;
                         }
-                    default:
+                        default:
                         {
-                            // console.log('OS is not supported: ', browserDetect.OS, '. Using the default image orientation' ); 
+                            rotationVal = (-Math.PI / 2);
+                            flipY = false;
                             break;
                         }
+                    }
+                    break;
                 }
-                break;
+                case 'iOS':
+                {
+                    rotationVal = 0;
+                    flipY = true;
+                    break;
+                }
+                default:
+                {
+                    // console.log('OS is not supported: ', browserDetect.OS, '. Using the default image orientation' ); 
+                    break;
+                }
             }
+            break;
+        }
         case 6:
-            {
-                // portrait
-                switch (browserDetect.OS) {
-                    case 'Linux':
-                    case 'Android':
-                    case 'Windows':
-                    case 'Mac':
+        {
+            // portrait
+            switch (browserDetect.OS) {
+                case 'Linux':
+                case 'Android':
+                case 'Windows':
+                case 'Mac':
+                {
+                    switch( browserDetect.browser ) {
+                        case 'Chrome':
+                        case 'Firefox':
+                        case 'Safari':
                         {
-                            switch( browserDetect.browser )
-                            {
-                                case 'Chrome':
-                                case 'Firefox':
-                                case 'Safari':
-                                {
-                                    rotationVal = (0);
-                                    flipY = true;
-                                    break;
-                                }
-                                default:
-                                {
-                                    rotationVal = (-Math.PI / 2);
-                                    flipY = true;
-                                    break;
-                                }
-                            }
-                            break;
-                        }
-                    case 'iOS':
-                        {
-                            rotationVal = 0;
+                            rotationVal = (0);
                             flipY = true;
                             break;
                         }
-                    default:
+                        default:
                         {
-                            // console.log('OS is not supported: ', browserDetect.OS, '. Using the default image orientation' ); 
+                            rotationVal = (-Math.PI / 2);
+                            flipY = true;
                             break;
                         }
+                    }
+                    break;
                 }
-                break;
+                case 'iOS':
+                {
+                    rotationVal = 0;
+                    flipY = true;
+                    break;
+                }
+                default:
+                {
+                    // console.log('OS is not supported: ', browserDetect.OS, '. Using the default image orientation' ); 
+                    break;
+                }
             }
+            break;
+        }
         case 7:
-            {
-                // portrait
-                switch (browserDetect.OS) {
-                    case 'Linux':
-                    case 'Android':
-                    case 'Windows':
-                    case 'Mac':
+        {
+            // portrait
+            switch (browserDetect.OS) {
+                case 'Linux':
+                case 'Android':
+                case 'Windows':
+                case 'Mac':
+                {
+                    switch( browserDetect.browser ) {
+                        case 'Chrome':
+                        case 'Firefox':
+                        case 'Safari':
                         {
-                            switch( browserDetect.browser )
-                            {
-                                case 'Chrome':
-                                case 'Firefox':
-                                case 'Safari':
-                                {
-                                    rotationVal = (0);
-                                    flipY = true;
-                                    break;
-                                }
-                                default:
-                                {
-                                    rotationVal = (Math.PI / 2);
-                                    flipY = false;
-                                    break;
-                                }
-                            }
-                            break;
-                        }
-                    case 'iOS':
-                        {
-                            rotationVal = 0;
+                            rotationVal = (0);
                             flipY = true;
                             break;
                         }
-                    default:
+                        default:
                         {
-                            // console.log('OS is not supported: ', browserDetect.OS, '. Using the default image orientation' ); 
+                            rotationVal = (Math.PI / 2);
+                            flipY = false;
                             break;
                         }
+                    }
+                    break;
                 }
-                break;
+                case 'iOS':
+                {
+                    rotationVal = 0;
+                    flipY = true;
+                    break;
+                }
+                default:
+                {
+                    // console.log('OS is not supported: ', browserDetect.OS, '. Using the default image orientation' ); 
+                    break;
+                }
             }
+            break;
+        }
         case 8:
-            {
-                // portrait
-                switch (browserDetect.OS) {
-                    case 'Linux':
-                    case 'Android':
-                    case 'Windows':
-                    case 'Mac':
+        {
+            // portrait
+            switch (browserDetect.OS) {
+                case 'Linux':
+                case 'Android':
+                case 'Windows':
+                case 'Mac':
+                {
+                    switch( browserDetect.browser ) {
+                        case 'Chrome':
+                        case 'Firefox':
+                        case 'Safari':
                         {
-                            switch( browserDetect.browser )
-                            {
-                                case 'Chrome':
-                                case 'Firefox':
-                                case 'Safari':
-                                {
-                                    rotationVal = (0);
-                                    flipY = true;
-                                    break;
-                                }
-                                default:
-                                {
-                                    rotationVal = (Math.PI / 2);
-                                    flipY = true;
-                                    break;
-                                }
-                            }
-                            break;
-                        }
-                    case 'iOS':
-                        {
-                            rotationVal = 0;
+                            rotationVal = (0);
                             flipY = true;
                             break;
                         }
-                    default:
+                        default:
                         {
-                            // console.log('OS is not supported: ', browserDetect.OS, '. Using the default image orientation' ); 
+                            rotationVal = (Math.PI / 2);
+                            flipY = true;
                             break;
                         }
+                    }
+                    break;
                 }
-                break;
+                case 'iOS':
+                {
+                    rotationVal = 0;
+                    flipY = true;
+                    break;
+                }
+                default:
+                {
+                    // console.log('OS is not supported: ', browserDetect.OS, '. Using the default image orientation' ); 
+                    break;
+                }
             }
+            break;
+        }
         default:
-            {
-                let msgStr = "imageOrientation is not supported: " + imageOrientation;
-                console.error(msgStr); 
-                console.error('Using the default orientation'); 
-                rotationVal = 0;
-                flipY = true;
-                break;
-            }
+        {
+            let msgStr = 'imageOrientation is not supported: ' + imageOrientation;
+            console.error(msgStr); 
+            console.error('Using the default orientation'); 
+            rotationVal = 0;
+            flipY = true;
+            break;
+        }
     }
 
     let rotationParams = {
@@ -441,190 +434,186 @@ COL.OrbitControlsUtils.getScaleAndRatio = function (width, height, imageOrientat
         case 2:
         case 3:
         case 4:
-            {
-                // landscape
-                scaleX = width;
-                scaleY = height;
-                break;
-            }
+        {
+            // landscape
+            scaleX = width;
+            scaleY = height;
+            break;
+        }
         case 5:
-            {
-                switch (browserDetect.OS) {
-                    case 'Linux':
-                    case 'Android':
-                    case 'Windows':
-                    case 'Mac':
-                        {
-                            switch( browserDetect.browser )
-                            {
-                                case 'Chrome':
-                                case 'Firefox':
-                                case 'Safari':
-                                {
-                                    scaleX = width;
-                                    scaleY = height;
-                                    break;
-                                }
-                                default:
-                                {
-                                    scaleX = height;
-                                    scaleY = width;
-                                    break;
-                                }
-                            }
-                            break;
-                        }
-                    case 'iOS':
+        {
+            switch (browserDetect.OS) {
+                case 'Linux':
+                case 'Android':
+                case 'Windows':
+                case 'Mac':
+                {
+                    switch( browserDetect.browser ) {
+                        case 'Chrome':
+                        case 'Firefox':
+                        case 'Safari':
                         {
                             scaleX = width;
                             scaleY = height;
                             break;
                         }
-                    default:
+                        default:
                         {
-                            // console.log('OS is not supported: ', browserDetect.OS, '. Using the default image orientation' ); 
+                            scaleX = height;
+                            scaleY = width;
                             break;
                         }
+                    }
+                    break;
                 }
-                break;
+                case 'iOS':
+                {
+                    scaleX = width;
+                    scaleY = height;
+                    break;
+                }
+                default:
+                {
+                    // console.log('OS is not supported: ', browserDetect.OS, '. Using the default image orientation' ); 
+                    break;
+                }
             }
+            break;
+        }
         case 6:
-            {
-                // portrait
-                switch (browserDetect.OS) {
-                    case 'Linux':
-                    case 'Android':
-                    case 'Windows':
-                    case 'Mac':
-                        {
-                            switch( browserDetect.browser )
-                            {
-                                case 'Chrome':
-                                case 'Firefox':
-                                case 'Safari':
-                                {
-                                    scaleX = width;
-                                    scaleY = height;
-                                    break;
-                                }
-                                default:
-                                {
-                                    scaleX = height;
-                                    scaleY = width;
-                                    break;
-                                }
-                            }
-                            break;
-                        }
-                    case 'iOS':
+        {
+            // portrait
+            switch (browserDetect.OS) {
+                case 'Linux':
+                case 'Android':
+                case 'Windows':
+                case 'Mac':
+                {
+                    switch( browserDetect.browser ) {
+                        case 'Chrome':
+                        case 'Firefox':
+                        case 'Safari':
                         {
                             scaleX = width;
                             scaleY = height;
                             break;
                         }
-                    default:
+                        default:
                         {
-                            // console.log('OS is not supported: ', browserDetect.OS, '. Using the default image orientation' ); 
+                            scaleX = height;
+                            scaleY = width;
                             break;
                         }
+                    }
+                    break;
                 }
-                break;
+                case 'iOS':
+                {
+                    scaleX = width;
+                    scaleY = height;
+                    break;
+                }
+                default:
+                {
+                    // console.log('OS is not supported: ', browserDetect.OS, '. Using the default image orientation' ); 
+                    break;
+                }
             }
+            break;
+        }
         case 7:
-            {
-                // portrait
-                switch (browserDetect.OS) {
-                    case 'Linux':
-                    case 'Android':
-                    case 'Windows':
-                    case 'Mac':
-                        {
-                            switch( browserDetect.browser )
-                            {
-                                case 'Chrome':
-                                case 'Firefox':
-                                case 'Safari':
-                                {
-                                    scaleX = width;
-                                    scaleY = height;
-                                    break;
-                                }
-                                default:
-                                {
-                                    scaleX = height;
-                                    scaleY = width;
-                                    break;
-                                }
-                            }
-                            break;
-                        }
-                    case 'iOS':
+        {
+            // portrait
+            switch (browserDetect.OS) {
+                case 'Linux':
+                case 'Android':
+                case 'Windows':
+                case 'Mac':
+                {
+                    switch( browserDetect.browser ) {
+                        case 'Chrome':
+                        case 'Firefox':
+                        case 'Safari':
                         {
                             scaleX = width;
                             scaleY = height;
                             break;
                         }
-                    default:
+                        default:
                         {
-                            // console.log('OS is not supported: ', browserDetect.OS, '. Using the default image orientation' ); 
+                            scaleX = height;
+                            scaleY = width;
                             break;
                         }
+                    }
+                    break;
                 }
-                break;
+                case 'iOS':
+                {
+                    scaleX = width;
+                    scaleY = height;
+                    break;
+                }
+                default:
+                {
+                    // console.log('OS is not supported: ', browserDetect.OS, '. Using the default image orientation' ); 
+                    break;
+                }
             }
+            break;
+        }
         case 8:
-            {
-                // portrait
-                switch (browserDetect.OS) {
-                    case 'Linux':
-                    case 'Android':
-                    case 'Windows':
-                    case 'Mac':
-                        {
-                            switch( browserDetect.browser )
-                            {
-                                case 'Chrome':
-                                case 'Firefox':
-                                case 'Safari':
-                                {
-                                    scaleX = width;
-                                    scaleY = height;
-                                    break;
-                                }
-                                default:
-                                {
-                                    scaleX = height;
-                                    scaleY = width;
-                                    break;
-                                }
-                            }
-                            break;
-                        }
-                    case 'iOS':
+        {
+            // portrait
+            switch (browserDetect.OS) {
+                case 'Linux':
+                case 'Android':
+                case 'Windows':
+                case 'Mac':
+                {
+                    switch( browserDetect.browser ) {
+                        case 'Chrome':
+                        case 'Firefox':
+                        case 'Safari':
                         {
                             scaleX = width;
                             scaleY = height;
                             break;
                         }
-                    default:
+                        default:
                         {
-                            // console.log('OS is not supported: ', browserDetect.OS, '. Using the default image orientation' ); 
+                            scaleX = height;
+                            scaleY = width;
                             break;
                         }
+                    }
+                    break;
                 }
-                break;
+                case 'iOS':
+                {
+                    scaleX = width;
+                    scaleY = height;
+                    break;
+                }
+                default:
+                {
+                    // console.log('OS is not supported: ', browserDetect.OS, '. Using the default image orientation' ); 
+                    break;
+                }
             }
+            break;
+        }
         default:
-            {
-                let msgStr = "imageOrientation is not supported: " + imageOrientation;
-                console.error(msgStr); 
-                console.error('Using the default orientation'); 
-                // throw new Error(msgStr);
+        {
+            let msgStr = 'imageOrientation is not supported: ' + imageOrientation;
+            console.error(msgStr); 
+            console.error('Using the default orientation'); 
+            // throw new Error(msgStr);
 
-                scaleX = width;
-                scaleY = height;
-                break;
-            }
+            scaleX = width;
+            scaleY = height;
+            break;
+        }
     }
 
     let rotationParams = COL.OrbitControlsUtils.getRotationParams(imageOrientation);
@@ -640,14 +629,13 @@ COL.OrbitControlsUtils.getScaleAndRatio = function (width, height, imageOrientat
 };
 
 COL.OrbitControlsUtils.calcCanvasParams = function (guiWindowWidth,
-                                                    guiWindowHeight,
-                                                    imageWidth,
-                                                    imageHeight,
-                                                    isTexturePane) {
+    guiWindowHeight,
+    imageWidth,
+    imageHeight,
+    isImageViewPane) {
     // console.log('BEG calcCanvasParams');
 
-    if(isTexturePane)
-    {
+    if(isImageViewPane) {
         // console.log('calcCanvasParams for texture pane');
     }
 
@@ -665,8 +653,7 @@ COL.OrbitControlsUtils.calcCanvasParams = function (guiWindowWidth,
     let image_w_h_ratio = imageWidth / imageHeight;
     let viewportExtendsOnX = false;
 
-    if(guiWindow_w_h_ratio > image_w_h_ratio)
-    {
+    if(guiWindow_w_h_ratio > image_w_h_ratio) {
         // canvasHeight is bigger than guiWindowHeight
         canvasWidth = guiWindowWidth;
         canvasHeight = canvasWidth / image_w_h_ratio;
@@ -674,8 +661,7 @@ COL.OrbitControlsUtils.calcCanvasParams = function (guiWindowWidth,
         canvasOffsetTop = (canvasHeight - guiWindowHeight) / 2;
         viewportExtendsOnX = false;
     }
-    else
-    {
+    else {
         // canvasWidth is bigger than guiWindowWidth
         canvasHeight = guiWindowHeight;
         canvasWidth = canvasHeight * image_w_h_ratio;

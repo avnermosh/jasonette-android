@@ -1,0 +1,35 @@
+{% extends "layout.html" %}
+{% from "_form_macros.html" import render_errors, render_field %}
+
+{% block content1 %}
+
+<div id="admin-add-user-id" "class="admin-add-user">
+    <div id="admin-add-user-page-header-id" class="page-header">
+        <h2>Add New User</h2>
+    </div>
+    <form action="{{ url_for('api.admin_add_user') }}" method="post">
+        {{ form.csrf_token }}
+        <dl>
+            {{ render_field(form.email, placeholder="Email address") }}
+            {{ render_field(form.password, placeholder="Password") }}
+            {{ render_field(form.confirm, placeholder="Confirm password") }}
+
+            <div class="form-group row">
+                <label for="new_group_id" class="col">User Group</label>
+                <div class="col-sm-6">
+                    <select class="form-control" id="new_group_id" name="new_group_id">
+                        {% for group2 in groups2 %}
+                        <option value={{group2.id}} >{{group2.group_name}}</option>
+                        {% endfor %}
+                    </select>
+                    {{ render_errors(form.new_group_id) }}
+                </div>
+            </div>
+
+        </dl>
+        <button class="btn btn-sm btn-success" type="submit">Add New User</button>
+        <a class="btn btn-sm btn-success" href="{{ url_for('api.admin_view_users') }}">Cancel</a>
+    </form>
+</div>
+
+{% endblock %}

@@ -1,0 +1,120 @@
+{% extends "layout.html" %}
+{% from "_form_macros.html" import render_errors, render_field %}
+
+{% block content1 %}
+
+<div id="admin-edit-user-id" "class="admin-edit-user">
+    <div id="admin-edit-user-page-header-id" class="page-header">
+        <h2>Edit User</h2>
+    </div>
+
+    <div class="container">
+        <form action="{{ url_for('api.admin_edit_user', user_id=user.id) }}" method="post" enctype="multipart/form-data">
+            {{ form.csrf_token }}
+
+            <div class="form-group row">
+                <label for="email" class="col">Email</label>
+                <div class="col-sm-6">
+                    <input type="text" class="form-control" id="email" name="email" value="{{ user.email }}">
+                    {{ render_errors(form.email) }}
+                </div>
+            </div>
+
+            <fieldset class="form-group row">
+                <label for="user_role" class="col">User Role</label>
+                <div class="col-sm-6">
+                    <div class="form-check">
+                        <label class="form-check-label">
+                            {% if user.role == "user" %}
+                            <input type="radio" class="form-check-input" name="user_role" id="user_role-0" value="user" checked>
+                            {% else %}
+                            <input type="radio" class="form-check-input" name="user_role" id="user_role-0" value="user">
+                            {% endif %}
+                            User
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <label class="form-check-label">
+                            {% if user.role == "group_owner" %}
+                            <input type="radio" class="form-check-input" name="user_role" id="user_role-1" value="group_owner" checked>
+                            {% else %}
+                            <input type="radio" class="form-check-input" name="user_role" id="user_role-1" value="group_owner">
+                            {% endif %}
+                            Group Owner
+                        </label>
+                    </div>
+
+                    {% if (current_user.role == "admin") %}
+                    <div class="form-check">
+                        <label class="form-check-label">
+                            {% if user.role == "admin" %}
+                            <input type="radio" class="form-check-input" name="user_role" id="user_role-1" value="admin" checked>
+                            {% else %}
+                            <input type="radio" class="form-check-input" name="user_role" id="user_role-1" value="admin">
+                            {% endif %}
+                            Administrator
+                        </label>
+                    </div>
+                    {% endif %}
+                </div>
+            </fieldset>
+
+            <div class="form-group row">
+                <label for="new_group_id" class="col">User Group</label>
+                <div class="col-sm-6">
+                    <select class="form-control" id="new_group_id" name="new_group_id">
+                        {% for group2 in groups2 %}
+                        <option value={{group2.id}}  {% if group2.id == user.group_id %} selected {% endif %}>{{group2.group_name}}</option>
+                        {% endfor %}
+                    </select>
+                    {{ render_errors(form.new_group_id) }}
+                </div>
+            </div>
+            
+            <div class="form-group row">
+                <label for="new_password" class="col">New Password</label>
+                <div class="col-sm-6">
+                    <input type="password" class="form-control" id="new_password" name="new_password" placeholder="Leave blank to not change password">
+                    {{ render_errors(form.new_password) }}
+                </div>
+            </div>
+
+            <div class="form-group row">
+                <label for="new_password_confirm" class="col">Confirm New Password</label>
+                <div class="col-sm-6">
+                    <input type="password" class="form-control" id="new_password_confirm" name="new_password_confirm" placeholder="Leave blank to not change password">
+                    {{ render_errors(form.new_password_confirm) }}
+                </div>
+            </div>
+
+            <div class="form-group row">
+                <label for="email_confirmed" class="col">Email Confirmed?</label>
+                <div class="col-sm-6">
+                    <div class="form-check">
+                        <label class="form-check-label">
+                            {% if user.email_confirmed == true %}
+                            <!-- <input class="form-check-input" disabled=True name="email_confirmed" id="email_confirmed" type="checkbox" checked> -->
+                            <input class="form-check-input" name="email_confirmed" id="email_confirmed" type="checkbox" checked>
+                            {% else %}
+                            <!-- <input class="form-check-input" disabled=True name="email_confirmed" id="email_confirmed" type="checkbox"> -->
+                            <input class="form-check-input" name="email_confirmed" id="email_confirmed" type="checkbox">
+                            {% endif %}
+                            Yes
+                        </label>
+                        {{ render_errors(form.email_confirmed) }}
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group row">
+                <div class="offset-sm-2 col-sm-10">
+                    <button type="submit" class="btn btn-success">Edit User</button>
+                    <a class="btn btn-sm btn-success" href="{{ url_for('api.admin_view_users') }}">Cancel</a>
+                </div>
+            </div>
+
+        </form>
+    </div>
+</div>
+
+{% endblock %}

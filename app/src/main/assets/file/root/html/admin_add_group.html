@@ -1,0 +1,15 @@
+{% extends "layout.html" %} {% from "_form_macros.html" import render_field %} {% block content1 %}
+
+<div class="add_new_group1">
+  <div class="page-header">
+    <h2>Add new Group</h2>
+  </div>
+  <form action="{{ url_for('api.admin_add_group') }}" method="post">
+    {{ form.csrf_token }}
+    <dl> {{ render_field(form.group_name, placeholder="Group Name") }} </dl>
+    <button class="btn btn-sm btn-success" type="submit">Add New Group</button>
+    <a class="btn btn-sm btn-success" href="{{ url_for('api.admin_edit_group', group_id = current_user.group_id) }}">Cancel</a>
+  </form>
+</div>
+
+{% endblock %}

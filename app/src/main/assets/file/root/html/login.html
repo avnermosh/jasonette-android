@@ -1,0 +1,30 @@
+{% extends "base_form.html" %}
+{% from "_form_macros.html" import render_field %}
+{% import 'bootstrap/wtf.html' as wtf %}
+
+{% block app_content %}
+
+<!-- https://blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-iii-web-forms/page/0#comments
+     similar to the blog-post that says:
+     This template expects a form object instantiated from the LoginForm class to be given as an argument, which you can see referenced as form.
+     This argument will be sent by the login view function...
+     
+     avner: in my case the login.html page is called/renderred from the auth.py/login route which passes the variable form=LoginForm
+   -->
+
+<div class="admin-add-user">
+  <div class="page-header">
+    <h2>Log In</h2>
+  </div>
+  <h1>Sign In</h1>
+  <div class="row">
+      <div class="col-md-4">
+          {{ form.hidden_tag() }}
+          {{ wtf.quick_form(form) }}
+      </div>
+  </div>
+  <br>
+  <p><em>Forgot your password? </em><a href="/reset">Reset!!</a></p>
+</div>
+
+{% endblock %}

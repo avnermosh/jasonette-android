@@ -3463,16 +3463,7 @@ var parseZip = function parseZip(buffer, doSkipFileData)
         // raise a toast to indicate the failure
         let toastTitleStr = "parseZip";
         let msgStr = "Failed to parseZip." + err;
-        if(COL.doEnableToastr)
-        {
-            toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
-        }
-        else
-        {
-            console.error(msgStr);
-            // alert(msgStr);
-        }
-
+        toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
         throw new Error(msgStr);
     }
 
@@ -3679,16 +3670,7 @@ var ZipLoader = function () {
             // raise a toast to indicate the failure
             let toastTitleStr = "unzip";
             let msgStr = "Failed to unzip." + err;
-            if(COL.doEnableToastr)
-            {
-                toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
-            }
-            else
-            {
-                console.error(msgStr);
-                // alert(msgStr);
-            }
-
+            toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
             throw new Error(msgStr);
         }
     };

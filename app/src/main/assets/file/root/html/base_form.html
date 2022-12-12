@@ -1,0 +1,82 @@
+{% extends 'bootstrap/base.html' %}
+
+{% block title %}
+{% if title %}{{ title }} - Construction Overlay{% else %}Welcome to Construction Overlay{% endif %}
+{% endblock %}
+
+{% block navbar %}
+    <nav class="navbar navbar-default">
+        <div class="container">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a class="navbar-brand" href="{{ url_for('api.index') }}">Construction Overlay1</a>
+            </div>
+            <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+                <ul class="nav navbar-nav">
+                    <li><a href="{{ url_for('api.index') }}">Home</a></li>
+                </ul>
+                {% if g.search_form %}
+                <form class="navbar-form navbar-left" method="get" action="{{ url_for('api.search') }}">
+                    <!-- form-group is a bootstrap class
+                         https://getbootstrap.com/docs/4.0/components/forms/#form-groups -->
+                    <div class="form-group">
+                        {{ g.search_form.q(size=20, class='form-control', placeholder=g.search_form.q.label.text) }}
+                    </div>
+                </form>
+                {% endif %}
+                <ul class="nav navbar-nav navbar-right">
+                    {% if current_user.is_anonymous %}
+                    <li><a href="{{ url_for('api.login') }}">Login222</a></li>
+                    {% else %}
+                    <li><a href="{{ url_for('api.logout') }}">Logout111</a></li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+{% endblock %}
+
+    <!-- "block content" is defined in bootstrap/base.html -->
+{% block content %}
+    <div class="container">
+        {% if current_user.is_authenticated %}
+        {% with tasks = current_user.get_tasks_in_progress() %}
+        {% if tasks %}
+            {% for task in tasks %}
+            <div class="alert alert-success" role="alert">
+                {{ task.description }}
+                <span id="{{ task.id }}-progress">{{ task.get_progress() }}</span>%
+            </div>
+            {% endfor %}
+        {% endif %}
+        {% endwith %}
+        {% endif %}
+        
+            <!-- flash messages -->
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for error_message in get_flashed_messages(category_filter=["error"]) %}
+                    <div class="alert alert-danger alert-dismissible">{{ error_message }}</div>
+                {% endfor %}
+                
+                {% for success_message in get_flashed_messages(category_filter=["success"]) %}
+                    <div class="alert alert-success alert-dismissible">{{ success_message }}</div>
+                {% endfor %}
+                
+                {% for info_message in get_flashed_messages(category_filter=["info"]) %}
+                    <div class="alert alert-info alert-dismissible">{{ info_message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+            
+        {# application content needs to be provided in the app_content block #}
+        {% block app_content %}{% endblock %}
+    </div>
+{% endblock %}
+

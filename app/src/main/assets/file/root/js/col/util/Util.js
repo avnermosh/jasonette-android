@@ -4,47 +4,63 @@
 
 'use strict';
 
+import {
+    Vector2 as THREE_Vector2
+} from '../../static/three.js/three.js-r135/build/three.module.js';
 import { COL } from '../COL.js';
 
 COL.util = {};
-
-// list of colors
-// https://www.imagemagick.org/script/color.php
-// online color chooser
-// https://www.htmlcsscolor.com/hex/00AA00
-// color names
-// https://www.htmlcsscolor.com/#wheel
-COL.util.redColor = 0xff0000;
-COL.util.greenColor = 0x00ff00;
-COL.util.whiteColor = 0xffffff;
-COL.util.yellow1 = 0xffff00;
-COL.util.yellow2 = 0xEEEE00;
-COL.util.blueColor = 0x0000ff;
-COL.util.islamicGreenColor = 0x00aa00;
-COL.util.Gold1 = 0xFFD700;
-COL.util.Gold2 = 0xFFF1AC;
-COL.util.Orange1 = 0xFFA500;
-COL.util.Orange2 = 0xFFD17D;
-COL.util.LavenderBlush1 = 0xFFF0F5;
-COL.util.Orchid = 0xDA70D6;
-COL.util.Orchid1 = 0xFF83FA;
-COL.util.Orchid2 = 0xEE7AE9;
-COL.util.Orchid3 = 0xCD69C9;
-COL.util.darkOrangeColor = 0xFF8C00;
-COL.util.sandyBrownColor = 0xF4A460;
-COL.util.acquaColor = 0x00FFFF;
-COL.util.whiteSmoke1 = 0xF5F5F5;
-COL.util.whiteSmoke2 = 0x7E7E7E;
-
-// Find similar color tone
-// https://www.htmlcsscolor.com/hex/778899
-// section: Monochromatic Colors of #778899
-//   #DDE1E5, rgb(221,225,229)
-//   #BCC4CC, rgb(188,196,204)
-//   #8D9399, rgb(141,147,153)
-//   #596672, rgb(89,102,114)
-//   #3C444C, rgb(60,68,76)
-//   #2D3339, rgb(45,51,57)
+    
+COL.util.Color = {
+    
+    // list of colors
+    // https://www.imagemagick.org/script/color.php
+    // online color chooser
+    // https://www.htmlcsscolor.com/hex/00AA00
+    // color names
+    // https://www.htmlcsscolor.com/#wheel
+    Red: 0xff0000,
+    Green: 0x00ff00,
+    White: 0xffffff,
+    
+    // Yellow1 indicates the selected overlayRect
+    Yellow1: 0xffff00,
+    Yellow2: 0xEEEE00,
+    Blue: 0x0000ff,
+    IslamicGreen: 0x00aa00,
+    Gold1: 0xFFD700,
+    Gold2: 0xFFF1AC,
+    
+    // Orange1 indicates the primary overlayRect in the merge, that all other overlayRects will be merged into.
+    Orange1: 0xFFA500,
+    
+    // Orange2 indicates an overlayRect that is candidate for merge
+    Orange2: 0xFFD17D,
+    
+    LavenderBlush1: 0xFFF0F5,
+    Orchid: 0xDA70D6,
+    Orchid1: 0xFF83FA,
+    Orchid2: 0xEE7AE9,
+    Orchid3: 0xCD69C9,
+    DarkOrange: 0xFF8C00,
+    SandyBrown: 0xF4A460,
+    
+    // Acqua indicates a 'regular' overlayRect. (e.g. one that is not the selected overlayRect)
+    Acqua: 0x00FFFF,
+    
+    WhiteSmoke1: 0xF5F5F5,
+    WhiteSmoke2: 0x7E7E7E,
+    
+    // Find similar color tone
+    // https://www.htmlcsscolor.com/hex/778899
+    // section: Monochromatic Colors of #778899
+    //   #DDE1E5, rgb(221,225,229)
+    //   #BCC4CC, rgb(188,196,204)
+    //   #8D9399, rgb(141,147,153)
+    //   #596672, rgb(89,102,114)
+    //   #3C444C, rgb(60,68,76)
+    //   #2D3339, rgb(45,51,57)
+}
 
 
 
@@ -153,6 +169,35 @@ COL.util.isTouchDevice = function () {
     return isTouchDevice1;
 };
 
+COL.util.getPointFromEvent = function (event) {
+    // console.log('BEG COL.util.getPointFromEvent');
+
+    let point2d;
+    if (event instanceof MouseEvent) {
+        point2d = new THREE_Vector2(event.clientX, event.clientY);
+    }
+    else if(event instanceof TouchEvent) {
+        switch (event.touches.length) {
+            case 1:
+                point2d = new THREE_Vector2(event.touches[0].pageX, event.touches[0].pageY);
+                break;
+
+            case 2:
+                // let centerPointX = (event.touches[0].pageX + event.touches[1].pageX) / 2;
+                // let centerPointY = (event.touches[0].pageY + event.touches[1].pageY) / 2;
+                // point2d = new THREE_Vector2(centerPointX, centerPointY);
+                point2d = new THREE_Vector2(event.touches[0].pageX, event.touches[0].pageY);
+                break;
+    
+            default:
+            {
+                throw new Error('The value of event.targetTouches.length is invalid: ' + event.targetTouches.length);
+            }
+        }
+    }
+    return point2d;
+}
+
 COL.util.isNumberInvalid = function (number) {
     let retval = false;
     if(COL.util.isObjectInvalid(number) || (isNaN(number)))
@@ -205,14 +250,14 @@ COL.util.IsValidJsonString = function (str) {
 // add html elemnt dynamically
 //
 // variables:
-// parentId - the id of the parent html element (e.g. 'topDownPaneId')
+// parentId - the id of the parent html element (e.g. 'planViewPaneId')
 // elementTag - the type of the html element (e.g. div)
 // elementId - the id of the html element (e.g. 'note1Id')
 // innerHtml - the content of the html element (can be another nested html element e.g. '<div id=editor1Id>')
 // elementCssClass - the css class to attach to the newly created elementId (e.g. editorClass)
 //
 // will create the following structure, e.g.
-// <div id="topDownPaneId">
+// <div id="planViewPaneId">
 //   <div id=note1Id>
 //     <div id=editor1Id class=editorClass></div>
 //   </div>

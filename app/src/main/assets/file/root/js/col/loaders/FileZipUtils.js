@@ -5,6 +5,8 @@
 'use strict';
 
 import { COL } from '../COL.js';
+import { Model } from '../core/Model.js';
+import '../util/Util.js';
 
 class FileZipUtils {
 
@@ -77,7 +79,7 @@ class FileZipUtils {
         //  need to make sure that we can handle download ofBIG files, e.g. bia streaming)
         // see: https://stackoverflow.com/questions/55734760/async-await-to-read-blob
         return new Promise(function(resolve, reject) {
-            let queryUrl = COL.model.getUrlBase() + 'api/v1_2/download_to_zip_file2/' + zipFilename;
+            let queryUrl = Model.GetUrlBase() + 'api/v1_2/download_to_zip_file2/' + zipFilename;
             // console.log('queryUrl', queryUrl); 
 
             // trigger the api call from javascript
@@ -171,7 +173,7 @@ class FileZipUtils {
         // http://localhost/api/v1_2/get_plan_by_user_site_plan/modelWith4Images/Main
         console.log('Query - get_plan_by_user_site_plan'); 
         
-        let queryUrl = COL.model.getUrlBase() + 'api/v1_2/get_plan_by_user_site_plan/' +
+        let queryUrl = Model.GetUrlBase() + 'api/v1_2/get_plan_by_user_site_plan/' +
             planInfo.siteName + '/' + 
             planInfo.name;
 
@@ -208,7 +210,7 @@ class FileZipUtils {
         };
 
         // tbd - add the site and update planInfo
-        let queryUrl = COL.model.getUrlBase() + 'api/v1_2/sites';
+        let queryUrl = Model.GetUrlBase() + 'api/v1_2/sites';
 
         let response = await fetch(queryUrl, fetchData);
         await COL.errorHandlingUtil.handleErrors(response);
@@ -249,31 +251,14 @@ class FileZipUtils {
         console.log('BEG saveFromWebServerToZipFile_inSteps');
 
         let saveFromWebServerToZipFileStatus = document.getElementById('saveFromWebServerToZipFileStatusId');
-        if(COL.util.isObjectInvalid(saveFromWebServerToZipFileStatus))
+        if(COL.util.isObjectInvalid(FileZipUtils.nanobar))
         {
-            //////////////////////////////////////////////////
-            // Set the nanobar to indicate the progress of the download
-            //////////////////////////////////////////////////
-            
-            let saveFromWebServerToZipFileStatus2 = $('<div id="saveFromWebServerToZipFileStatusId"><div></div><div>0%</div><div>...</div><div>&nbsp;</div></div><hr>');
-            // saveFromWebServerToZipFileStatus2.appendTo('#grid-container1');
-            saveFromWebServerToZipFileStatus2.appendTo('#admin-view-groups-id');
-            
-            saveFromWebServerToZipFileStatus = document.getElementById('saveFromWebServerToZipFileStatusId');
-            if(COL.util.isObjectInvalid(saveFromWebServerToZipFileStatus))
-            {
-                // sanity check
-                console.error('saveFromWebServerToZipFileStatus is invalid');
-            }
-
-            // create a progress bar
             FileZipUtils.nanobar = new Nanobar({
                 bg: '#44f',
-                target: saveFromWebServerToZipFileStatus.childNodes[0]
-                // target: saveFromWebServerToZipFileStatus
+                // target: saveFromWebServerToZipFileStatus.childNodes[0]
+                target: saveFromWebServerToZipFileStatus
             });
         }
-        
 
         console.log('saveFromWebServerToZipFileStatus', saveFromWebServerToZipFileStatus);
 
@@ -281,13 +266,7 @@ class FileZipUtils {
         // Get the group name
         //////////////////////////////////////////////////
 
-        if(COL.util.isObjectInvalid(COL.model)) {
-            // sanity check
-            console.error('COL.model', COL.model);
-            throw new Error('COL.model is invalid');
-        }
-        
-        let queryUrl = COL.model.getUrlBase() + 'api/v1_2/admin/group/' + groupId;
+        let queryUrl = Model.GetUrlBase() + 'api/v1_2/admin/group/' + groupId;
         let response = await fetch(queryUrl);
         await COL.errorHandlingUtil.handleErrors(response);
 
@@ -301,8 +280,7 @@ class FileZipUtils {
         // Request to create the zip file on the webserver
         //////////////////////////////////////////////////
 
-        // let queryUrl = COL.model.getUrlBase() + 'api/v1_2/create_zip_file';
-        queryUrl = COL.model.getUrlBase() + 'api/v1_2/admin/admin_download_group_sites/' + groupId;
+        queryUrl = Model.GetUrlBase() + 'api/v1_2/admin/admin_download_group_sites/' + groupId;
         response = await fetch(queryUrl);
         await COL.errorHandlingUtil.handleErrors(response);
 

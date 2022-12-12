@@ -1,3 +1,6 @@
+/* eslint-disable no-case-declarations */
+/* eslint-disable no-dupe-class-members */
+/* eslint-disable new-cap */
 // =========================================================
 // Copyright 2018-2022 Construction Overlay Inc.
 // =========================================================
@@ -15,41 +18,41 @@
 /* global Note*/
 
 import {Object3D as THREE_Object3D,
-        MeshBasicMaterial as THREE_MeshBasicMaterial,
-        CircleGeometry as THREE_CircleGeometry,
-        Mesh as THREE_Mesh,
-        Vector3 as THREE_Vector3,
-        MeshPhongMaterial as THREE_MeshPhongMaterial, 
-        DoubleSide as THREE_DoubleSide,
-        FrontSide as THREE_FrontSide,
-        Box3 as THREE_Box3,
-        Vector2 as THREE_Vector2,
-        Vector4 as THREE_Vector4,
-        TextureLoader as THREE_TextureLoader,
-        RGBFormat as THREE_RGBFormat,
-        ClampToEdgeWrapping as THREE_ClampToEdgeWrapping,
-        LinearFilter as THREE_LinearFilter,
-        SpriteMaterial as THREE_SpriteMaterial,
-        CanvasTexture as THREE_CanvasTexture,
-        Sprite as THREE_Sprite        
-       } from '../../static/three.js/three.js-r135/build/three.module.js';
+    MeshBasicMaterial as THREE_MeshBasicMaterial,
+    CircleGeometry as THREE_CircleGeometry,
+    PlaneGeometry as THREE_PlaneGeometry,
+    Mesh as THREE_Mesh,
+    Vector3 as THREE_Vector3,
+    MeshPhongMaterial as THREE_MeshPhongMaterial, 
+    DoubleSide as THREE_DoubleSide,
+    FrontSide as THREE_FrontSide,
+    Box3 as THREE_Box3,
+    Vector2 as THREE_Vector2,
+    Vector4 as THREE_Vector4,
+    TextureLoader as THREE_TextureLoader,
+    RGBFormat as THREE_RGBFormat,
+    ClampToEdgeWrapping as THREE_ClampToEdgeWrapping,
+    LinearFilter as THREE_LinearFilter,
+    SpriteMaterial as THREE_SpriteMaterial,
+    Sprite as THREE_Sprite        
+} from '../../static/three.js/three.js-r135/build/three.module.js';
 
-import {CSS2DObject, CSS2DRenderer} from "../../static/CSS2DRenderer.js";
+import {CSS2DObject, CSS2DRenderer} from '../../static/CSS2DRenderer.js';
 
-import { COL } from  "../COL.js";
-import { Model } from "./Model.js";
-import { OverlayRect } from "./OverlayRect.js";
-import { ApiService } from  "./ApiService.js";
-import { BlobInfo } from "./BlobInfo.js";
-import { Scene3DtopDown } from "./Scene3DtopDown.js";
-import { TexturePanelPlugin } from "./TexturePanelPlugin.js";
-import { Note } from "./Note.js";
-import { ImageInfo } from "./ImageInfo.js";
+import { COL } from  '../COL.js';
+import { Model } from './Model.js';
+import { OverlayRect } from './OverlayRect.js';
+import { BlobInfo } from './BlobInfo.js';
+import { PlanView } from './PlanView.js';
+import { ImageView } from './ImageView.js';
+import { Note } from './Note.js';
+import { ImageInfo } from './ImageInfo.js';
 // import { Whiteboard } from "./Whiteboard.js";
-import "./Core.js";
-import "./FileNotes.js";
-import "../util/Util.js";
-import "../util/ThreejsUtil.js";
+import './Core.js';
+import './FileNotes.js';
+import '../util/Util.js';
+import '../util/ThreejsUtil.js';
+import { OrbitControlsPlanView } from '../orbitControl/OrbitControlsPlanView.js';
 
 let imageCountTotal_numFilesBetweenReporting = 10;
 // let imageCountTotal_numFilesBetweenReporting = 2;
@@ -57,15 +60,16 @@ var imageCountTotal = 0;
 
 // layer a.k.a. plan a.k.a. floor
 class Layer {
-    constructor(layerName, planInfo){
+    constructor(layerName, planInfo, isLayerFromZipFile=false){
         this.planInfo = planInfo;
         this.setLayerName(layerName);
+        this.isLayerFromZipFile = isLayerFromZipFile;
 
         // _overlayMeshGroup is a threejs object that stores the contents of the overlay images:
-        // - representation of the images, as dots to be overlayed in the topDown 3d pane:
+        // - representation of the images, as dots to be overlayed in the selected plan pane:
         // - location, mesh of type circle
         this._overlayMeshGroup = new THREE_Object3D();
-        this._overlayMeshGroup.name = "overlayRects";
+        this._overlayMeshGroup.name = 'overlayRects';
 
         // _overlayRects is a list of OverlayRect objects
         //   _overlayRects and _overlayMeshGroup are equivalent (but not identical)
@@ -78,14 +82,14 @@ class Layer {
         // it is used to display the ring around the removed overlayRect until the
         // removed overlayRect is synced to the back-end
         this._removedOverlayMeshGroup = new THREE_Object3D();
-        this._removedOverlayMeshGroup.name = "removedOverlayRects";
+        this._removedOverlayMeshGroup.name = 'removedOverlayRects';
 
         // stickyNoteGroup stores the mutable overlay related meshes
         this.stickyNoteGroup = new THREE_Object3D();
-        this.stickyNoteGroup.name = "stickyNotes";
+        this.stickyNoteGroup.name = 'stickyNotes';
 
-        this.scene3DtopDown = undefined;
-        this.texturePanelPlugin = undefined;
+        this.planView = undefined;
+        this.imageView = undefined;
         
         this.noteArray = new COL.util.AssociativeArray();
 
@@ -99,27 +103,23 @@ class Layer {
         this._removedImagesInfo = new COL.util.AssociativeArray();
 
         // for manageMemory - the last N images (can cross multiple overlayRects) to keep in RAM
-        this._lastSelectedImageFilenames = new COL.util.AssociativeArray();
+        this._cachedImages = new COL.util.AssociativeArray();
         
         // The selected overlayRect (e.g. the yellow dot)
         this._selectedOverlayRect = undefined;
-        this._selectedOverlayRectPrev = undefined;
 
         // for mergeing overlayRects
         this._selectedForMergeOverlayRects = new COL.util.AssociativeArray();
         
         // The currently loaded texture image
-        this._currentTextureImage = undefined;
+        this._currentSprite = undefined;
 
-        // _floorPlanMeshObj stores the topDown plan related mesh
+        // _floorPlanMeshObj stores the planView plan related mesh
         this._floorPlanMeshObj = null;
 
-        if(COL.doEnableWhiteboard)
-        {
+        if(COL.doEnableWhiteboard) {
             this._floorPlanWhiteboard = new Whiteboard();
         }
-
-        this._editOverlayRectFlag = false;
 
         this._playImagesState = Layer.PLAY_IMAGES_STATE.NONE;
 
@@ -151,41 +151,35 @@ class Layer {
         // - this._generalMetadata.generalInfo.modelVersion - the version for the layer
         //   1.0 - load overlay from overlay.obj, overlay.mtl (obsolete)
         //   1.1 - load overlay from layer.getLayerJsonFilename()
+        //   1.2 - rename topDown -> planView (structure change in the plan .json file)
         this._generalMetadata;
-    };
+    }
 
-    toScene3DtopDown = async function (objectLoader, scene3DtopDown_asDict) {
-        // console.log('BEG toScene3DtopDown');
+    async toPlanView (objectLoader, planView_asDict) {
+        // console.log('BEG toPlanView');
 
-        let scene3DtopDown = this.getScene3DtopDown();
-        await scene3DtopDown.fromJson(this, objectLoader, scene3DtopDown_asDict);
-        Scene3DtopDown.render1();
-    };
+        let planView = this.getPlanView();
+        await planView.fromJson(this, objectLoader, planView_asDict);
+        PlanView.Render();
+    }
 
-    toSelectedOverlayRect = async function (selectedOverlayRect_asDict) {
-        //console.log('BEG toSelectedOverlayRect');
-
+    async toSelectedOverlayRect (selectedOverlayRect_asDict) {
         let meshObjectUuid = selectedOverlayRect_asDict['_meshObject.uuid'];
         let meshObject =  this._overlayMeshGroup.getObjectByProperty( 'uuid', meshObjectUuid );
-        // console.log('meshObjectUuid', meshObjectUuid); 
-        // console.log('meshObject', meshObject); 
-        
         await this.setSelectedOverlayRect(meshObject);
-    };
+        await this.showSelectedOverlayRect();
+    }
 
-    initializeFloorPlanWhiteboard = async function ()
-    {
-    };
+    async initializeFloorPlanWhiteboard () {
+    }
     
-    populateFloorPlanObj = async function ()
-    {
+    async populateFloorPlanObj () {
         // console.log('BEG CO_ObjectLoader populateFloorPlanObj');
 
         let floorPlanObj = this.getFloorPlanMeshObj();
 
         let imagesInfo = this.getImagesInfo();
-        if(COL.util.isObjectInvalid(imagesInfo))
-        {
+        if(COL.util.isObjectInvalid(imagesInfo)) {
             imagesInfo = new COL.util.AssociativeArray();
         }
 
@@ -197,12 +191,12 @@ class Layer {
             throw new Error('Invalid meshObj1. Should have: type "Mesh", name !== "ring", material defined');
         }
 
-        //////////////////////////////////////////////////////////////////////////////
+        // ////////////////////////////////////////////////////////////////////////////
         // For meshObj1:
         // - set the material
         // - calc the bounding box
         // - add the floorPlan as imageInfo (with blobUrl) to layer
-        //////////////////////////////////////////////////////////////////////////////
+        // ////////////////////////////////////////////////////////////////////////////
         
         meshObj1.material.side = THREE_DoubleSide;
         meshObj1.material.needsUpdate = true;
@@ -217,8 +211,7 @@ class Layer {
         let userData = meshObj1.material.userData;
         
         let imagesNames_asDict = userData['imagesNames'];
-        if(COL.util.isObjectInvalid(imagesNames_asDict))
-        {
+        if(COL.util.isObjectInvalid(imagesNames_asDict)) {
             console.error('imagesNames_asDict is invalid'); 
         }
         
@@ -232,12 +225,12 @@ class Layer {
         let blobInfo = new BlobInfo({filenameFullPath: floorPlanFilenameFullPath, blobUrl: undefined, isDirty: true});
         let imageInfo = new ImageInfo({filename: floorPlanFilename, blobInfo: blobInfo});
 
-        //////////////////////////////////////////////////////////////////////////////
+        // ////////////////////////////////////////////////////////////////////////////
         // add the floorPlan as imageInfo, with blobUrl, to layer in steps:
         // - first with blobUrl set to undefined (needed for getting the blobUrl)
         // - then get the blobUrl
         // - then add the blobUrl to imageInfo
-        //////////////////////////////////////////////////////////////////////////////
+        // ////////////////////////////////////////////////////////////////////////////
 
         imagesInfo.set(floorPlanFilename, imageInfo);
         this.setImagesInfo(imagesInfo);
@@ -246,10 +239,7 @@ class Layer {
         blobInfo = new BlobInfo({filenameFullPath: floorPlanFilename, blobUrl: blobUrl, isDirty: true});
         imageInfo.blobInfo = blobInfo;
 
-        // based on https://discourse.threejs.org/t/updating-material-map/2381
-        // meshObj1.material.map = new THREE_ImageUtils.loadTexture( blobUrl );
-        //     mtlLoader.setMaterialOptions( {side: THREE_DoubleSide, needsUpdate: true} );
-        await this.loadTopDownTextureFromFile(blobUrl);
+        await this.loadPlanViewTextureFromBlobUrl(blobUrl);
 
         // need to add floorPlanFilename to imagesInfo, so that it
         // gets saved to the backend e.g. when syncing from zip file to the webserver
@@ -258,10 +248,9 @@ class Layer {
         this.setImagesInfo(imagesInfo);
 
         // return imagesInfo;
-    };
+    }
     
-    populateOverlayRects = function (overlayMeshGroup)
-    {
+    populateOverlayRects (overlayMeshGroup) {
         // console.log('BEG CO_ObjectLoader populateOverlayRects');
 
         let _this = this;
@@ -273,27 +262,36 @@ class Layer {
             if ( (child.type === 'Mesh') && (child.name !== 'ring') ) {
                 child.geometry.computeBoundingBox();
                 overlayMeshGroup.bBox = child.geometry.boundingBox;
-
+    
                 let imagesNames_asDict = child.material.userData['imagesNames'];
-
+    
                 let imagesNames = new COL.util.AssociativeArray();
-                if(COL.util.isObjectValid(imagesNames_asDict))
-                {
+                if(COL.util.isObjectValid(imagesNames_asDict)) {
                     for (let filename in imagesNames_asDict) {
                         imagesNames.set(filename, true);
                     }
                 }
-                else
-                {
+                else {
                     console.error('imagesInfo is invalid for overlayRect');
                 }
-
+    
                 child.material.userData['imagesNames'] = imagesNames;
-                
+                    
+                // Set all overlayRects to 'regular' (e.g. mark as NOT selectedOverlayRect)
+                child.material.color.setHex( COL.util.Color.Acqua );
+
+                // Set all overlayRects to 'regular' (e.g. mark overlayRect as NOT in move process)
+                for (let i = child.children.length - 1; i >= 0; i--) {
+                    if (child.children[i].name === 'ring') {
+                        COL.ThreejsUtil.disposeObject(child.children[i]);
+                        child.remove(child.children[i]);
+                    }
+                }
+
                 let overlayRect = new OverlayRect(child);
-
+    
                 _this._overlayRects.set(child.name, overlayRect);
-
+    
                 // userData['imagesNames'] has 2 forms:
                 // - as a string (when it is read and written to e.g. layer.json file)
                 // - as associativeArray class when it's fed to overlayRect
@@ -301,9 +299,9 @@ class Layer {
         });
 
         this.setOverlayMeshGroup(overlayMeshGroup);
-    };
+    }
     
-    toImagesInfo = function (imagesInfo_asDict) {
+    toImagesInfo (imagesInfo_asDict) {
         // console.log('BEG toImagesInfo'); 
 
         let imagesInfo_forLayer = new COL.util.AssociativeArray();
@@ -314,8 +312,7 @@ class Layer {
             // console.log('imageInfo_asDict', imageInfo_asDict);
             
             let blobUrl = COL.util.getNestedObject(imageInfo_asDict, ['blobInfo', 'blobUrl']);
-            if(COL.util.isObjectValid(blobUrl))
-            {
+            if(COL.util.isObjectValid(blobUrl)) {
                 // when using the json file, the blobUrl does not really exist, and has to be reloaded from the zip file.
                 // So remove the blobUrl (otherwise, the program thinks that the file is loaded in memory, which is not the case)
                 imageInfo_asDict.blobInfo.blobUrl = null;
@@ -324,23 +321,21 @@ class Layer {
             let blobInfo_asDict = imageInfo_asDict.blobInfo;
 
             let blobInfo = null;
-            if(COL.util.isObjectValid(blobInfo_asDict))
-            {
+            if(COL.util.isObjectValid(blobInfo_asDict)) {
                 blobInfo = new BlobInfo({filenameFullPath: blobInfo_asDict.filename,
-                                         blobUrl: blobInfo_asDict.fileUrl,
-                                         isDirty: false});
+                    blobUrl: blobInfo_asDict.fileUrl,
+                    isDirty: false});
             }
-            else
-            {
+            else {
                 blobInfo = new BlobInfo({filenameFullPath: filename,
-                                         blobUrl: undefined,
-                                         isDirty: false});
+                    blobUrl: undefined,
+                    isDirty: false});
             }
             
             let imageInfo = new ImageInfo({filename: filename,
-                                           imageTags: imageInfo_asDict.imageTags,
-                                           cameraInfo_asDict: imageInfo_asDict.cameraInfo,
-                                           blobInfo: blobInfo});
+                imageTags: imageInfo_asDict.imageTags,
+                cameraInfo_asDict: imageInfo_asDict.cameraInfo,
+                blobInfo: blobInfo});
             
             imagesInfo_forLayer.set(filename, imageInfo);
         }
@@ -355,18 +350,18 @@ class Layer {
         
         this._imagesInfo = imagesInfo_forLayer;
         
-    };
+    }
 
 
-    addStickyNote = function () {
+    addStickyNote () {
         console.log('BEG addStickyNote');
 
         let selectedImageFilename = this._selectedOverlayRect.getSelectedImageFilename();
         if(selectedImageFilename) {
             let index = this.noteArray.size();
             let noteNumber = Number(index);
-            let noteId = "note" + noteNumber;
-            let dataStr = "{\"ops\":[{\"insert\":\"My Note\"},{\"attributes\":{\"header\":1},\"insert\":\"\\n\"}]}";
+            let noteId = 'note' + noteNumber;
+            let dataStr = '{"ops":[{"insert":"My Note"},{"attributes":{"header":1},"insert":"\\n"}]}';
 
             let noteData = dataStr;
             let noteStyle = {
@@ -374,69 +369,72 @@ class Layer {
                 left: 0
             };
             let imageFilename = selectedImageFilename;
-            let texturePlugin = this.getTexturePanelPlugin();
-            var texScene = texturePlugin.getTexScene();
-            var texCamera = texturePlugin.getTexCamera();
-            var texLabelRenderer = texturePlugin.getTexLabelRenderer();
+            let imageView = this.getImageView();
+            var imageViewScene = imageView.getImageViewScene();
+            var camera = imageView.getCamera();
+            var labelRenderer = imageView.getlabelRenderer();
 
             let newNote = new Note(noteId,
-                                   noteData,
-                                   noteStyle,
-                                   imageFilename,
-                                   index,
-                                   this,
-                                   texLabelRenderer,
-                                   texScene,
-                                   texCamera);
+                noteData,
+                noteStyle,
+                imageFilename,
+                index,
+                this,
+                labelRenderer,
+                imageViewScene,
+                camera);
 
             this.noteArray.set(noteId, newNote);
         }
-    };
+    }
 
-    initLayer = function () {
+    initLayer () {
         // console.log('BEG initLayer');
 
-        this.scene3DtopDown = new Scene3DtopDown();
-        this.scene3DtopDown.initScene3DtopDown();
+        this.planView = new PlanView;
+        this.planView.initPlanView();
 
-        if(COL.doEnableWhiteboard)
-        {
+        if(COL.doEnableWhiteboard) {
             this.initializeFloorPlanWhiteboard();
         }
         
         // add the _removedOverlayMeshGroup to the scene
-        this.scene3DtopDown.addToScene(this._removedOverlayMeshGroup);
+        this.planView.addToScene(this._removedOverlayMeshGroup);
         
-        this.texturePanelPlugin = new TexturePanelPlugin();
-        this.texturePanelPlugin.initTexturePanelPlugin();
-    };
+        this.imageView = new ImageView();
+        this.imageView.initSelectedView();
+    }
 
-    getIsMilestoneDatesFilterEnabled = function () {
+    getIsMilestoneDatesFilterEnabled () {
         return this._isMilestoneDatesFilterEnabled;
-    };
+    }
 
-    setIsMilestoneDatesFilterEnabled = function (isMilestoneDatesEnabled) {
+    setIsMilestoneDatesFilterEnabled (isMilestoneDatesEnabled) {
         this._isMilestoneDatesFilterEnabled = isMilestoneDatesEnabled;
-    };
+    }
 
-    getOverlayMeshGroup = function () {
+    getOverlayMeshGroup () {
         return this._overlayMeshGroup;
-    };
+    }
 
-    setOverlayMeshGroup = function (overlayMeshGroup) {
+    setOverlayMeshGroup (overlayMeshGroup) {
         this._overlayMeshGroup = overlayMeshGroup;
-    };
+    }
 
-    getOverlayRectByName = function (overlayRectName) {
+    getOverlayRectByName (overlayRectName) {
         let overlayRect = this._overlayRects.getByKey(overlayRectName);
         return overlayRect;
-    };
+    }
 
-    updateOverlayRectScale = function (overlayRectScale) {
+    getOverlayRects () {
+        return this._overlayRects;
+    }
+    
+    updateOverlayRectScale (overlayRectScale) {
         // console.log('BEG updateOverlayRectScale');
         
         // update the scale for future overlayRects
-        this.scene3DtopDown.setOverlayRectScale(overlayRectScale);
+        this.planView.setOverlayRectScale(overlayRectScale);
 
         // update the scale for existing overlayRects
         this._overlayMeshGroup.traverse(function ( child ) {
@@ -444,62 +442,49 @@ class Layer {
                 child.scale.set(overlayRectScale, overlayRectScale, overlayRectScale);
             }
         });
-        Scene3DtopDown.render1();
-    };
+        PlanView.Render();
+    }
     
-    /////////////////////////////////////////////////////////////////
+    // ///////////////////////////////////////////////////////////////
     // Create an overlay mesh object and add it to overlayMeshGroup
     // Return the newly-created overlay mesh object from the overlayMeshGroup
-    /////////////////////////////////////////////////////////////////
+    // ///////////////////////////////////////////////////////////////
 
-    addToOverlayMeshGroup = function (otherOverlayMesh) {
-        console.log('BEG addToOverlayMeshGroup'); 
+    addToOverlayMeshGroup_createOverlayRect_andAddToOverlayRects (otherMeshObj) {
+        console.log('BEG addToOverlayMeshGroup_createOverlayRect_andAddToOverlayRects'); 
         
-        // setting the opacity, transparent, and side attributes so that the sprite is not hidden, see
-        // https://threejs.slack.com/archives/C0AR9959Q/p1616646469112000
-        let material = new THREE_MeshBasicMaterial({
-            transparent: true,
-        });
-        material.color.set(COL.util.acquaColor);
-        material.userData = otherOverlayMesh.material.userData;
-
-        material.opacity = 0.91;
-        material.side = THREE_DoubleSide;
+        let overlayRectRadius = this.planView.getOverlayRectRadius();
+        let meshObj = new THREE_Mesh( otherMeshObj.geometry, otherMeshObj.material );
         
-        let overlayRectRadius = this.scene3DtopDown.getOverlayRectRadius();
-        let geometry = new THREE_CircleGeometry( overlayRectRadius, Scene3DtopDown.numSegments );
-
-        let overlayMeshObj = new THREE_Mesh( geometry, material );
         // Update rotation angles, so that the circle can be seen from above
-        overlayMeshObj.rotation.x = -Math.PI/2;
-        overlayMeshObj.name = otherOverlayMesh.name;
-        overlayMeshObj.visible = true;
-        // copy the position onto overlayMeshObj
-        overlayMeshObj.position.copy(otherOverlayMesh.position);
-        overlayMeshObj.scale.copy(otherOverlayMesh.scale);
+        meshObj.rotation.x = -Math.PI/2;
+        meshObj.name = otherMeshObj.name;
+        meshObj.visible = true;
+        // copy the position onto meshObj
+        meshObj.position.copy(otherMeshObj.position);
+        meshObj.scale.copy(otherMeshObj.scale);
         
-        // after adding overlayMeshObj to overlayMeshGroup, we need to call "updateMatrixWorld()".
-        // for _raycaster3DtopDown.intersectObjects() to intersect with the new object.
-        overlayMeshObj.updateMatrixWorld();
+        // after adding meshObj to overlayMeshGroup, we need to call "updateMatrixWorld()".
+        // for _raycasterPlanView.intersectObjects() to intersect with the new object.
+        meshObj.updateMatrixWorld();
 
-        ////////////////////////////////////////////
+        // //////////////////////////////////////////
         // create label with the number of images
-        ////////////////////////////////////////////
+        // //////////////////////////////////////////
 
-        let overlayRect = new OverlayRect(overlayMeshObj);
-        overlayMeshObj = overlayRect.getMeshObject();
+        let overlayRect = new OverlayRect(meshObj);
+        meshObj = overlayRect.getMeshObject();
         
         let numImagesInOverlayRect = overlayRect.getNumImagesInOverlayRect();
         let labelText = numImagesInOverlayRect;
         let overlayRectLabel = OverlayRect.makeSpriteLabel(overlayRectRadius, labelText);
-        overlayMeshObj.add(overlayRectLabel);
+        meshObj.add(overlayRectLabel);
 
-        if(COL.doUseRing)
-        {
+        if(COL.doUseRing) {
             let overlayRectRing = OverlayRect.makeRing(overlayRectRadius);
-            overlayMeshObj.add(overlayRectRing);
+            meshObj.add(overlayRectRing);
         }
-        this._overlayMeshGroup.add(overlayMeshObj);
+        this._overlayMeshGroup.add(meshObj);
 
         // sanity check - check that every OverlayRect._imageName has a counter-part in Layer._imagesInfo
         let imageNames = overlayRect.getImagesNames();
@@ -509,27 +494,25 @@ class Layer {
         while (iter.hasNext()) {
             let imageName = iter.nextKey();
             let imageInfo = this._imagesInfo.getByKey(imageName);
-            if(COL.util.isObjectInvalid(imageInfo))
-            {
-                let msgStr = "imageName: " + imageName + " does not have a corresponding imageInfo";
+            if(COL.util.isObjectInvalid(imageInfo)) {
+                let msgStr = 'imageName: ' + imageName + ' does not have a corresponding imageInfo';
                 console.error(msgStr);
             }
         }
         
-        this._overlayRects.set(overlayMeshObj.name, overlayRect);
+        this._overlayRects.set(meshObj.name, overlayRect);
 
-        return overlayMeshObj;
-    };
+        return meshObj;
+    }
 
-    /////////////////////////////////////////////////////////////////
+    // ///////////////////////////////////////////////////////////////
     // Remove the overlay mesh object from overlayMeshGroup
-    /////////////////////////////////////////////////////////////////
+    // ///////////////////////////////////////////////////////////////
 
-    removeFromOverlayMeshGroup = function (overlayMeshObj) {
+    removeFromOverlayMeshGroup (overlayMeshObj) {
         // console.log('BEG removeFromOverlayMeshGroup');
         
-        if(COL.util.isObjectInvalid(overlayMeshObj))
-        {
+        if(COL.util.isObjectInvalid(overlayMeshObj)) {
             // sanity check
             throw new Error('overlayMeshObj is invalid');
         }
@@ -548,123 +531,156 @@ class Layer {
         
         // Remove from Layer._overlayRects
         this._overlayRects.remove(overlayMeshObj.name);
-    };
+    }
     
-    getLayerName = function () {
+    getLayerName () {
         return this.name;
-    };
+    }
 
-    setLayerName = function (layerName) {
+    setLayerName (layerName) {
         // console.log('BEG setLayerName(layerName)'); 
 
         // sanity check
-        if(layerName != Layer.CreateLayerName(this.planInfo))
-        {
+        if(layerName != Layer.CreateLayerName(this.planInfo.siteName, this.planInfo.name)) {
             throw new Error('layerName does not match the expected name');
         }
         this.name = layerName;
-    };
+    }
 
-    setLayerName = function () {
+    setLayerName () {
         // console.log('BEG setLayerName'); 
 
-        if(COL.util.isObjectInvalid(this.planInfo))
-        {
+        if(COL.util.isObjectInvalid(this.planInfo)) {
             throw new Error('this.planInfo is invalid');
         }
         
-        this.name = Layer.CreateLayerName(this.planInfo);
-    };
+        this.name = Layer.CreateLayerName(this.planInfo.siteName, this.planInfo.name);
+    }
 
-    getScene3DtopDown = function () {
-        // tbd - maybe fix the logic, so that getScene3DtopDown() is only called when this.scene3DtopDown is valid
+    getPlanView () {
+        // tbd - maybe fix the logic, so that getPlanView is only called when this.planView is valid
         //   and re-introduce the throw...
         //
-        // if(COL.util.isObjectInvalid(this.scene3DtopDown))
+        // if(COL.util.isObjectInvalid(this.planView))
         // {
-        //     // Support the case where after loading from zip file, the layer's scene3DtopDown may not be ready temporarily.
-        //     // - in Layer::getScene3DtopDown(), if scene3DtopDown is not set yet, return null instead of throwing.
+        //     // Support the case where after loading from zip file, the layer's planView may not be ready temporarily.
+        //     // - in Layer::getPlanView(), if planView is not set yet, return null instead of throwing.
 
-        //     // throw new Error('this.scene3DtopDown is invalid');
+        //     // throw new Error('this.planView is invalid');
         //     return null;
         // }
-        return this.scene3DtopDown;
-    };
+        return this.planView;
+    }
 
-    getTexturePanelPlugin = function () {
-        return this.texturePanelPlugin;
-    };
+    getImageView () {
+        return this.imageView;
+    }
     
-    getNoteArray = function () {
+    getNoteArray () {
         return this.noteArray;
-    };
+    }
     
-    setNoteArray = function (noteArray) {
+    setNoteArray (noteArray) {
         this.noteArray = noteArray;
-    };
+    }
 
-    getPlanInfo = function () {
+    getPlanInfo () {
         return this.planInfo;
-    };
+    }
     
-    setPlanInfo = function (planInfo) {
+    setPlanInfo (planInfo) {
         this.planInfo = planInfo;
-    };
+    }
 
-    getStickyNoteGroup = function () {
+    getStickyNoteGroup () {
         return this.stickyNoteGroup;
-    };
+    }
 
-    addToStickyNoteGroup = function (css2DObject) {
+    addToStickyNoteGroup (css2DObject) {
         this.stickyNoteGroup.add( css2DObject );
-    };
+    }
 
-    getSelectedOverlayRect = function () {
+    getSelectedOverlayRect () {
         return this._selectedOverlayRect;
-    };
+    }
 
-    getCurrentTextureImage = function () {
-        // console.log('BEG getCurrentTextureImage');
+    getSprite () {
+        // console.log('BEG getSprite');
         
-        return this._currentTextureImage;
-    };
+        return this._currentSprite;
+    }
 
-    setCurrentTextureImage = function (textureImage) {
-        // console.log('BEG setCurrentTextureImage');
+    setSprite (otherSprite) {
+        // console.log('BEG setSprite');
 
-        if( COL.util.isObjectValid(this._currentTextureImage) )
-        {
-            COL.ThreejsUtil.disposeObject(this._currentTextureImage);
+        if( COL.util.isObjectValid(this._currentSprite) ) {
+            COL.ThreejsUtil.disposeObject(this._currentSprite);
         }
            
-        this._currentTextureImage = textureImage;
-    };
+        this._currentSprite = otherSprite;
+    }
 
-    isSelectedOverlayRect = function (overlayRect) {
+    isSelectedOverlayRect (overlayRect) {
         return (overlayRect == this._selectedOverlayRect);
-    };
+    }
 
-    getSelectedForMergeOverlayRects = function () {
+    getSelectedForMergeOverlayRects () {
         return this._selectedForMergeOverlayRects;
-    };
+    }
 
-    setSelectedForMergeOverlayRects = async function (otherOverlayRect) {
+    setSelectedForMergeOverlayRects (otherOverlayRect) {
         // console.log('BEG setSelectedForMergeOverlayRects'); 
 
-        let otherOverlayMeshObj = otherOverlayRect.getMeshObject();
-        let otherOverlayMeshObjName = otherOverlayMeshObj.name;
-        this._selectedForMergeOverlayRects.set(otherOverlayMeshObjName, otherOverlayRect);
-    };
-    
-    ///////////////////////////////////////////////////////////////
-    // Sets the selectedOverlayRect (yellow image dot), and selectedOverlayRectPrev
-    ///////////////////////////////////////////////////////////////
+        let otherMeshObj = otherOverlayRect.getMeshObject();
+        if(this._selectedForMergeOverlayRects.size() == 0) {
+            // color for first overlayRect in selectedForMergeOverlayRects, where all other overlayRects are going to be merged into.
+            otherMeshObj.material.color.setHex( COL.util.Color.Orange1 );
+            otherMeshObj.material.needsUpdate = true;
+        }
+        else{
+            // get the first overlayRect
+            let firstOverlayRect = this._selectedForMergeOverlayRects.getFirstVal();
+            let firstOverlayRectMeshObject = firstOverlayRect.getMeshObject();
+            console.log('firstOverlayRectMeshObject.name', firstOverlayRectMeshObject.name);
+            console.log('otherMeshObj.name', otherMeshObj.name);
 
-    setSelectedOverlayRect = async function (otherMeshObject) {
+            if(otherMeshObj.name !== firstOverlayRectMeshObject.name) {
+                otherMeshObj.material.color.setHex( COL.util.Color.Orange2 );
+                otherMeshObj.material.needsUpdate = true;
+            }
+        }
+
+        this._selectedForMergeOverlayRects.set(otherMeshObj.name, otherOverlayRect);
+    }
+
+    
+    async showSelectedOverlayRect() {
+
+        console.log('BEG showSelectedOverlayRect1');
+        
+        let spinnerJqueryObj = $('#inProgressSpinnerId');
+        spinnerJqueryObj.addClass('is-active');
+
+        // update things related to the image
+        // - clear the texture
+        // - set image info string to NA
+        // - set imageNumOutOfTotalImages to NA
+        await this.updateLayerImageRelatedRenderring();
+
+        // show the tiled images
+        let overlayRectImageThumbnailsPaneEl = document.getElementById('overlayRectImageThumbnailsPaneId');
+        await COL.manageGUI.setPane(overlayRectImageThumbnailsPaneEl);
+        spinnerJqueryObj.removeClass('is-active');
+    }
+
+    // /////////////////////////////////////////////////////////////
+    // Sets the selectedOverlayRect (yellow image dot)
+    // /////////////////////////////////////////////////////////////
+
+    async setSelectedOverlayRect (otherMeshObject) {
         // console.log('BEG setSelectedOverlayRect'); 
 
-        try
-        {
+        try {
             // let imageInfo2 = ImageInfo.getSelectedImageInfo();
             // if( COL.util.isObjectValid(imageInfo2) )
             // {
@@ -673,285 +689,191 @@ class Layer {
             // }
 
             let meshObject = undefined;
-            if( COL.util.isObjectValid(this._selectedOverlayRect) )
-            {
+            if( COL.util.isObjectValid(this._selectedOverlayRect) ) {
                 meshObject = this._selectedOverlayRect.getMeshObject();
             }
 
-            ///////////////////////////////////////////////////////////////
-            // Set selectedOverlayRectPrev
-            ///////////////////////////////////////////////////////////////
-            
-            if( COL.util.isObjectValid(otherMeshObject) &&
-                COL.util.isObjectValid(meshObject) &&
-                (otherMeshObject != meshObject) )
-            {
-                // There is another mesh and, there is a current mesh,
-                // and the other mesh is different from the exising mesh 
-                this.setSelectedOverlayRectPrev(this._selectedOverlayRect);
-            }
-            else if(COL.util.isObjectInvalid(otherMeshObject) &&
-                    COL.util.isObjectValid(meshObject))
-            {
-                // There is NO other mesh and there is a current mesh
-                this.setSelectedOverlayRectPrev(this._selectedOverlayRect);
-            }
-
-            ///////////////////////////////////////////////////////////////
+            // /////////////////////////////////////////////////////////////
             // Before setting the selectedOverlayRect, which changes the selected image
             // persist the imageInfo (e.g. camerainfo) of the last selected image,
             // so that if we revisit this image, we will get the same view setting
             // of the image (e.g. zoom)
-            ///////////////////////////////////////////////////////////////
+            // /////////////////////////////////////////////////////////////
 
             this.saveSelectedImageCameraInfo();
             
-            ///////////////////////////////////////////////////////////////
+            // /////////////////////////////////////////////////////////////
             // Set selectedOverlayRect
-            ///////////////////////////////////////////////////////////////
+            // /////////////////////////////////////////////////////////////
 
             // Fill _selectedOverlayRect (using otherMeshObject) from entry in _overlayRects
             // (with _overlayRects states, e.g. last revisited image index in this overlaRect)
 
-            if(COL.util.isObjectValid(otherMeshObject))
-            {
+            if(COL.util.isObjectValid(otherMeshObject)) {
                 // otherMeshObject is defined. Set this._selectedOverlayRect
                 // from an entry in this._overlayRects that has the same name as otherMeshObject.name
                 
                 // console.log('otherMeshObject.name', otherMeshObject.name);
                 this._selectedOverlayRect = this._overlayRects.getByKey(otherMeshObject.name);
-                if(COL.util.isObjectInvalid(this._selectedOverlayRect))
-                {
+                if(COL.util.isObjectInvalid(this._selectedOverlayRect)) {
                     // sanity check
                     console.error('otherMeshObject.name', otherMeshObject.name); 
                     throw new Error('this._selectedOverlayRect is invalid. (it is set from a mesh object that is not in the list of this._overlayRects)');
                 }
 
-                if(COL.doWorkOnline)
-                {
-                    let sceneBar = COL.model.getSceneBar();
-                    let isMergeButtonOn = sceneBar._mergeOverlayRectsButton.isOn();
-                    if( isMergeButtonOn )
-                    {
-                        // the button is turned on - add the overlayRect to the list of selectedForMergeOverlayRects
-                        //
-                        // tbd - remove the await ??
-                        await this.setSelectedForMergeOverlayRects(this._selectedOverlayRect);
-                    }
+                let planView = this.getPlanView();
+                let orbitControls = planView.getOrbitControls();
+                if(orbitControls.getState() == OrbitControlsPlanView.STATE.EDIT_MODE_MERGE_START_OVERLAY_RECT) {
+                    // add the overlayRect to the list of selectedForMergeOverlayRects
+                    this.setSelectedForMergeOverlayRects(this._selectedOverlayRect);
                 }
 
                 let selectedOverlayRectName = this._selectedOverlayRect.getMeshObject().name;
                 let selectedForMergeOverlayRect = this._selectedForMergeOverlayRects.getByKey(selectedOverlayRectName);
-                if(COL.util.isObjectValid(selectedForMergeOverlayRect))
-                {
-                    // the _selectedOverlayRect is in the merge list. Indicate it by setting its color to yellow2
-                    this._selectedOverlayRect.getMeshObject().material.color.setHex( COL.util.yellow2 );
-                }
-                else
-                {
-                    // the _selectedOverlayRect is NOT in the merge list. Indicate it by setting its color to yellow1
-                    this._selectedOverlayRect.getMeshObject().material.color.setHex( COL.util.yellow1 );
-                }
-                
             }
-            else
-            {
+            else {
                 // can get here if e.g. clicking in non-overlayRect area
                 this._selectedOverlayRect = undefined;
             }
-            
-            // update things related to the image
-            // - clear the texture
-            // - set image info string to NA
-            // - set imageNumOutOfTotalImages to NA
-            await this.updateLayerImageRelatedRenderring();
         }
         catch(err) {
             console.error('err', err);
 
-            let toastTitleStr = "setSelectedOverlayRect";
-            let msgStr = "Failed to setSelectedOverlayRect." + err;
+            let toastTitleStr = 'setSelectedOverlayRect';
+            let msgStr = 'Failed to setSelectedOverlayRect.' + err;
             toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
             throw new Error(msgStr);
         }
         
-    };
+    }
 
-    saveSelectedImageCameraInfo = function () {
+    saveSelectedImageCameraInfo () {
         // console.log('BEG saveSelectedImageCameraInfo'); 
 
         let imageInfo = ImageInfo.getSelectedImageInfo(this);
-        if( COL.util.isObjectValid(imageInfo) )
-        {
-            /////////////////////////////////////////////////////////////////
+        if( COL.util.isObjectValid(imageInfo) ) {
+            // ///////////////////////////////////////////////////////////////
             // A previous selectedImage exists
             // persist its imageInfo (e.g. camerainfo), so that if we revisit
             // this image, we will get the same view setting of the image (e.g. zoom)
-            /////////////////////////////////////////////////////////////////
+            // ///////////////////////////////////////////////////////////////
 
-            let texturePlugin = this.getTexturePanelPlugin();
-            imageInfo.setCameraInfo(texturePlugin.getTexControls(), texturePlugin.getRotationVal(), texturePlugin.getFlipY());
+            let imageView = this.getImageView();
+            imageInfo.setCameraInfo(imageView.getControls(), imageView.getRotationVal(), imageView.getFlipY());
         }
-    };
+    }
     
-    getSelectedOverlayRectPrev = function () {
-        return this._selectedOverlayRectPrev;
-    };
-
-    setSelectedOverlayRectPrev = function (otherOverlayRect) {
-        // console.log('BEG setSelectedOverlayRectPrev');
-
-        if(COL.util.isObjectInvalid(otherOverlayRect)) {
-            // sanity check.
-            throw new Error('otherOverlayRect is invalid');
-        }
-
-        // Set the overlayRect color
-        // - if the overlayRect is in _selectedForMergeOverlayRects - set the color to Orange variation
-        //   -- set the color to Orange1 - if it is the first merge element which all other elements are merged into
-        //   -- set the color to Orange2 - if it is NOT the first merge element
-        // - if the overlayRect is NOT in _selectedForMergeOverlayRects - set the color to acquaColor
-        let otherOverlayRectName = otherOverlayRect.getMeshObject().name;
-        let selectedForMergeOverlayRect = this._selectedForMergeOverlayRects.getByKey(otherOverlayRectName);
-        if(COL.util.isObjectValid(selectedForMergeOverlayRect))
-        {
-            if(otherOverlayRectName === this._selectedForMergeOverlayRects.getFirstKey())
-            {
-                // the otherOverlayRect to-be-set-to selectedOverlayRectPrev the first overlayRect in the merge list.
-                // Indicate it by setting its color to Orange1
-                otherOverlayRect.getMeshObject().material.color.setHex( COL.util.Orange1 );
-            }
-            else
-            {
-                // the otherOverlayRect to-be-set-to selectedOverlayRectPrev in the merge list, but not the first overlayRect.
-                // Indicate it by setting its color to Orange2
-                otherOverlayRect.getMeshObject().material.color.setHex( COL.util.Orange2 );
-            }
-        }
-        else
-        {
-            // the otherOverlayRect to-be-set-to selectedOverlayRectPrev is NOT in the merge list. Indicate it by setting its color to acquaColor
-            otherOverlayRect.getMeshObject().material.color.setHex( COL.util.acquaColor );
-        }
-        
-        this._selectedOverlayRectPrev = otherOverlayRect;
-    };
-    
-    getImagesInfo = function () {
+    getImagesInfo () {
         return this._imagesInfo;
-    };
+    }
 
-    setImagesInfo = function (imagesInfo) {
+    setImagesInfo (imagesInfo) {
         this._imagesInfo = imagesInfo;
-    };
+    }
 
-    getRemovedImagesInfo = function () {
+    getRemovedImagesInfo () {
         return this._removedImagesInfo;
-    };
+    }
     
-    setRemovedImagesInfo = function (removedImagesInfo) {
+    setRemovedImagesInfo (removedImagesInfo) {
         this._removedImagesInfo = removedImagesInfo;
-    };
+    }
     
-    getMetaDataFilesInfo = function () {
+    getMetaDataFilesInfo () {
         return this._metaDataFilesInfo;
-    };
+    }
 
-    setMetaDataFilesInfo = function (metaDataFilesInfo) {
+    setMetaDataFilesInfo (metaDataFilesInfo) {
         this._metaDataFilesInfo = metaDataFilesInfo;
-    };
+    }
     
-    getEditOverlayRectFlag = function () {
-        return this._editOverlayRectFlag;
-    };
+    getEditOverlayRectFlag () {
+        let planView = this.getPlanView();
+        let orbitControls = planView.getOrbitControls();
+        let orbitControlsState = orbitControls.getState();
+        switch(orbitControlsState) {
+            case OrbitControlsPlanView.STATE.EDIT_MODE_MOVE_OVERLAY_RECT: 
+            case OrbitControlsPlanView.STATE.EDIT_MODE_ADD_OVERLAY_RECT:
+                return true;
+            default:
+                return false;
+        }
+    }
 
-    setEditOverlayRectFlag = function (editOverlayRectFlag) {
-        this._editOverlayRectFlag = editOverlayRectFlag;
-        this.scene3DtopDown.enableEditTopDownOverlayControl(this._editOverlayRectFlag);
-    };
-
-    getPlayImagesState = function () {
+    getPlayImagesState () {
         return this._playImagesState;
-    };
+    }
 
-    setPlayImagesState = function(playImagesState) {
+    setPlayImagesState(playImagesState) {
         this._playImagesState = playImagesState;
-    };
+    }
 
-    getGeneralMetadata = function () {
+    getGeneralMetadata () {
         return this._generalMetadata;
-    };
+    }
 
-    setGeneralMetadata = function (generalMetadata) {
+    setGeneralMetadata (generalMetadata) {
         this._generalMetadata = generalMetadata;
-        // // tbd - removeme
-        // this._generalMetadata.generalInfo.modelVersion = 1.0;
-    };
+    }
 
-    getLayerJsonFilename = function () {
+    getLayerJsonFilename () {
         return this._layerJsonFilename;
-    };
+    }
 
-    setLayerJsonFilename = function (layerJsonFilename) {
+    setLayerJsonFilename (layerJsonFilename) {
         this._layerJsonFilename = layerJsonFilename;
-    };
+    }
 
-    getFloorPlanMeshObj = function () {
+    getFloorPlanMeshObj () {
         return this._floorPlanMeshObj;
-    };
+    }
 
-    setFloorPlanMeshObj = function (floorPlanMeshObj) {
+    setFloorPlanMeshObj (floorPlanMeshObj) {
         this._floorPlanMeshObj = floorPlanMeshObj;
-    };
+    }
 
-    getFloorPlanImageFilename = function () {
+    getFloorPlanImageFilename () {
         return this._floorPlanImageFilename;
-    };
+    }
 
-    setFloorPlanImageFilename = function (floorPlanImageFilename) {
+    setFloorPlanImageFilename (floorPlanImageFilename) {
         this._floorPlanImageFilename = floorPlanImageFilename;
-    };
+    }
     
-    getFloorPlanWhiteboard = function () {
-        if(COL.doEnableWhiteboard)
-        {
+    getFloorPlanWhiteboard () {
+        if(COL.doEnableWhiteboard) {
             // sanity check - should not get here
             throw new Error('getFloorPlanWhiteboard called while doEnableWhiteboard === false');
         }
         return this._floorPlanWhiteboard;
-    };
+    }
 
-    setFloorPlanWhiteboard = function (floorPlanWhiteboard) {
-        if(COL.doEnableWhiteboard)
-        {
+    setFloorPlanWhiteboard (floorPlanWhiteboard) {
+        if(COL.doEnableWhiteboard) {
             // sanity check - should not get here
             throw new Error('getFloorPlanWhiteboard called while doEnableWhiteboard === false');
         }
         this._floorPlanWhiteboard = floorPlanWhiteboard;
-    };
+    }
 
-    loadNextOrPreviousImage = async function (doLoadNextImage) {
+    async loadNextOrPreviousImage (doLoadNextImage) {
         // console.log('BEG loadNextOrPreviousImage'); 
-        if(COL.util.isObjectValid(this._selectedOverlayRect))
-        {
+        if(COL.util.isObjectValid(this._selectedOverlayRect)) {
             await this._selectedOverlayRect.nextOrPrevSelectedImage(this, doLoadNextImage);
         }
-    };
+    }
     
-    playImagesInSelectedOverlayRect = async function () {
+    async playImagesInSelectedOverlayRect () {
         // console.log('BEG playImagesInSelectedOverlayRect');
 
-        try
-        {
+        try {
             let playImagesState = this.getPlayImagesState();
-            if(this.getPlayImagesState() !== Layer.PLAY_IMAGES_STATE.NONE)
-            {
+            if(this.getPlayImagesState() !== Layer.PLAY_IMAGES_STATE.NONE) {
                 let numLoops = 1;
                 for (let loopIndex = 0; loopIndex < numLoops; loopIndex++) {
                     // console.log('Doing loop', loopIndex, 'of', numLoops);
 
-                    if(COL.util.isObjectInvalid(this._selectedOverlayRect))
-                    {
+                    if(COL.util.isObjectInvalid(this._selectedOverlayRect)) {
                         throw new Error('Invalid _selectedOverlayRect');
                     }
 
@@ -965,23 +887,21 @@ class Layer {
         catch(err) {
             console.error('err', err);
 
-            let toastTitleStr = "playImagesInSelectedOverlayRect";
-            let msgStr = "Failed to playImagesInSelectedOverlayRect." + err;
+            let toastTitleStr = 'playImagesInSelectedOverlayRect';
+            let msgStr = 'Failed to playImagesInSelectedOverlayRect.' + err;
             console.trace();
             let consoleStack = err.stack;
             console.log('consoleStack', consoleStack); 
             toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
             throw new Error(msgStr);
         }
-    };
+    }
 
-    playImagesInAllOverlayRects = async function () {
+    async playImagesInAllOverlayRects() {
         // console.log('BEG playImagesInAllOverlayRects');
 
-        try
-        {
-            if(this.getPlayImagesState() !== Layer.PLAY_IMAGES_STATE.NONE)
-            {
+        try {
+            if(this.getPlayImagesState() !== Layer.PLAY_IMAGES_STATE.NONE) {
                 let numLoops = 20;
                 // let numLoops = 1;
                 for (let loopIndex = 0; loopIndex < numLoops; loopIndex++) {
@@ -992,16 +912,15 @@ class Layer {
 
                         let overlayRect1 = iter.next();
                         await this.setSelectedOverlayRect(overlayRect1.getMeshObject());
-                        if(this.getPlayImagesState() == Layer.PLAY_IMAGES_STATE.NONE)
-                        {
+                        await this.showSelectedOverlayRect();
+                        if(this.getPlayImagesState() == Layer.PLAY_IMAGES_STATE.NONE) {
                             // stop the play
                             console.log('stop the play'); 
                             break;
                         }
                         await this.playImagesInSelectedOverlayRect();
                     }
-                    if(this.getPlayImagesState() == Layer.PLAY_IMAGES_STATE.NONE)
-                    {
+                    if(this.getPlayImagesState() == Layer.PLAY_IMAGES_STATE.NONE) {
                         // stop the play
                         console.log('stop the play'); 
                         break;
@@ -1012,13 +931,13 @@ class Layer {
         catch(err) {
             console.error('err', err);
 
-            let toastTitleStr = "playImagesInAllOverlayRects";
-            let msgStr = "Failed to playImagesInAllOverlayRects." + err;
+            let toastTitleStr = 'playImagesInAllOverlayRects';
+            let msgStr = 'Failed to playImagesInAllOverlayRects.' + err;
             toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
             throw new Error(msgStr);
         }
         
-    };
+    }
     
     // Returns blobUrl for image specified with imageFilename.
     // 
@@ -1027,49 +946,53 @@ class Layer {
     // 2. if using webserver, from webserver image blob, or
     // 3. if using zip file, from zip file image blob, or
     // 4. fail
-    getImageBlobUrl = async function (imageFilename) {
+    async  getImageBlobUrl (imageFilename) {
         // console.log('BEG getImageBlobUrl');
 
-        try
-        {
+        try {
             let imageInfo = this._imagesInfo.getByKey(imageFilename);
             let blobInfo = imageInfo.blobInfo;
             
             // if(imageFilename === "image8.jpg")
             // {
-            //     ImageInfo.PrintImagesInfo(this._imagesInfo);
+            // ImageInfo.PrintImagesInfo(this._imagesInfo);
             // }
             
             let blobUrl = undefined;
-            if(COL.util.isObjectValid(blobInfo))
-            {        
-                if(COL.util.isObjectValid(COL.util.getNestedObject(blobInfo, ['blobUrl'])))
-                {
+            if(COL.util.isObjectValid(blobInfo)) {        
+                if(COL.util.isObjectValid(COL.util.getNestedObject(blobInfo, ['blobUrl']))) {
                     // the blobUrl exists in memory - get the blobUrl from memory 
                     blobUrl = blobInfo.blobUrl;
                 }
-                else if(ApiService.LOAD_FROM_TYPE == ApiService.API_SERVICE_TYPES.APIServiceMultiFile) {
-                    // get the blobUrl from webserver image blob 
+                else if (!this.isLayerFromZipFile){
+                    // get the blobUrl from webserver image blob.
 
                     // e.g. https://localhost/avner/img/45/56/image_0.jpg
-                    let url = COL.model.getUrlBase() + COL.model.getUrlImagePathBase() +
+                    let url = Model.GetUrlBase() + COL.model.getUrlImagePathBase() +
                         '/' + this.planInfo.siteId + '/' +
                         this.planInfo.id + '/' + imageFilename;
 
                     blobUrl = await this.getImageBlobUrlFromWebServer(url);
                 }
-                else if(ApiService.LOAD_FROM_TYPE == ApiService.API_SERVICE_TYPES.ApiServiceZip) {
-                    // get the blobUrl from zip file image blob 
+                else {
+                    // get the blobUrl from zip file image blob.
+
                     let imageFilenameFullPath = blobInfo.filenameFullPath;
+                    let matchResults1 = imageFilenameFullPath.match( /\.jpg/i );            
+                    let foundMatch1 = false;
+                    if(matchResults1 && (blobInfo.dirname == '')) {
+                        foundMatch1 = true;       
+                    }
+                   
+                    if(foundMatch1 || imageFilenameFullPath === 'image8.jpg' || (imageFilenameFullPath === 'image4.jpg')) {
+                        imageFilenameFullPath = this.planInfo.siteId + '/' +
+                        this.planInfo.id + '/' + blobInfo.filenameFullPath;
+                        blobInfo.filenameFullPath = imageFilenameFullPath;
+                    }
                     blobUrl = await COL.model.fileZip.getImageBlobUrlFromZipFile(imageFilenameFullPath, this._imagesInfo);
                 }
-                else {
-                    let msgStr = 'Cannot get image blobUrl for image file: ' + imageFilename;
-                    throw new Error(msgStr);
-                }
             }
-            else
-            {
+            else {
                 // ImageInfo.PrintImagesInfo(this._imagesInfo);
                 
                 let msgStr = 'Cannot get image blobUrl for image file: ' + imageFilename;
@@ -1082,15 +1005,15 @@ class Layer {
             console.error('err', err);
 
             // raise a toast to indicate the failure
-            let toastTitleStr = "getImageBlobUrl";
-            let msgStr = "Failed to getImageBlobUrl." + err;
+            let toastTitleStr = 'getImageBlobUrl';
+            let msgStr = 'Failed to getImageBlobUrl.' + err;
             toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
             throw new Error(msgStr);
         }
         
-    };
+    }
 
-    getImageBlobUrlFromWebServer = async function(url){
+    async getImageBlobUrlFromWebServer(url){
         // console.log('BEG getImageBlobUrlFromWebServer');
         
         // The url is without /api/v1_2
@@ -1101,20 +1024,18 @@ class Layer {
         let response = await fetch(url);
         await COL.errorHandlingUtil.handleErrors(response);
         
-        let blob = await response.blob()
+        let blob = await response.blob();
         // console.log('blob.size1', COL.util.numberWithCommas(blob.size)); 
         let blobUrl = URL.createObjectURL(blob);
         return blobUrl;
-    };
+    }
 
     // keep only up to N images, to cache the last images and avoid out-of-memory error
-    manageMemory = function () {
+    manageMemory () {
         // console.log('BEG manageMemory'); 
 
-        try
-        {
-            if(COL.util.isObjectInvalid(this._selectedOverlayRect))
-            {
+        try {
+            if(COL.util.isObjectInvalid(this._selectedOverlayRect)) {
                 throw new Error('Invalid _selectedOverlayRect');
             }
 
@@ -1123,41 +1044,34 @@ class Layer {
             // - if removedVal is defined, selectedImageFilename was in the array so it will change position in the array to last position
             // - if removedVal is undefined, selectedImageFilename was NOT in the array so it will be added with position set to last position
             let selectedImageFilename = this._selectedOverlayRect.getSelectedImageFilename();
-            let removedVal = this._lastSelectedImageFilenames.remove(selectedImageFilename);
-            // "true" is an arbitrary value (we are not interested in the values, just in the keys (associative and by order))
+            let removedVal = this._cachedImages.remove(selectedImageFilename);
 
-            // console.log('add image:', selectedImageFilename, 'to this._lastSelectedImageFilenames' );
+            // console.log('add image:', selectedImageFilename, 'to this._cachedImages' );
             
-            this._lastSelectedImageFilenames.set(selectedImageFilename, true);
+            // "true" is an arbitrary value (we are not interested in the values, just in the keys (associative and by order))
+            this._cachedImages.set(selectedImageFilename, true);
             
-            // console.log('this._lastSelectedImageFilenames.size() before removing excess images: ', this._lastSelectedImageFilenames.size());
+            // console.log('this._cachedImages.size() before removing excess images: ', this._cachedImages.size());
             // console.log('Layer.maxNumImageBlobsInMeomry', Layer.maxNumImageBlobsInMeomry);
 
-            if(this._lastSelectedImageFilenames.size() > Layer.maxNumImageBlobsInMeomry)
-            {
+            if(this._cachedImages.size() > Layer.maxNumImageBlobsInMeomry) {
                 // Remove the first element in the array (fifo) i.e. remove the image that was selected most ancient  
-                let keyVal = this._lastSelectedImageFilenames.shift();
+                let keyVal = this._cachedImages.shift();
 
-                // console.log('this._lastSelectedImageFilenames.size() after removing excess images: ', this._lastSelectedImageFilenames.size());
+                // console.log('this._cachedImages.size() after removing excess images: ', this._cachedImages.size());
                 // console.log('this._imagesInfo.size()', this._imagesInfo.size());
                 
-                if(keyVal)
-                {
+                if(keyVal) {
+                    // //////////////////////////////////////////////////////////////////////////////////////////
+                    // Release the previous image from: this._imagesInfo and zipFileInfo (if using zip file)
+                    // - revoke Object URL and set to null
+                    // //////////////////////////////////////////////////////////////////////////////////////////
+
                     let mostAncientImageFilename = keyVal['key'];
-                    let val = keyVal['val'];
-                    // console.log('val', val);
 
-                    // console.log('mostAncientImageFilename', mostAncientImageFilename); 
-                    // console.log('removed image:', mostAncientImageFilename, 'from this._lastSelectedImageFilenames' );
+                    // console.log('removed image:', mostAncientImageFilename, 'from this._cachedImages' );
                     let imageInfoPrev = this._imagesInfo.getByKey(mostAncientImageFilename);
-                    // console.log('imageInfoPrev', imageInfoPrev); 
                     let blobInfoPrev = imageInfoPrev.blobInfo;
-                    
-                    // release the previous image
-
-                    /////////////////////////////////////////////////////////////////
-                    // Clear entry from this._imagesInfo
-                    /////////////////////////////////////////////////////////////////
                     
                     if(COL.util.isObjectValid(blobInfoPrev) && COL.util.isObjectValid(blobInfoPrev.blobUrl)) {
                         // console.log('revokeObjectURL for blobInfoPrev.blobUrl');
@@ -1165,63 +1079,60 @@ class Layer {
                         blobInfoPrev.blobUrl = null;
                     }
 
-                    /////////////////////////////////////////////////////////////////
-                    // Clear entry from zipFileInfo.files (if using .zip file)
-                    /////////////////////////////////////////////////////////////////
-
-                    // find zipFileInfo.files entries with substring mostAncientImageFilename
-                    // e.g. "IMG_20190319_163544" in "234/567/IMG_20190319_163544"
-
                     let zipFileInfo = COL.model.getSelectedZipFileInfo();
+                    if( COL.util.isObjectValid(zipFileInfo) ) {
+                        // ///////////////////////////////////////////////////////////////
+                        // Clear entry from zipFileInfo.files (if using .zip file)
+                        // ///////////////////////////////////////////////////////////////
 
-                    let filenames_inZipFileInfo = Object.keys(zipFileInfo.files);
-                    let filenamesToClean_inZipFileInfo = filenames_inZipFileInfo.filter(function (filename) {
-                        return filename.includes(mostAncientImageFilename);
-                    });
-                    
-                    // console.log('filenamesToClean_inZipFileInfo', filenamesToClean_inZipFileInfo);
-
-                    if(filenamesToClean_inZipFileInfo.length > 0)
-                    {
-                        // console.log('filenamesToClean_inZipFileInfo.length', filenamesToClean_inZipFileInfo.length); 
-                        let filenameToClean_inZipFileInfo = filenamesToClean_inZipFileInfo[0];
-                        // console.log('filenameToClean_inZipFileInfo', filenameToClean_inZipFileInfo); 
-                        let fileInfo = zipFileInfo.files[filenameToClean_inZipFileInfo];
-                        if( COL.util.isObjectValid(fileInfo.url) )
-                        {
-                            URL.revokeObjectURL(fileInfo.url);
-                            fileInfo.url = null;
-                        }
+                        // find zipFileInfo.files entries with substring mostAncientImageFilename
+                        // e.g. "IMG_20190319_163544" in "234/567/IMG_20190319_163544"
                         
-                        if( COL.util.isObjectValid(fileInfo.buffer) )
-                        {
-                            // https://stackoverflow.com/questions/43918027/what-is-the-best-way-to-free-up-memory-from-a-typedarray-in-javascript
-                            fileInfo.buffer = null;
-                        }
-
-                        // {
-                        //     // sanity check - count the number of entries with valid "fileInfo.buffer" in zipFileInfo.files
-                        //     let numValidBuffers = 0;
-                        //     let numValidObjectUrls = 0;
-
-                        //     for (const [key, value] of Object.entries(zipFileInfo.files)) {
-                        //         // console.log(key, value);
-                        //         let fileInfo2 = value;
-                        //         if(COL.util.isObjectValid(fileInfo2.buffer)) {
-                        //             console.log('fileInfo2.filename1', fileInfo2.filename);
-                        //             numValidBuffers++;
-                        //         }
-                        //         if(COL.util.isObjectValid(fileInfo2.url)) {
-                        //             // console.log('fileInfo2.filename2', fileInfo2.filename);
-                        //             numValidObjectUrls++;
-                        //         }
-                        //     }
+                        let filenames_inZipFileInfo = Object.keys(zipFileInfo.files);
+                        let filenamesToClean_inZipFileInfo = filenames_inZipFileInfo.filter(function (filename) {
+                            return filename.includes(mostAncientImageFilename);
+                        });
                         
-                        //     console.log('numValidBuffers in zipFileInfo.files', numValidBuffers); 
-                        //     console.log('numValidObjectUrls in zipFileInfo.files', numValidObjectUrls); 
-                        // }
+                        // console.log('filenamesToClean_inZipFileInfo', filenamesToClean_inZipFileInfo);
+
+                        if(filenamesToClean_inZipFileInfo.length > 0) {
+                            // console.log('filenamesToClean_inZipFileInfo.length', filenamesToClean_inZipFileInfo.length); 
+                            let filenameToClean_inZipFileInfo = filenamesToClean_inZipFileInfo[0];
+                            // console.log('filenameToClean_inZipFileInfo', filenameToClean_inZipFileInfo); 
+                            let fileInfo = zipFileInfo.files[filenameToClean_inZipFileInfo];
+                            if( COL.util.isObjectValid(fileInfo.url) ) {
+                                URL.revokeObjectURL(fileInfo.url);
+                                fileInfo.url = null;
+                            }
+                            
+                            if( COL.util.isObjectValid(fileInfo.buffer) ) {
+                                // https://stackoverflow.com/questions/43918027/what-is-the-best-way-to-free-up-memory-from-a-typedarray-in-javascript
+                                fileInfo.buffer = null;
+                            }
+
+                            // {
+                            //     // sanity check - count the number of entries with valid "fileInfo.buffer" in zipFileInfo.files
+                            //     let numValidBuffers = 0;
+                            //     let numValidObjectUrls = 0;
+
+                            //     for (const [key, value] of Object.entries(zipFileInfo.files)) {
+                            //         // console.log(key, value);
+                            //         let fileInfo2 = value;
+                            //         if(COL.util.isObjectValid(fileInfo2.buffer)) {
+                            //             console.log('fileInfo2.filename1', fileInfo2.filename);
+                            //             numValidBuffers++;
+                            //         }
+                            //         if(COL.util.isObjectValid(fileInfo2.url)) {
+                            //             // console.log('fileInfo2.filename2', fileInfo2.filename);
+                            //             numValidObjectUrls++;
+                            //         }
+                            //     }
+                            
+                            //     console.log('numValidBuffers in zipFileInfo.files', numValidBuffers); 
+                            //     console.log('numValidObjectUrls in zipFileInfo.files', numValidObjectUrls); 
+                            // }
+                        }
                     }
-                    
                 }
             }
         }
@@ -1229,17 +1140,16 @@ class Layer {
             console.error('err', err);
 
             // raise a toast to indicate the failure
-            let toastTitleStr = "manageMemory";
-            let msgStr = "Failed to manageMemory." + err;
+            let toastTitleStr = 'manageMemory';
+            let msgStr = 'Failed to manageMemory.' + err;
             toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
             throw new Error(msgStr);
         }
-    };
+    }
 
     
-    checkPossibleMemoryLeakAndReportImageCounter = function () {
-        if( (imageCountTotal % imageCountTotal_numFilesBetweenReporting) == 0 )
-        {
+    checkPossibleMemoryLeakAndReportImageCounter () {
+        if( (imageCountTotal % imageCountTotal_numFilesBetweenReporting) == 0 ) {
             // // // --------------------------------------------------------------
             // // // Size of imageInfoVec
             // let imagesInfoSizeInBytes2 = this._imagesInfo.getNumBytes();
@@ -1254,35 +1164,35 @@ class Layer {
             // console.log('zipFileInfoSizeInBytes', COL.util.numberWithCommas(zipFileInfoSizeInBytes)); 
 
             // --------------------------------------------------------------
-            // Size of texScene
+            // Size of imageViewScene
 
             // let imagesInfoSizeInBytes1 = COL.util.roughSizeOfObject(this._imagesInfo);
             // console.log('imagesInfoSizeInBytes1', imagesInfoSizeInBytes1);
 
-            // let texturePlugin = this.getTexturePanelPlugin();
-            // let texScene = texturePlugin.getTexScene();
+            // let imageView = this.getImageView();
+            // let imageViewScene = imageView.getImageViewScene();
 
-            // let texSceneSizeInBytes = COL.util.roughSizeOfObject(texScene);
-            // console.log('texSceneSizeInBytes', COL.util.numberWithCommas(texSceneSizeInBytes)); 
+            // let sceneSizeInBytes = COL.util.roughSizeOfObject(imageViewScene);
+            // console.log('sceneSizeInBytes', COL.util.numberWithCommas(sceneSizeInBytes)); 
             
             // // --------------------------------------------------------------
-            // // Num objects in texScene
+            // // Num objects in imageViewScene
 
-            // let numObjects_in_texScene = COL.util.countNumberOfObjects(texScene);
-            // console.log('numObjects_in_texScene', numObjects_in_texScene);
+            // let numObjects_in_scene = COL.util.countNumberOfObjects(imageViewScene);
+            // console.log('numObjects_in_scene', numObjects_in_scene);
 
             // // --------------------------------------------------------------
-            // // Size of scene3DtopDown_scene
-            // let scene3DtopDown = this.getScene3DtopDown();
-            // let scene3DtopDown_scene = scene3DtopDown.getScene2();
+            // // Size of planView_scene
+            // let planView = this.getPlanView();
+            // let planView_scene = planView.getScene();
 
-            // let scene3DtopDown_scene_SizeInBytes = COL.util.roughSizeOfObject(scene3DtopDown_scene);
-            // console.log('scene3DtopDown_scene_SizeInBytes', COL.util.numberWithCommas(scene3DtopDown_scene_SizeInBytes));                
+            // let planView_scene_SizeInBytes = COL.util.roughSizeOfObject(planView_scene);
+            // console.log('planView_scene_SizeInBytes', COL.util.numberWithCommas(planView_sceneizeInBytes));                
             
             // // --------------------------------------------------------------
-            // // Num objects in scene3DtopDown_scene
-            // let numObjects_in_scene3DtopDown_scene = COL.util.countNumberOfObjects(scene3DtopDown_scene);
-            // console.log('numObjects_in_scene3DtopDown_scene', numObjects_in_scene3DtopDown_scene);
+            // // Num objects in planView_scene
+            // let numObjects_in_planView_scene = COL.util.countNumberOfObjects(planView_scene);
+            // console.log('numObjects_in_planView_scene', numObjects_in_planView_scene);
 
 
             // {
@@ -1315,25 +1225,82 @@ class Layer {
             // https://stackoverflow.com/questions/41040911/find-and-clear-a-toast-toastr
             toastr.clear();
 
-            let toastTitleStr = "Image counter";
-            let msgStr = "imageCountTotal: " + imageCountTotal;
+            let toastTitleStr = 'Image counter';
+            let msgStr = 'imageCountTotal: ' + imageCountTotal;
             // msgStr += "COL.errorHandlingUtil.toastrSettings.timeOut: " + COL.errorHandlingUtil.toastrSettings.timeOut;
             toastr.success(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
             
         }
         imageCountTotal++;
-    };
+    }
     
-    loadTheSelectedImageAndRender = async function () {
+    async loadImageToBlobUrl_andLoadImageInfo (imageFilename) {
+        let imageInfo = this._imagesInfo.getByKey(imageFilename);
+
+        if(COL.util.isObjectInvalid(imageInfo)) {
+            // sanity check. Shouldn't reach here.
+            this._imagesInfo.printKeysAndValues();
+            throw new Error('imageInfo is invalid');
+        }
+
+        // sanity check
+        if( imageFilename !== imageInfo.filename) {
+            console.error('imageFilename', imageFilename); 
+            console.error('imageInfo.filename', imageInfo.filename);
+            throw new Error('Reached failure condition: "imageFilename !== imageInfo.filename"');
+        }
+
+        // Get the image blobUrl from memory, or from webserver, or from zip file
+        let blobUrl = await this.getImageBlobUrl(imageFilename);
+
+        // /////////////////////////////////////////////
+        // Update _imagesInfo if needed
+        // /////////////////////////////////////////////
+
+        if(COL.util.isObjectInvalid(imageInfo.imageTags)) {
+            let fileType = COL.util.getFileTypeFromFilename(imageInfo.filename);
+            
+            let imageTags = {};
+            if(fileType === 'jpg') {
+                // load imageTags from the image. This will update the imageTags for the image in _imagesInfo
+                
+                // get the blob from the blobUrl
+                let response = await fetch(blobUrl);
+                await COL.errorHandlingUtil.handleErrors(response);
+                let blob = await response.blob();
+                imageTags = await COL.core.ImageFile.getImageTags(imageInfo.filename, blob);
+            }
+            else {
+                imageTags.filename = imageInfo.filename;
+                imageTags.imageOrientation = -1;
+            }
+            imageInfo.imageTags = imageTags;
+        }
+        
+        if(COL.util.isObjectInvalid(imageInfo.blobInfo)) {
+            // the blob is not in memory. Get it from the webServer, and since we are only displaying it set isDirty=false
+            let blobInfo = new BlobInfo({filenameFullPath: imageFilename, blobUrl: blobUrl, isDirty: false});
+            imageInfo.blobInfo = blobInfo;
+        }
+        else {
+            // the blob is in memory. It may be a new blob with a isDirty=true (or a preloaded blob from the webServer with isDirty=true)
+            // so leave isDirty as is
+            imageInfo.blobInfo.blobUrl = blobUrl;
+        }
+
+        // imageInfo.printImageInfo();
+
+        this._imagesInfo.set(imageFilename, imageInfo);
+
+        return blobUrl;
+    }
+
+    async loadTheSelectedImageAndRender () {
         // console.log('BEG loadTheSelectedImageAndRender');
 
-        try
-        {
-            let imageInfo;
-            let blobUrl;
+        try {
             let selectedImageFilename;
-            if(COL.util.isObjectInvalid(this._selectedOverlayRect))
-            {
+            if(COL.util.isObjectInvalid(this._selectedOverlayRect)) {
                 throw new Error('Invalid _selectedOverlayRect');
             }
 
@@ -1343,80 +1310,20 @@ class Layer {
                 throw new Error('selectedImageFilename is invalid');
             }
 
-            imageInfo = this._imagesInfo.getByKey(selectedImageFilename);
-
-            if(COL.util.isObjectInvalid(imageInfo)) {
-                // sanity check. Shouldn't reach here.
-                this._imagesInfo.printKeysAndValues();
-                throw new Error('imageInfo is invalid');
-            }
-
-            // sanity check
-            if( selectedImageFilename !== imageInfo.filename) {
-                console.error('selectedImageFilename', selectedImageFilename); 
-                console.error('imageInfo.filename', imageInfo.filename);
-                throw new Error('Reached failure condition: "selectedImageFilename !== imageInfo.filename"');
-            }
-
-            
             // keep last N images, and release all other images
             let doKeepN_images = true;
             // doKeepN_images = false;
-            if(doKeepN_images)
-            {
+            if(doKeepN_images) {
                 this.manageMemory();
             }
-            else
-            {
-                console.warn('manageMemory is disabled')
-            }
-
-            // Get the image blobUrl from memory, or from webserver, or from zip file
-            blobUrl = await this.getImageBlobUrl(selectedImageFilename);
-
-            ///////////////////////////////////////////////
-            // Update _imagesInfo if needed
-            ///////////////////////////////////////////////
-
-            if(COL.util.isObjectInvalid(imageInfo.imageTags))
-            {
-                let fileType = COL.util.getFileTypeFromFilename(imageInfo.filename);
-                
-                let imageTags = {};
-                if(fileType === 'jpg')
-                {
-                    // load imageTags from the image. This will update the imageTags for the image in _imagesInfo
-                    
-                    // get the blob from the blobUrl
-                    let response = await fetch(blobUrl);
-                    await COL.errorHandlingUtil.handleErrors(response);
-                    let blob = await response.blob();
-                    imageTags = await COL.core.ImageFile.getImageTags(imageInfo.filename, blob);
-                }
-                else
-                {
-                    imageTags.filename = imageInfo.filename;
-                    imageTags.imageOrientation = -1;
-                }
-                imageInfo.imageTags = imageTags;
-            }
-            
-            if(COL.util.isObjectInvalid(imageInfo.blobInfo)) {
-                // the blob is not in memory. Get it from the webServer, and since we are only displaying it set isDirty=false
-                let blobInfo = new BlobInfo({filenameFullPath: selectedImageFilename, blobUrl: blobUrl, isDirty: false});
-                imageInfo.blobInfo = blobInfo;
-            }
             else {
-                // the blob is in memory. It may be a new blob with a isDirty=true (or a preloaded blob from the webServer with isDirty=true)
-                // so leave isDirty as is
-                imageInfo.blobInfo.blobUrl = blobUrl;
+                console.warn('manageMemory is disabled');
             }
 
-            // imageInfo.printImageInfo();
+            let blobUrl = await this.loadImageToBlobUrl_andLoadImageInfo(selectedImageFilename);
 
-            this._imagesInfo.set(selectedImageFilename, imageInfo);
-            
-            await this.loadOverlayTextureFromFile(blobUrl);
+            await this.loadSelectedImageTextureFromUrl(blobUrl);
+            this.toggleDateDisplay();
 
             // checkPossibleMemoryLeakAndReportImageCounter();
         }
@@ -1424,34 +1331,51 @@ class Layer {
             console.error('err', err);
 
             // raise a toast to indicate the failure
-            let toastTitleStr = "loadTheSelectedImageAndRender";
-            let msgStr = "Failed to loadTheSelectedImageAndRender." + err;
-            toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
-            throw new Error(msgStr);
+            let toastTitleStr = 'loadTheSelectedImageAndRender';
+            toastr.error(err, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
+            throw new Error(err);
         }
         
         return true;
-    };
+    }
 
-    clearRenderingOfSelectedImage = function () {
-        // console.log('BEG clearRenderingOfSelectedImage');
+    toggleDateDisplay() {
+        // let selectedLayer = COL.model.getSelectedLayer();
+        let imageView = this.getImageView();
+        let imageInfo = ImageInfo.getSelectedImageInfo(this);
+        if (COL.util.isObjectInvalid(imageInfo)) {
+            console.error('imageInfo is not defined');
+            return;
+        }
         
-        this.texturePanelPlugin.hideWidgets();
-    };
+        let dateCreated = imageInfo.imageTags.dateCreated;
+        document.getElementById('dateCreatedId').innerHTML = dateCreated;
+        
+        if(imageView.doDisplayImageDetails) {
+            // show
+            document.querySelector('#imageViewPaneFooterId').style.display = 'block';
+            document.querySelector('#imageViewBackBtnId').style.display = 'block';
+        }
+        else{
+            // hide
+            document.querySelector('#imageViewPaneFooterId').style.display = 'none';
+            document.querySelector('#imageViewBackBtnId').style.display = 'none';
+        }
+        // toggle
+        imageView.doDisplayImageDetails = !imageView.doDisplayImageDetails;
+    }
 
-    getSelectedImageTextInfo = function () {
-        let textInfoStr = "NA";
-        if(COL.util.isObjectValid(this._selectedOverlayRect))
-        {
+    getSelectedImageTextInfo () {
+        let textInfoStr = 'NA';
+        if(COL.util.isObjectValid(this._selectedOverlayRect)) {
             let selectedImageFilename = this._selectedOverlayRect.getSelectedImageFilename();
             let imageInfoVec = this.getImagesInfo();
             let imageInfo = imageInfoVec.getByKey(selectedImageFilename);
 
-            if(COL.util.isObjectValid(imageInfo))
-            {
-                /////////////////////////////////
+            if(COL.util.isObjectValid(imageInfo)) {
+                // ///////////////////////////////
                 // Set the imageInfo string
-                /////////////////////////////////
+                // ///////////////////////////////
                 
                 let imageInfoStr = imageInfo.imageTagsToString();
                 this._selectedOverlayRect.setSelectedImageInfoStr(imageInfoStr);
@@ -1460,54 +1384,60 @@ class Layer {
             }
         }
         return textInfoStr;
-    };
+    }
     
-    updateLayerImageRelatedRenderring = async function () {
+    async updateLayerImageRelatedRenderring() {
         // console.log('BEG updateLayerImageRelatedRenderring');
         
         // console.trace();
         
-        try
-        {
-            if( COL.util.isObjectValid(this._selectedOverlayRect) )
-            {
-                //////////////////////////////////////////////////////////////////
+        try {
+            if( COL.util.isObjectValid(this._selectedOverlayRect) ) {
+                // ////////////////////////////////////////////////////////////////
                 // Display the image and related buttons/labels
-                //////////////////////////////////////////////////////////////////
+                // ////////////////////////////////////////////////////////////////
                 
                 // let selectedImageFilename = this._selectedOverlayRect.getSelectedImageFilename();
                 // let msgStr1 = "Display image: " + selectedImageFilename + " and related buttons/labels";
                 // console.log(msgStr1);
                 
-                await this._selectedOverlayRect.updateSelectedImageRelatedRenderring(this);
+                await this._selectedOverlayRect.loadImagesAsThumbnails(this);
+
+                await this._selectedOverlayRect.updateImageViewRelatedRenderring(this);
+
+                let numImagesInOverlayRect = this._selectedOverlayRect.getNumImagesInOverlayRect();
+                let splitImageFromOverlayRectListItemEl = document.getElementById('splitImageFromOverlayRectId');
+                if(numImagesInOverlayRect <= 1) {
+                    splitImageFromOverlayRectListItemEl.style.display = 'none';
+                }
+                else{
+                    splitImageFromOverlayRectListItemEl.style.display = 'list-item';
+                }
             }
-            else
-            {
-                //////////////////////////////////////////////////////////////////
+            else {
+                // ////////////////////////////////////////////////////////////////
                 // Clear image display and related buttons/labels
-                //////////////////////////////////////////////////////////////////
+                // ////////////////////////////////////////////////////////////////
 
-                // update the current texture image info, to the one that is displayed
-                this.setCurrentTextureImage(undefined);
+                // update the image info, to the one that is displayed
+                this.setSprite(undefined);
                 
-                // hide the texture image
-                this.clearRenderingOfSelectedImage();
+                if(COL.isOldGUIEnabled) {
+                    // update the image related labels, e.g.
+                    // - "image info" string
+                    // - "image index out of total number of images for the overlayRect" label (e.g. 1/3)
+                    this.updateLayerImageRelatedLabels();
 
-                // update the image related labels, e.g.
-                // - "image info" string
-                // - "image index out of total number of images for the overlayRect" label (e.g. 1/3)
-                this.updateLayerImageRelatedLabels();
+                    // enable/disable viewOverlayRect related buttons (nextImageButton, previousImageButton)
+                    this.updatePreviousPlayNextImageButtons();
+                }
 
-                // enable/disable viewOverlayRect related buttons (nextImageButton, previousImageButton)
-                this.updatePreviousPlayNextImageButtons();
-
-                if(COL.doWorkOnline)
-                {
+                if(COL.doWorkOnline) {
                     // update the overlayRectEdit buttons, e.g. disable if no image is selected
                     this.updateEditOverlayRectRelatedButtons();
                 }
             }
-            Scene3DtopDown.render1();
+            PlanView.Render();
             
         }
         catch(err) {
@@ -1516,30 +1446,26 @@ class Layer {
             // ImageInfo.PrintImagesInfo(this._imagesInfo);
             
             // raise a toast to indicate the failure
-            let toastTitleStr = "updateLayerImageRelatedRenderring";
-            let msgStr = "Failed to updateLayerImageRelatedRenderring." + err;
-            toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
+            let toastTitleStr = 'updateLayerImageRelatedRenderring';
+            toastr.error(err, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
         }
-    };
+    }
 
-    updateLayerImageRelatedLabels = function () {
-        // console.log('BEG updateLayerImageRelatedLabels'); 
-
+    updateLayerImageRelatedLabels () {
         // update the image info that is displayed when toggling the "Info" button
         let textInfoStr = this.getSelectedImageTextInfo();
         COL.colJS.displayImageTextInfo(textInfoStr);
 
         // Update the "image index out of total number of images for the overlayRect" label (e.g. 1/3)
         this.setLabel_ImageIndexOfNumImagesInOverlayRect2();
-    };
+    }
 
-    updatePreviousPlayNextImageButtons = function () {
+    updatePreviousPlayNextImageButtons () {
         // console.log('BEG updatePreviousPlayNextImageButtons'); 
 
         let sceneBar = COL.model.getSceneBar();
 
-        switch( this._playImagesState )
-        {
+        switch( this._playImagesState ) {
             case Layer.PLAY_IMAGES_STATE.NONE:
             {
                 // enable buttons: playImagesInSelectedOverlayRectButton, _playImagesInAllOverlayRectsButton
@@ -1548,8 +1474,7 @@ class Layer {
                 // enable/disable the loadNextOrPreviousImage depending on if 
                 // - overlayRect is selected or not
                 // - the number of images in the selectedOverlayRect
-                if(COL.util.isObjectValid(this._selectedOverlayRect))
-                {
+                if(COL.util.isObjectValid(this._selectedOverlayRect)) {
                     // if selected overlayRect has 2 or more images enable
                     // - playImagesInSelectedOverlayRectButton, 
                     // - nextImageButton, previousImageButton
@@ -1559,8 +1484,7 @@ class Layer {
                     COL.colJS.playImagesInSelectedOverlayRectButton.disabled((numImagesInSelectedOverlayRect < 2));
                     sceneBar.disableNextAndPreviousImageButtons((numImagesInSelectedOverlayRect < 2));
                 }
-                else
-                {
+                else {
                     // no overlayRect is selected.
                     // Disable the buttons
                     // - playImagesInSelectedOverlayRectButton
@@ -1597,67 +1521,71 @@ class Layer {
         }
 
         
-    };
+    }
 
-    updateEditOverlayRectRelatedButtons = function () {
+    updateEditOverlayRectRelatedButtons () {
         // console.log('BEG updateEditOverlayRectRelatedButtons');
         
         // Update the overlayRectEdit buttons, e.g. disable if no image is selected
         let sceneBar = COL.model.getSceneBar();
         if(this.getEditOverlayRectFlag()) {
             // disable/enable editOverlayRect related buttons (openImageFileButton, editOverlayRect_deleteButton)
-            if(COL.util.isObjectValid(this._selectedOverlayRect))
-            {
+            if(COL.util.isObjectValid(this._selectedOverlayRect)) {
                 // enable the editOverlay related buttons
                 sceneBar.disableEditOverlayRectRelatedButtons(false);
             }
-            else
-            {
+            else {
                 // disable the editOverlay related buttons
                 sceneBar.disableEditOverlayRectRelatedButtons(true);
             }
         }
-        else
-        {
+        else {
             sceneBar.disableEditOverlayRectRelatedButtons(true);
         }
-    };
+    }
     
-    setLabel_ImageIndexOfNumImagesInOverlayRect2 = function () {
+    setLabel_ImageIndexOfNumImagesInOverlayRect2 () {
         let imageIndexOfNumImagesInOverlayRectStr = 'NA';
-        if(COL.util.isObjectValid(this._selectedOverlayRect))
-        {
+        if(COL.util.isObjectValid(this._selectedOverlayRect)) {
             imageIndexOfNumImagesInOverlayRectStr = this._selectedOverlayRect.setLabel_ImageIndexOfNumImagesInOverlayRect1();
         }        
         
         let imageIndexInOverlayRectLabel = COL.colJS.getImageIndexInOverlayRectLabel();
         imageIndexInOverlayRectLabel.$.html(imageIndexOfNumImagesInOverlayRectStr);
-    };
+    }
 
-    createCircleMesh = function (intersectedStructurePoint) {
-        // console.log('BEG createCircleMesh'); 
+    createMesh (intersectedStructurePoint, shape, materialAttributes) {
+        // console.log('BEG createMesh'); 
 
-        // ///////////////////////////////////////////////////////////
-        // Set up the material for the overlayRect object that is displayed in Scene3D
-        // (NOT needed for Scene3DtopDown)
-        // ///////////////////////////////////////////////////////////
-
-        let scene3DtopDown = this.getScene3DtopDown();
+        let planView = this.getPlanView();
         var userData = {imagesNames: new COL.util.AssociativeArray()};
 
-        var meshMaterial = new THREE_MeshPhongMaterial( {
-            opacity: 0.5,
-            transparent: false,
-            side: THREE_DoubleSide,
-            // default color is white ??
-            color: COL.util.redColor, 
-            // leave name commented out so that it will be set automatically to unique indexed name, e.g. material_44
-            // name: "imageFilename",
-            userData: userData
-        } );
+        let meshMaterial = new THREE_MeshBasicMaterial({
+            opacity: materialAttributes.opacity,
+            transparent: materialAttributes.transparent,
+            side: materialAttributes.side,
+            color: materialAttributes.color, 
+            userData: userData,
+        });
 
-        let overlayRectRadius = scene3DtopDown.getOverlayRectRadius();
-        let geometry = new THREE_CircleGeometry( overlayRectRadius, Scene3DtopDown.numSegments );
+        let geometry = undefined;
+        switch(shape) {
+            case 'circle': {
+                let overlayRectRadius = planView.getOverlayRectRadius();
+                geometry = new THREE_CircleGeometry( overlayRectRadius, PlanView.numSegments );
+                break;
+            }
+            case 'square': {
+                let width = planView.getOverlayRectRadius();
+                geometry = new THREE_PlaneGeometry( width, width );
+                break;
+            }
+            
+            default:
+                let msgStr = 'Shape: ' + shape + ' is not supported.';
+                throw new Error(msgStr);
+        }
+
 
         let overlayMeshObj = new THREE_Mesh( geometry, meshMaterial );
 
@@ -1668,25 +1596,23 @@ class Layer {
         // The rectangle position is set to be the center of the bounding box
         box.getCenter( overlayMeshObj.position ); // this re-sets the position
 
-        let scaleFactor = scene3DtopDown.getOverlayRectScale();
+        let scaleFactor = planView.getOverlayRectScale();
         overlayMeshObj.scale.set(scaleFactor, scaleFactor, scaleFactor);
         overlayMeshObj.geometry.computeBoundingBox();
         overlayMeshObj.geometry.center();
         overlayMeshObj.updateMatrixWorld();
 
         return overlayMeshObj;
-    };
+    }
     
-    addImageToLayer = async function ( overlayRect, imageInfo ) {
+    async addImageToLayer ( overlayRect, imageInfo ) {
         // console.log('BEG addImageToLayer');
         
-        if(COL.util.isObjectInvalid(overlayRect))
-        {
+        if(COL.util.isObjectInvalid(overlayRect)) {
             // sanity check
             throw new Error('overlayRect is invalid');
         }
-        if(COL.util.isObjectInvalid(imageInfo))
-        {
+        if(COL.util.isObjectInvalid(imageInfo)) {
             // sanity check
             throw new Error('imageInfo is invalid');
         }
@@ -1695,8 +1621,7 @@ class Layer {
         // check that the filename doesn't already exist
         // (prevent from having multiple overlayRects with the same image filename)
         let imageInfo2 = this._imagesInfo.getByKey(filename);
-        if(COL.util.isObjectValid(imageInfo2))
-        {
+        if(COL.util.isObjectValid(imageInfo2)) {
             // The layer already includes an image with the filename
             // Don't add the file and fail the operation to add images
             throw new Error('Cannot add the file: ' + filename + ', as it already exists in imagesInfo');
@@ -1704,21 +1629,18 @@ class Layer {
         
         // check if the file already exists in the this._removedImagesInfo
         let removedImageInfo = this._removedImagesInfo.getByKey(filename);
-        if(COL.util.isObjectValid(removedImageInfo))
-        {
+        if(COL.util.isObjectValid(removedImageInfo)) {
             // The layer already includes an image with the filename in the this._removedImagesInfo list
             // check if the removedImageInfo is dirty,
             
-            if(COL.util.isObjectInvalid(removedImageInfo.blobInfo))
-            {
+            if(COL.util.isObjectInvalid(removedImageInfo.blobInfo)) {
                 // sanity check
                 // an image that was removed must have been loaded, so it must have a defined blobInfo
                 // (invalid blobInfo can only happen if the image has not been loaded yet)
                 throw new Error('image is in the removedImageInfo list with invalid blobInfo');
             }
 
-            if(removedImageInfo.blobInfo.isDirty)
-            {
+            if(removedImageInfo.blobInfo.isDirty) {
                 // usecase1 -
                 // - the image was originally loaded from the back-end to overlayRect1,
                 // - then marked as dirty for deletion from overlayRect1,
@@ -1736,8 +1658,7 @@ class Layer {
                 // - remove it from this._removedImagesInfo
                 removedImageInfo.blobInfo.isDirty = false;
             }
-            else
-            {
+            else {
                 // the image was originally added (i.e. not in the db and was marked as dirty for adding),
                 //   then the image was removed, so it was moved to this._removedImagesInfo, and
                 //   marked as NOT dirty (so it doesn't get deleted from the back-end because it is not there)
@@ -1750,50 +1671,53 @@ class Layer {
             this._removedImagesInfo.remove(filename);
             await overlayRect.addImageToOverlayRect(this, removedImageInfo);
         }
-        else
-        {
+        else {
             imageInfo.blobInfo.isDirty = true;
             this._imagesInfo.set(filename, imageInfo);
             await overlayRect.addImageToOverlayRect(this, imageInfo);
         }
-        
-    };
+
+        // reload the thumbnails after adding the image
+        await this.showSelectedOverlayRect();
+
+        // sync to the webserver after adding an image. 
+        let syncStatus = await this.syncBlobsWithWebServer();
+        if(!syncStatus) {
+            throw new Error('Error from syncBlobsWithWebServer while adding an image');
+        }
+    }
     
-    //////////////////////////////////////////////////////////////////////////////////////////////////
+    // ////////////////////////////////////////////////////////////////////////////////////////////////
     // Deletes an image from overlayRect, and possibly the overlayRect itself
     // - If the number of images in meshObject > 0, deletes the image
     // - If the number of images after possible deletion == 0, deletes the meshObject
-    //////////////////////////////////////////////////////////////////////////////////////////////////
+    // ////////////////////////////////////////////////////////////////////////////////////////////////
 
     
-    deleteImageFromLayer = async function ( overlayRect, imageFilenameToRemove ) {
+    async deleteImageFromLayer ( overlayRect, imageFilenameToRemove ) {
         console.log('BEG deleteImageFromLayer'); 
 
         // meshObject is stored both in overlayRect and in this._overlayMeshGroup
         // meshObject may be deleted from overlayRect
-        // Therefor, get meshObject, BEFORE calling overlayRect.deleteImageFromOverlayRect
+        // Therefore, get meshObject, BEFORE calling overlayRect.deleteImageFromOverlayRect
         // so that, if needed, it can also be deleted from OverlayMeshGroup
 
-        if(COL.util.isObjectInvalid(overlayRect))
-        {
+        if(COL.util.isObjectInvalid(overlayRect)) {
             throw new Error('Invalid overlayRect for deletion');
         }
         
         let meshObject = overlayRect.getMeshObject();
-        if(COL.util.isObjectInvalid(meshObject))
-        {
+        if(COL.util.isObjectInvalid(meshObject)) {
             throw new Error('Invalid meshObject for deletion');
         }
 
         // Remove the selected image from _imagesInfo and
         // add the selected image to _removedImagesInfo (only if it is already synced with the back-end)
         let imageInfo = this._imagesInfo.getByKey(imageFilenameToRemove);
-        if(COL.util.isObjectValid(imageInfo))
-        {
+        if(COL.util.isObjectValid(imageInfo)) {
             this._imagesInfo.remove(imageFilenameToRemove);
 
-            if(COL.util.isObjectInvalid(imageInfo.blobInfo))
-            {
+            if(COL.util.isObjectInvalid(imageInfo.blobInfo)) {
                 // sanity check
                 // an image that is about to be removed must have been loaded first, so it must have a defined blobInfo
                 // (invalid blobInfo can only happen if the image has not been loaded yet)
@@ -1802,11 +1726,10 @@ class Layer {
                 // Ideally, we would just throw,
                 // but in case of corrption, this prevents layerJsonFilename from being updated, and recovering
                 // so be more lineant and just issue an error message?
-                let msgStr = "image to be removed: " + imageFilenameToRemove + " has invalid blobInfo";
+                let msgStr = 'image to be removed: ' + imageFilenameToRemove + ' has invalid blobInfo';
                 console.error(msgStr); 
             }
-            else if(imageInfo.blobInfo.isDirty == false)
-            {
+            else if(imageInfo.blobInfo.isDirty == false) {
                 // the image to be removed is synced with the back-end, i.e. we need to add it to the removed list)
                 // tbd - and set its blobInfo.isDirty to true ???
                 imageInfo.blobInfo.isDirty = true;
@@ -1816,8 +1739,7 @@ class Layer {
 
         let imagesNames = overlayRect.getImagesNames();
         
-        if(COL.util.isObjectInvalid(imagesNames))
-        {
+        if(COL.util.isObjectInvalid(imagesNames)) {
             // sanity check
             throw new Error('imagesNames is invalid');
         }
@@ -1826,26 +1748,35 @@ class Layer {
             // Remove the selected image from imagesNames
             // tbd - should/where-do we remove from layer._imagesInfo ???
             await overlayRect.deleteImageFromOverlayRect( this, imageFilenameToRemove );
+            await this.showSelectedOverlayRect();
         }
-        else
-        {
+        else {
             // Before assigning new value (unsigned) to overlayRect, check if overlayRect is the selectedOverlayRect.
             let isSelectedOverlayRect = this.isSelectedOverlayRect(overlayRect);
-            if(isSelectedOverlayRect)
-            {
+            if(isSelectedOverlayRect) {
                 // overlayRect is the selectedOverlayRect. Set the selectedOverlayRect to undefined
                 await this.setSelectedOverlayRect( undefined );
-                let scene3DtopDown = this.getScene3DtopDown();
-                scene3DtopDown.clearIntersectionOverlayRectInfo();
+                await this.showSelectedOverlayRect();
+                let planView = this.getPlanView();
+                planView.clearIntersectionOverlayRectInfo();
             }
 
             // Remove the meshObject of the overlayRect from the meshGroup
             this.removeFromOverlayMeshGroup(meshObject);
         }
-    };
+
+        // remove the image filename from the list of _cachedImages
+        this._cachedImages.remove(imageFilenameToRemove);
+        
+        // sync to the webserver after deleting an image. 
+        let syncStatus = await this.syncBlobsWithWebServer();
+        if(!syncStatus) {
+            throw new Error('Error from syncBlobsWithWebServer while deleting an image');
+        }
+    }
 
     
-    syncMetaDataBlobs_withWebServer_inSingleRequest = async function () {
+    async syncMetaDataBlobs_withWebServer_inSingleRequest () {
         console.log('BEG syncMetaDataBlobs_withWebServer_inSingleRequest');
 
         // tbd
@@ -1861,10 +1792,10 @@ class Layer {
         // after syncMetaDataBlobs_withWebServer_inSingleRequest:
         // - adds to the db (api/v1_2/insert_update_delete_images_in_db)
 
-        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        // ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         // - step1 - Loop over all the MetaDataBlobs.
         //   - For each blob if isDirty, add to the formData
-        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        // ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
         const formData = new FormData();
 
@@ -1893,11 +1824,11 @@ class Layer {
             
             if(filename === layerJsonFilename) {
 
-                // tbd - check - deletion of overlayRect not always updates scene3DtopDown._scene2
+                // tbd - check - deletion of overlayRect not always updates planView._scene
 
                 // tbd - clear overlayRects with 0 entries
                 this.clearOverlayRectsWithoutImages();
-                this.scanForInconsitenciesBetweenImagesInfo_and_overlayRectImagesNames();
+                this.scanForInconsitenciesBetweenImagesInfo_and_overlayRectImageThumbnailsNames();
                 
                 let layer_asJson_str = COL.loaders.utils.exportLayer_toJSON_str(this);
                 COL.loaders.utils.addMetaDataFileInfoToMetaDataFilesInfo(metaDataFilesInfo, layer_asJson_str, layerJsonFilename);
@@ -1909,9 +1840,9 @@ class Layer {
                 blobInfo.isDirty = true;
             }
             else if(filename === 'general_metadata.json') {
-                //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                // ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
                 // Update the file "general_metadata.json" in the backend
-                //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                // ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
                 let generalMetadata_asJson_str = JSON.stringify(this._generalMetadata);
                 // console.log('generalMetadata_asJson_str', generalMetadata_asJson_str);
@@ -1927,7 +1858,7 @@ class Layer {
                 await COL.errorHandlingUtil.handleErrors(response);
                 let blob = await response.blob();
                 let filePathNew = filePath + '/' + filename;
-                formData.append('files', blob, filePathNew)
+                formData.append('files', blob, filePathNew);
 
                 // https://127.0.0.1/avner/img/223/262/IMG_20180311_104622.jpg
                 //     ->
@@ -1950,31 +1881,31 @@ class Layer {
                 let doDeferFileSystemAndDbSync = true;
                 let retVal2 = await blobInfo.syncBlobToWebServer(siteId, planId, filePath, doDeferFileSystemAndDbSync);
                 
-                //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                // ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
                 // append the blob for the current file
                 // based on https://stackoverflow.com/a/50472925/5159177
-                //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                // ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-                formData.append('files', blob, filePathNew)
+                formData.append('files', blob, filePathNew);
             }
         }
 
-        if(this._generalMetadata.generalInfo.modelVersion < 1.2) {
-            // Single time migration
-            // after getting some milage with layerJsonFilename
-            // delete .obj, .mtl files, e.g.
-            // - overlay.obj,
-            // - overlay.mtl,
-            // - 168/188/44_decourcy_drive_pilot_bay_gabriola_island.structure.layer0.obj,
-            // - 168/188/44_decourcy_drive_pilot_bay_gabriola_island.structure.layer0.mtl
-            //
-            // tbd - migrateLayerTo_v1_2 is not implemented yet
-            // await this.migrateLayerTo_v1_2();
-        }
+        // if(this._generalMetadata.generalInfo.modelVersion < 1.2) {
+        //     // Single time migration
+        //     // after getting some milage with layerJsonFilename
+        //     // delete .obj, .mtl files, e.g.
+        //     // - overlay.obj,
+        //     // - overlay.mtl,
+        //     // - 168/188/44_decourcy_drive_pilot_bay_gabriola_island.structure.layer0.obj,
+        //     // - 168/188/44_decourcy_drive_pilot_bay_gabriola_island.structure.layer0.mtl
+        //     //
+        //     // tbd - migrateLayerTo_v1_2 is not implemented yet
+        //     // await this.migrateLayerTo_v1_2();
+        // }
         
-        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        // ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         // - step2 - add to the file system - make a single request with multiple blobs in the single formData
-        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        // ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
         // formData shows empty object, which may be deceiving
         // the list of files can be seen in devtools -> Network -> upload_multiple_files_to_the_file_system -> Headers -> FormData
@@ -1992,15 +1923,15 @@ class Layer {
         };
 
         // e.g. http://192.168.1.74/api/v1_2/upload_multiple_files_to_the_file_system POST
-        let queryUrl = COL.model.getUrlBase() + 'api/v1_2/upload_multiple_files_to_the_file_system';
+        let queryUrl = Model.GetUrlBase() + 'api/v1_2/upload_multiple_files_to_the_file_system';
         
         let response = await fetch(queryUrl, fetchData);
         await COL.errorHandlingUtil.handleErrors(response);
 
         
-        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        // ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         // - step3 - make a single request with multiple blobs in the single formData
-        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        // ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
         // tbd
         
@@ -2014,10 +1945,10 @@ class Layer {
         //     this.cleanIsDirtyStates(filename);
         // }
 
-    };
+    }
 
     
-    updateSyncedInfo1 = function () {
+    updateSyncedInfo1 () {
         // Update the isDirty flags: isDirty_newOverlayRect, isDirty_moved, isDirty_mergedWithOverlayRect
         // of all overlayRect(s) 
         // - the layer.json file contains the location, and shape (circle of the overlayRect)
@@ -2046,23 +1977,23 @@ class Layer {
         for (let i = this._removedOverlayMeshGroup.children.length - 1; i >= 0; i--) {
             this._removedOverlayMeshGroup.remove(this._removedOverlayMeshGroup.children[i]);
         }
-    };
+    }
 
-    updateSyncedInfo2 = function () {
-        ///////////////////////////////////////////////////////////////////////
+    updateSyncedInfo2 () {
+        // /////////////////////////////////////////////////////////////////////
         // overlay.mtl was synced successfully. Do the following:
         // Loop over all overlayRects.
         // for those that are fully synced update overlayRect._syncedImageFilenames
-        ///////////////////////////////////////////////////////////////////////
+        // /////////////////////////////////////////////////////////////////////
 
-        ///////////////////////////////////////////////////////////////////////
+        // /////////////////////////////////////////////////////////////////////
         // After syncing layer.json
         // update the overlayRect.isDirty2 state
         // Loop over the overlayRects. For each overlayRect, check that every
         // imageInfo.blobInfo.isDirty is false
         // If yes: set overlayRect.isDirty_general to false
         // Otherwise: leave overlayRect.isDirty_general as true (to indicate that the sync is incomplete)
-        ///////////////////////////////////////////////////////////////////////
+        // /////////////////////////////////////////////////////////////////////
         
         let iter_overlayRects = this._overlayRects.iterator();
         while (iter_overlayRects.hasNext()) {
@@ -2075,16 +2006,13 @@ class Layer {
                 let imageInfoVec = this.getImagesInfo();
                 let imageInfo2 = imageInfoVec.getByKey(imageNameInOverlayRect);
                 
-                if(COL.util.isObjectValid(imageInfo2.blobInfo))
-                {
-                    if(imageInfo2.blobInfo.isDirty)
-                    {
+                if(COL.util.isObjectValid(imageInfo2.blobInfo)) {
+                    if(imageInfo2.blobInfo.isDirty) {
                         isDirty_imageAddedOrRemovedVal = true;
                         break;
                     }
                 }
-                else
-                {
+                else {
                     // imageInfo2.blobInfo can be invalid if the image was not loaded
                     // in such case it is already synced with the back-end.
                     // No need to do anything
@@ -2093,8 +2021,7 @@ class Layer {
 
             let removedImagesNamesInOverlayRect = overlayRect1.getRemovedImagesNames();
             // console.log('removedImagesNamesInOverlayRect.size()', removedImagesNamesInOverlayRect.size());
-            if(removedImagesNamesInOverlayRect.size() > 0)
-            {
+            if(removedImagesNamesInOverlayRect.size() > 0) {
                 // at this point, entries in overlayRect1._removedImagesNames are for images that did not sync with the back-end
                 // 
                 // images that were synced to the back-end were removed from overlayRect1._removedImagesNames
@@ -2114,9 +2041,9 @@ class Layer {
             };
             overlayRect1.setIsDirty2(overlayRectIsDirty2);
         }
-    };
+    }
     
-    cleanIsDirtyStates = function (filename) {
+    cleanIsDirtyStates (filename) {
         console.log('BEG cleanIsDirtyStates');
         
         if(filename === this._layerJsonFilename) {
@@ -2124,9 +2051,9 @@ class Layer {
             this.updateSyncedInfo2();
         }
         
-    };
+    }
     
-    syncBlobsWithWebServer = async function () {
+    async syncBlobsWithWebServer () {
         console.log('BEG syncBlobsWithWebServer'); 
 
         // // validate that there are no empty imagesInfo
@@ -2135,24 +2062,22 @@ class Layer {
         // reset the this.syncRetVals container
         this.syncRetVals = [];
 
-        try
-        {
+        try {
             let doDeferFileSystemAndDbSync = true;
-            if (doDeferFileSystemAndDbSync)
-            {
-                ////////////////////////////////////////////////////////////////////////////////////
+            if (doDeferFileSystemAndDbSync) {
+                // //////////////////////////////////////////////////////////////////////////////////
                 // execute all db operations in single request
                 // clear image_db_operations_array
-                ////////////////////////////////////////////////////////////////////////////////////
+                // //////////////////////////////////////////////////////////////////////////////////
 
-		// tbd - delete after placing a post and getting answer if it is advised to keep session open between requests.                
+                // tbd - delete after placing a post and getting answer if it is advised to keep session open between requests.                
                 // // begin the session
                 // let fetchData = { 
                 //     method: 'GET', 
                 // };
 
                 // // queryUrl - e.g. http://192.168.1.74/api/v1_2/clear_images_global
-                // let queryUrl = COL.model.getUrlBase() + 'api/v1_2/clear_images_global';
+                // let queryUrl = Model.GetUrlBase() + 'api/v1_2/clear_images_global';
                 // console.log('queryUrl', queryUrl);
                 
                 // let response = await fetch(queryUrl, fetchData);
@@ -2162,10 +2087,10 @@ class Layer {
                 COL.model.image_db_operations_array = [];
             }
             
-            ///////////////////////////////////////////////////////////////////////
+            // /////////////////////////////////////////////////////////////////////
             // Sync imagesInfo entries with isDirty===true to the webserver
             // - add blobs to the webserver (to the database, and to the file system)
-            ///////////////////////////////////////////////////////////////////////
+            // /////////////////////////////////////////////////////////////////////
 
             let imagesInfo = this.getImagesInfo();
             let imagesInfoIter = imagesInfo.iterator();
@@ -2177,8 +2102,7 @@ class Layer {
                 // reset the container, and update to the synced-file-in-progress
                 this.synced_filenames_in_progress = [];
                 let filename = keyVal[0];
-                if(filename == layerJsonFilename)
-                {
+                if(filename == layerJsonFilename) {
                     console.log('filename', filename);
                     console.log('foo1'); 
                 }
@@ -2192,8 +2116,7 @@ class Layer {
                 // Blob exist only for image that was interacted with
                 //  (e.g. clicked on to view, or added as new image)
                 // Blob may not not exist for many images that have not be interacted with yet
-                if(COL.util.isObjectValid(blobInfo))
-                {
+                if(COL.util.isObjectValid(blobInfo)) {
                     // The blob exists
                     
                     // Sync imagesInfo entries with isDirty===true to the webserver
@@ -2208,8 +2131,7 @@ class Layer {
                         let doDeferFileSystemAndDbSync = false;
                         let retVal2 = await blobInfo.syncBlobToWebServer(siteId, planId, filePath, doDeferFileSystemAndDbSync);
                         this.syncRetVals.push(retVal2);
-                        if(retVal2.syncStatus == true)
-                        {
+                        if(retVal2.syncStatus == true) {
                             // the syncStatus is good so mark the blob as "in-sync"
                             blobInfo.isDirty = false;
 
@@ -2218,8 +2140,7 @@ class Layer {
                             let iter = this._overlayRects.iterator();
                             while (iter.hasNext()) {
                                 let overlayRect1 = iter.next();
-                                if(overlayRect1.isImageNameInOverlayRect(filename))
-                                {
+                                if(overlayRect1.isImageNameInOverlayRect(filename)) {
                                     overlayRect1.updateStateIsDirty2();
                                 }
                             }
@@ -2228,10 +2149,10 @@ class Layer {
                 }
             }
 
-            ///////////////////////////////////////////////////////////////////////
+            // /////////////////////////////////////////////////////////////////////
             // Sync removedImagesInfo entries with isDirty===true to the webserver
             // - remove blobs from the webserver (from the database, and from the file system)
-            ///////////////////////////////////////////////////////////////////////
+            // /////////////////////////////////////////////////////////////////////
 
             // to be sure that all entries in _removedImagesInfo were properly synced with the back-end, we need to:
             // 1. sync every image (i.e. delete the image from the backend - db and the file system)
@@ -2250,8 +2171,7 @@ class Layer {
                 index1++;
 
                 let blobInfo = imageInfo.blobInfo;
-                if(COL.util.isObjectInvalid(blobInfo))
-                {
+                if(COL.util.isObjectInvalid(blobInfo)) {
                     // sanity check - should not reach here
                     throw new Error('blobInfo is invalid');
                 }
@@ -2265,8 +2185,7 @@ class Layer {
                 let doDeferFileSystemAndDbSync = false;
                 let retVal2 = await blobInfo.syncBlobToWebServer(siteId, planId, filePath, doDeferFileSystemAndDbSync, operation);
                 this.syncRetVals.push(retVal2);
-                if(retVal2.syncStatus == true)
-                {
+                if(retVal2.syncStatus == true) {
                     // the syncStatus is good so mark the blob as "in-sync"
                     blobInfo.isDirty = false;
 
@@ -2280,8 +2199,7 @@ class Layer {
                     while (iter.hasNext()) {
                         let overlayRect1 = iter.next();
                         let isImageNameInRemovedListInOverlayRect1 = overlayRect1.isImageNameInRemovedListInOverlayRect(filename);
-                        if(isImageNameInRemovedListInOverlayRect1)
-                        {
+                        if(isImageNameInRemovedListInOverlayRect1) {
                             let removedImageNameInOverlayRect = overlayRect1.getRemovedImagesNames();
                             removedImageNameInOverlayRect.remove(filename);
                             overlayRect1.setRemovedImagesNames(removedImageNameInOverlayRect);
@@ -2302,10 +2220,10 @@ class Layer {
             }
 
 
-            ///////////////////////////////////////////////////////////////////////
+            // /////////////////////////////////////////////////////////////////////
             // Sync metaDataFilesInfo entries with isDirty===true to the webserver
             // metaDataFilesInfo are e.g. .json [notes]
-            ///////////////////////////////////////////////////////////////////////
+            // /////////////////////////////////////////////////////////////////////
 
             await this.syncMetaDataBlobs_withWebServer_inSingleRequest();
         }
@@ -2324,13 +2242,13 @@ class Layer {
             this.syncRetVals.push(retVal);
         }
         
-        //////////////////////////////////////////////////////
+        // ////////////////////////////////////////////////////
         // Check if the sync was successful and raise a toast
-        //////////////////////////////////////////////////////
+        // ////////////////////////////////////////////////////
 
         let syncStatus = true;
-        let successfulSyncMsg = "";
-        let failureSyncMsg = "";
+        let successfulSyncMsg = '';
+        let failureSyncMsg = '';
 
         let doListSyncedFilenames = true;
         // doListSyncedFilenames = false;
@@ -2338,21 +2256,17 @@ class Layer {
         // Check if the sync was successful
         for (let i = 0; i < this.syncRetVals.length; ++i) {
             let syncRetVal = this.syncRetVals[i];
-            let syncMsg = syncRetVal['filePath'] + "<br />";
+            let syncMsg = syncRetVal['filePath'] + '<br />';
             
-            if(doListSyncedFilenames)
-            {
-                if(syncRetVal['syncStatus'])
-                {
+            if(doListSyncedFilenames) {
+                if(syncRetVal['syncStatus']) {
                     successfulSyncMsg = successfulSyncMsg + syncMsg;
                 }
-                else
-                {
+                else {
                     failureSyncMsg = failureSyncMsg + syncMsg;
                 }
             }
-            if(!syncRetVal['syncStatus'])
-            {
+            if(!syncRetVal['syncStatus']) {
                 syncStatus = false;
             }
         }
@@ -2360,15 +2274,13 @@ class Layer {
         let doDeferFileSystemAndDbSync = true;
         console.log('doDeferFileSystemAndDbSync', doDeferFileSystemAndDbSync);
         
-        if (doDeferFileSystemAndDbSync)
-        {
-            ////////////////////////////////////////////////////////////////////////////////////
+        if (doDeferFileSystemAndDbSync) {
+            // //////////////////////////////////////////////////////////////////////////////////
             // execute all db operations in single request
             // execute the request
-            ////////////////////////////////////////////////////////////////////////////////////
+            // //////////////////////////////////////////////////////////////////////////////////
             
-            if(syncStatus)
-            {
+            if(syncStatus) {
                 // insert/update/delete from the database with the new/updated/deleted images 
                 let jsonData = {image_db_operations_array: COL.model.image_db_operations_array};
                 let jsonDataAsStr = JSON.stringify(jsonData);
@@ -2388,7 +2300,7 @@ class Layer {
 
                 
                 // queryUrl - e.g. http://192.168.1.74/api/v1_2/insert_update_delete_images_in_db
-                let queryUrl = COL.model.getUrlBase() + 'api/v1_2/insert_update_delete_images_in_db';
+                let queryUrl = Model.GetUrlBase() + 'api/v1_2/insert_update_delete_images_in_db';
 
                 let response = await fetch(queryUrl, fetchData);
                 await COL.errorHandlingUtil.handleErrors(response);
@@ -2396,33 +2308,30 @@ class Layer {
         }
 
         
-        //////////////////////////////////////////////////////
+        // ////////////////////////////////////////////////////
         // raise a toast
         // tbd - need to add a check on success of syncing the metadata to the db, to global syncStatus
         //       (currently only checking on images to filesystem-and-db, and metadat to filesystem? (not to db))
-        //////////////////////////////////////////////////////
+        // ////////////////////////////////////////////////////
 
-        let toastTitleStr = "Sync from memory to webserver";
-        if(syncStatus)
-        {
-            let msgStr = "Succeeded to sync";
+        let toastTitleStr = 'Sync from memory to webserver';
+        if(syncStatus) {
+            let msgStr = 'Succeeded to sync';
             toastr.success(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
         }
-        else
-        {
-            let msgStr = "Failed to sync: <br />" + failureSyncMsg;
+        else {
+            let msgStr = 'Failed to sync: <br />' + failureSyncMsg;
             toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
         }
 
         return syncStatus;
-    };
+    }
 
-    /////////////////////////////////////////////////////////
+    // ///////////////////////////////////////////////////////
     // update imageInfo.isImageInRange
-    /////////////////////////////////////////////////////////
+    // ///////////////////////////////////////////////////////
     
-    updateImagesInfoAttr_isImageInRange = function (conditionStr)
-    {
+    updateImagesInfoAttr_isImageInRange (conditionStr) {
         // console.log('BEG updateImagesInfoAttr_isImageInRange');
 
         let iter = this._imagesInfo.iterator();
@@ -2434,13 +2343,11 @@ class Layer {
             imageInfo.isImageInRange = ImageInfo.IsImageInRangeEnum.NOT_APPLICABLE;
 
             if(this._isMilestoneDatesFilterEnabled &&
-               COL.util.isObjectValid(COL.util.getNestedObject(imageInfo, ['imageTags', 'dateTimeOriginal'])))
-            {
+               COL.util.isObjectValid(COL.util.getNestedObject(imageInfo, ['imageTags', 'dateCreated']))) {
                 let imageTags = imageInfo.imageTags;
 
-                if( COL.util.isObjectValid(imageTags.dateTimeOriginal) )
-                {
-                    var m1 = moment.utc(imageTags.dateTimeOriginal, "YYYY:MM:DD HH:mm:ss");
+                if( COL.util.isObjectValid(imageTags.dateCreated) ) {
+                    var m1 = moment.utc(imageTags.dateCreated, 'YYYY:MM:DD HH:mm:ss');
                     let dateTimeOriginal_asDate = m1.toDate();
 
                     let dateTimeOriginalAsNumber = dateTimeOriginal_asDate.getTime();
@@ -2451,16 +2358,16 @@ class Layer {
             }
         }
 
-        ///////////////////////////////////////////////////////////////////////////////
+        // /////////////////////////////////////////////////////////////////////////////
         // tbd - update this._overlayMeshGroup
         // loop over this._overlayMeshGroup
         //   if the overlayMeshObj entry in this._overlayMeshGroup has images with isImageInRange !== NOT_IN_RANGE
         //     i.e. IN_RANGE or NOT_APPLICABLE
         //     leave the overlayMeshObj entry, i.e. enable overlayRect display
         //   else
-        //     mark the overlayMeshObj entry with sandyBrownColor (instead of acquaColor)
+        //     mark the overlayMeshObj entry with SandyBrown (instead of Acqua)
         //     i.e. disable overlayRect display
-        ///////////////////////////////////////////////////////////////////////////////
+        // /////////////////////////////////////////////////////////////////////////////
 
         let _this = this;
         
@@ -2471,18 +2378,15 @@ class Layer {
                 let imagesNames = imagesNamesDict.getKeys();
 
                 let opacity = 1;
-                if(_this._isMilestoneDatesFilterEnabled)
-                {
+                if(_this._isMilestoneDatesFilterEnabled) {
                     // milestoneDates filter is enabled
                     for (let imagesName of imagesNames){
                         let imageInfo = _this._imagesInfo.getByKey(imagesName);
-                        if( COL.util.isObjectInvalid(imageInfo) )
-                        {
+                        if( COL.util.isObjectInvalid(imageInfo) ) {
                             throw new Error('imageInfo is invalid');
                         }
                         
-                        if( imageInfo.isImageInRange !== ImageInfo.IsImageInRangeEnum.NOT_IN_RANGE )
-                        {
+                        if( imageInfo.isImageInRange !== ImageInfo.IsImageInRangeEnum.NOT_IN_RANGE ) {
                             // isImageInRange is in range or na (e.g. if there is no date tag).
                             // Mark the overlayRect as filteredIn i.e. available for display.
                             isOverlayRectFilteredIn = true;
@@ -2490,25 +2394,22 @@ class Layer {
                         }
                     }
 
-                    if(!isOverlayRectFilteredIn)
-                    {
+                    if(!isOverlayRectFilteredIn) {
                         // milestoneDates filter is enabled. All overlayRect images are outside the filtered date range.
                         // Mark the overlayRect as filteredOut i.e. NOT available for display.
-                        child.material.color.set(COL.util.whiteSmoke2);
+                        child.material.color.set(COL.util.Color.WhiteSmoke2);
                         opacity = 0.3;
                         child.material.userData.isOverlayRectFilteredIn = false;
                     }
-                    else
-                    {
+                    else {
                         // milestoneDates filter is enabled. One or more of the overlayRect images are inside the filtered date range.
-                        child.material.color.set(COL.util.acquaColor);
+                        child.material.color.set(COL.util.Color.Acqua);
                         child.material.userData.isOverlayRectFilteredIn = true;
                     }
                 }
-                else
-                {
+                else {
                     // milestoneDates filter is disabled
-                    child.material.color.set(COL.util.acquaColor);
+                    child.material.color.set(COL.util.Color.Acqua);
                     child.material.userData.isOverlayRectFilteredIn = true;
                 }
                 
@@ -2519,116 +2420,89 @@ class Layer {
                 child.children[0].material.needsUpdate = true;
             }
         });
-        Scene3DtopDown.render1();
-    };
+        PlanView.Render();
+    }
     
-    splitOverlayRect = async function () {
-        // console.log('BEG splitOverlayRect');
-        
-        if( COL.util.isObjectValid(this._selectedOverlayRect) )
-        {
-            await this._selectedOverlayRect.splitOverlayRect2(this);
+    mergeOverlayRectsStart () {
+        console.log('BEG mergeOverlayRectsStart');
+
+        // prepare for merge:
+        // - reset the list of this._selectedForMergeOverlayRects
+        //   restore the color of the overlayRect to indicate that it is not candidate for merging, and remove the overlayRect 
+        //   from this._selectedForMergeOverlayRects
+        // - add the selectedOverlayRect as the first entry to this._selectedForMergeOverlayRects
+        //   (with every click on overlayRect, another overlayRect will be added to the list and colored with e.g. Orange2)
+
+        while (this._selectedForMergeOverlayRects.size() > 0) {
+            let keyVal = this._selectedForMergeOverlayRects.shift();
+            let meshObjName = keyVal['key'];
+            let overlayRect = keyVal['val'];
+            let meshObject = overlayRect.getMeshObject();
+            // restore the color of the overlayRect to indicate that it is not candidate for merging
+            meshObject.material.color.setHex( COL.util.Color.Acqua );
+            meshObject.material.needsUpdate = true;
         }
-    };
+                
+        if( COL.util.isObjectValid(this._selectedOverlayRect) ) {
+            this.setSelectedForMergeOverlayRects(this._selectedOverlayRect);
+        }
+
+        // render the planView pane to show the color of the overlayRects after reseting _selectedForMergeOverlayRects
+        PlanView.Render();
+    }
     
-    mergeOverlayRects = async function () {
-        // console.log('BEG mergeOverlayRects');
+    async mergeOverlayRectsEnd () {
+        // console.log('BEG mergeOverlayRectsEnd');
 
-        let sceneBar = COL.model.getSceneBar();
-        let doDisableSceneBarButtons = false;
-        if(sceneBar._mergeOverlayRectsButton.isOn())
-        {
-            doDisableSceneBarButtons = true;
-            
-            // reset _selectedForMergeOverlayRects
-            this._selectedForMergeOverlayRects.clear();
-
-            if( COL.util.isObjectValid(this._selectedOverlayRect) )
-            {
-                await this.setSelectedForMergeOverlayRects(this._selectedOverlayRect);
-
-                // color for selectedForMergeOverlayRects
-                let selectedMeshObject = this._selectedOverlayRect.getMeshObject();
-                selectedMeshObject.material.color.setHex( COL.util.Orange1 );
-                Scene3DtopDown.render1();
-            }
-
-            // the button is turned on - enable merging
-            //
-            // - reset the list of this._selectedForMergeOverlayRects
-            //   start adding overlayRects to this._selectedForMergeOverlayRects
-            //   (with every click on overlayRect, it should be added to the list and colored with e.g. red)
-            //    another click on the same overlayRect, should remove it from the list
-            // overlayRects will be added with every setSelectedOverlayRect
+        if(this._selectedForMergeOverlayRects < 2) {
+            // sanity check
+            let msgStr = 'Number of overlayRects is invalid. It must be >=2. this._selectedForMergeOverlayRects: ' + this._selectedForMergeOverlayRects;
+            throw new Error(msgStr);
         }
-        else
-        {
-            // the button is turned off
-            // - merge all this._selectedForMergeOverlayRects into the first selected overlayRect
-            //
-            // tbd
-            //   update Layer::._overlayRects
-            // - mark the merged overlayRect as dirty (for syncing to the webserver which is not hapenning here)
-            // - reset the list of this._selectedForMergeOverlayRects
-            // - unmark the merged overlayRect (e.g. from red color to no color)
-            // 
-            await this.merge_selectedForMergeOverlayRects();
-
-            // reset _selectedForMergeOverlayRects after the merge
-            this._selectedForMergeOverlayRects.clear();
-
-            Scene3DtopDown.render1();
-        }
-
-        // disable/enable SceneBar buttons, when the mergeOverlayRectsButton is on/off,
-        // so they don't interfer with the merge
-        // (e.g. disable the button _editOverlayRect_deleteButton, until implementing the
-        //  deletion of the deleted overlayRect, also from setSelectedForMergeOverlayRects)
-
-        if(COL.doEnableWhiteboard)
-        {
-            sceneBar._editOverlayRect_editFloorPlanWhiteboard.disabled(doDisableSceneBarButtons);
-        }
-        sceneBar._editOverlayRect_deleteButton.disabled(doDisableSceneBarButtons);
-        sceneBar._openImageFileButton.disabled(doDisableSceneBarButtons);
-        sceneBar._reconcileFrontEndButton.disabled(doDisableSceneBarButtons);
-    };
-    
-    merge_selectedForMergeOverlayRects = async function () {
-        // console.log('BEG merge_selectedForMergeOverlayRects');
-
-        // console.log('_selectedForMergeOverlayRects'); 
-        // this._selectedForMergeOverlayRects.printKeysAndValues();
 
         // get the first overlayRect
-        let firstOverlayRect = this._selectedForMergeOverlayRects.getFirstVal();
-        // console.log('firstOverlayRect', firstOverlayRect); 
+        let keyVal = this._selectedForMergeOverlayRects.shift();
+        let meshObjName = keyVal['key'];
+        let firstOverlayRect = keyVal['val'];
 
-        let firstOverlayRectMeshObject = firstOverlayRect.getMeshObject();
-        // console.log('firstOverlayRectMeshObject.name', firstOverlayRectMeshObject.name);
-        
-        let selectedForMergeOverlayRectsIter = this._selectedForMergeOverlayRects.iterator();
-        while (selectedForMergeOverlayRectsIter.hasNext()) {
-            let overlayRect = selectedForMergeOverlayRectsIter.next();
-            let overlayRectMeshObject = overlayRect.getMeshObject();
-            // console.log('overlayRectMeshObject.name', overlayRectMeshObject.name); 
-            if(firstOverlayRectMeshObject.name === overlayRectMeshObject.name)
-            {
-                // skip the first overlayRect
-                continue;
+        while (this._selectedForMergeOverlayRects.size() > 0) {
+
+            let keyVal = this._selectedForMergeOverlayRects.shift();
+            if(keyVal) {
+                let meshObjName = keyVal['key'];
+                let overlayRect = keyVal['val'];
+
+                let overlayRectMeshObject = overlayRect.getMeshObject();
+                await firstOverlayRect.mergeOtherOverlayRect(this, overlayRect);
+
+                // Remove the meshObject of the overlayRect from the meshGroup of the layer (as it no longer exists by itself)
+                this.removeFromOverlayMeshGroup(overlayRectMeshObject);
+
+                await this.setSelectedOverlayRect(firstOverlayRect.getMeshObject());
+                this.planView.getOrbitControls().setState(OrbitControlsPlanView.STATE.NONE);
             }
-            await firstOverlayRect.mergeOtherOverlayRect(this, overlayRect);
-
-            // Remove the meshObject of the overlayRect from the meshGroup of the layer
-            this.removeFromOverlayMeshGroup(overlayRectMeshObject);
-
-            await this.setSelectedOverlayRect(firstOverlayRect.getMeshObject());
         }
-    };
+
+        if( COL.util.isObjectValid(this._selectedOverlayRect) ) {
+            // set the color of the merged overlayRect back to Yellow1, after the merge.
+            let firstOverlayRectMeshObject = firstOverlayRect.getMeshObject();
+            firstOverlayRectMeshObject.material.color.setHex( COL.util.Color.Yellow1 );
+            firstOverlayRectMeshObject.material.needsUpdate = true;
+        }
+
+        // sync to the webserver after merging overlayRects. 
+        let syncStatus = await this.syncBlobsWithWebServer();
+        if(!syncStatus) {
+            throw new Error('Error from syncBlobsWithWebServer while merging overlyRects.');
+        }
+
+        // render the planView pane to show the merged overlayRect
+        PlanView.Render();
+    }
 
 
-    scanForInconsitenciesBetweenImagesInfo_and_overlayRectImagesNames = function () {
-        console.log('BEG scanForInconsitenciesBetweenImagesInfo_and_overlayRectImagesNames');
+    scanForInconsitenciesBetweenImagesInfo_and_overlayRectImageThumbnailsNames () {
+        console.log('BEG scanForInconsitenciesBetweenImagesInfo_and_overlayRectImageThumbnailsNames');
         
         let retVal = true;
         
@@ -2639,10 +2513,10 @@ class Layer {
         // let imageNamesOnlyIn_overlayMeshGroup = new COL.util.AssociativeArray();
         // let imageNamesOnlyIn_removedOverlayMeshGroup = new COL.util.AssociativeArray();
         
-        ///////////////////////////////////////////////////////////////////////////////
+        // /////////////////////////////////////////////////////////////////////////////
         // Compare _overlayRects vs _imagesInfo
         // Loop over _overlayRects
-        ///////////////////////////////////////////////////////////////////////////////
+        // /////////////////////////////////////////////////////////////////////////////
 
         let imageNames_in_overlayRects = new COL.util.AssociativeArray();
 
@@ -2657,8 +2531,7 @@ class Layer {
             let imageNames = overlayRect.getImagesNames();
 
             // at this point (after removing empty overlayRects) every overlayRect must have imagesNames with 1 or more images
-            if(COL.util.isObjectInvalid(imageNames))
-            {
+            if(COL.util.isObjectInvalid(imageNames)) {
                 retVal = false;
                 let msgStr = 'imageNames is invalid';
                 console.error(msgStr); 
@@ -2670,12 +2543,10 @@ class Layer {
                 let imageName = iter2.nextKey();
 
                 // verify that imageName only exists in one overlayRect
-                if(COL.util.isObjectInvalid(imageNames_in_overlayRects.getByKey(imageName)))
-                {
+                if(COL.util.isObjectInvalid(imageNames_in_overlayRects.getByKey(imageName))) {
                     imageNames_in_overlayRects.set(imageName, true);
                 }
-                else
-                {
+                else {
                     retVal = false;
                     let msgStr = 'imageName: ' + imageName + ' exists in more than 1 overlayRect';
                     console.error(msgStr); 
@@ -2683,39 +2554,40 @@ class Layer {
                 }
                 
                 let imageInfo = this._imagesInfo.getByKey(imageName);
-                if(COL.util.isObjectInvalid(imageInfo))
-                {
+                if(COL.util.isObjectInvalid(imageInfo)) {
                     imageNamesOnlyIn_overlayRects.set(imageName, true);
                 }
-                else
-                {
+                else {
                     imageNamesIn_overlayRects_and_imagesInfo.set(imageName, true);
                 }
             }
         }
 
-        ///////////////////////////////////////////////////////////////////////////////
+        // /////////////////////////////////////////////////////////////////////////////
         // Compare _imagesInfo vs imageNames_in_overlayRects
         // Loop over _imagesInfo
-        ///////////////////////////////////////////////////////////////////////////////
+        // /////////////////////////////////////////////////////////////////////////////
 
         iter = this._imagesInfo.iterator();
         while (iter.hasNext()) {
             let imageName_inImageInfo = iter.nextKey();
             let imageName_in_overlayRects = imageNames_in_overlayRects.getByKey(imageName_inImageInfo);
 
-            if(COL.util.isObjectInvalid(imageName_in_overlayRects))
-            {
+            // skip files with name "*_ground_1*
+            let foundMatch = imageName_inImageInfo.match( /_ground_1/i );            
+            if(foundMatch) {
+                continue;
+            }
+
+            if(COL.util.isObjectInvalid(imageName_in_overlayRects)) {
                 imageNamesOnlyIn_imagesInfo.set(imageName_inImageInfo, true);
             }
-            else
-            {
+            else {
                 imageNamesIn_overlayRects_and_imagesInfo.set(imageName_inImageInfo, true);
             }
-        };
+        }
 
-        if((imageNamesOnlyIn_overlayRects.size() !== 0) || (imageNamesOnlyIn_imagesInfo.size() !== 0))
-        {
+        if((imageNamesOnlyIn_overlayRects.size() !== 0) || (imageNamesOnlyIn_imagesInfo.size() !== 0)) {
             retVal = false;
             let msgStr = 'Found inconsistencies between _imagesInfo, and _overlayRects';
             console.error('imageNamesOnlyIn_overlayRects', imageNamesOnlyIn_overlayRects.getKeys()); 
@@ -2727,44 +2599,42 @@ class Layer {
             while (iter.hasNext()) {
                 let imageNameOnlyIn_imagesInfo = iter.nextKey();
                 this._imagesInfo.remove(imageNameOnlyIn_imagesInfo);
-            };
+            }
         }
 
         console.log('retVal', retVal); 
         
-    };
+    }
     
-    clearOverlayRectsWithoutImages = function () {
+    clearOverlayRectsWithoutImages () {
         let iter = this._overlayRects.iterator();
         while (iter.hasNext()) {
             let overlayRect = iter.next();
-            if(overlayRect.getImagesNames().size() == 0)
-            {
+            if(overlayRect.getImagesNames().size() == 0) {
                 let meshObject = overlayRect.getMeshObject();
                 // Remove the meshObject of the overlayRect from the meshGroup of the layer
                 this.removeFromOverlayMeshGroup(meshObject);
             }
         }
-    };
+    }
     
 
-    reconcileFrontEndInconcitencies = async function () {
+    async reconcileFrontEndInconcitencies () {
         // console.log('BEG reconcileFrontEndInconcitencies');
 
         let syncStatus = true;
-        let msgStr = "";
-        let msgStr1 = "";
+        let msgStr = '';
+        let msgStr1 = '';
         let filename = '';
         this.syncRetVals = [];
         
-        try
-        {
-            ////////////////////////////////////////////////////////////////////////////
+        try {
+            // //////////////////////////////////////////////////////////////////////////
             // Reconcile (remove) added images that are not synced with the back-end
             // (entries in this._imagesInfo with "isDirty == true")
             // loop over the imagesInfo.
             // For imageInfo with "isDirty == true" undo the change, e.g. remove the image from the .mtl file
-            ////////////////////////////////////////////////////////////////////////////
+            // //////////////////////////////////////////////////////////////////////////
             
             let imagesInfo = this.getImagesInfo();
             let imagesInfoIter = imagesInfo.iterator();
@@ -2775,8 +2645,7 @@ class Layer {
                 let imageInfo = keyVal[1];
                 let blobInfo = imageInfo.blobInfo;
 
-                if(COL.util.isObjectValid(blobInfo))
-                {
+                if(COL.util.isObjectValid(blobInfo)) {
                     console.log('blobInfo', blobInfo);
                     
                     // Revert imagesInfo entries with isDirty===true
@@ -2786,10 +2655,8 @@ class Layer {
 
                             let overlayRect1 = iter.next();
                             let isImageNameInOverlayRect1 = overlayRect1.isImageNameInOverlayRect(filename);
-                            if(isImageNameInOverlayRect1)
-                            {
+                            if(isImageNameInOverlayRect1) {
                                 // the image is added but failed to sync so remove it from overlayRect to reverse the operation
-                                // await overlayRect1.deleteImageFromOverlayRect(imageInfo.filename);
                                 await this.deleteImageFromLayer(overlayRect1, imageInfo.filename);
                             }
                         }
@@ -2797,12 +2664,12 @@ class Layer {
                 }
             }
 
-            ////////////////////////////////////////////////////////////////////////////
+            // //////////////////////////////////////////////////////////////////////////
             // Reconcile (add) removed images that are not synced with the back-end
             // (entries in this._removedImagesInfo with "isDirty == true")
             // loop over the removedImagesInfo.
             // For imageInfo with "isDirty == true" undo the change, e.g. add the image back to the .mtl file
-            ////////////////////////////////////////////////////////////////////////////
+            // //////////////////////////////////////////////////////////////////////////
 
             let removedImagesInfoSizeOrig = removedImagesInfo.size();
             let index1 = 0;
@@ -2813,8 +2680,7 @@ class Layer {
                 filename = imageInfo.filename;
                 
                 let blobInfo = imageInfo.blobInfo;
-                if(COL.util.isObjectValid(blobInfo))
-                {
+                if(COL.util.isObjectValid(blobInfo)) {
                     // console.log('blobInfo', blobInfo);
                     
                     // Revert this._removedImagesInfo entries with isDirty===true
@@ -2825,12 +2691,10 @@ class Layer {
                             let overlayRect1 = iter.next();
 
                             let isImageNameInRemovedListInOverlayRect1 = overlayRect1.isImageNameInRemovedListInOverlayRect(filename);
-                            if(isImageNameInRemovedListInOverlayRect1)
-                            {
+                            if(isImageNameInRemovedListInOverlayRect1) {
                                 await this.addImageToLayer(overlayRect1, imageInfo);
                                 let numEntriesRemoved = removedImagesInfoSizeOrig - this._removedImagesInfo.size();
-                                if(numEntriesRemoved > 0)
-                                {
+                                if(numEntriesRemoved > 0) {
                                     // reduce the index1 by the number of entries that were removed
                                     // (assuming that the entries removed are consecutive and start at the entry that the index points to.
                                     index1 -= numEntriesRemoved;
@@ -2854,44 +2718,38 @@ class Layer {
         }
 
         // raise a toast
-        let toastTitleStr = "Reconcile front-end inconcitencies";
-        if(syncStatus)
-        {
-            msgStr = "Succeeded to reconcile inconcitencies";
+        let toastTitleStr = 'Reconcile front-end inconcitencies';
+        if(syncStatus) {
+            msgStr = 'Succeeded to reconcile inconcitencies';
             toastr.success(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
         }
-        else
-        {
-            msgStr = "Failed to reconcile inconcitencies: " + msgStr1;
+        else {
+            msgStr = 'Failed to reconcile inconcitencies: ' + msgStr1;
             toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
         }
-    };
+    }
 
-   
-    loadOverlayTextureFromFile = async function (textureFileUrl) {
-        // console.log('BEG loadOverlayTextureFromFile');
+    async loadSelectedImageTextureFromUrl (blobUrl) {
 
         try{
-            let textureObj = await new THREE_TextureLoader().loadAsync(textureFileUrl);
+            let texture = await new THREE_TextureLoader().loadAsync(blobUrl);
 
-            textureObj.wrapS = THREE_ClampToEdgeWrapping;
-            textureObj.wrapT = THREE_ClampToEdgeWrapping;
+            texture.wrapS = THREE_ClampToEdgeWrapping;
+            texture.wrapT = THREE_ClampToEdgeWrapping;
             
             // Prevent warning when texture is not a power of 2
             // https://discourse.threejs.org/t/warning-from-threejs-image-is-not-power-of-two/7085
-            textureObj.minFilter = THREE_LinearFilter;
+            texture.minFilter = THREE_LinearFilter;
             // texture.generateMipmaps = false;
 
-            if(COL.util.isObjectInvalid(this))
-            {
+            if(COL.util.isObjectInvalid(this)) {
                 throw new Error('Selected layer is invalid');
             }
 
             let imagesInfo = this.getImagesInfo();
 
             let selectedOverlayRect = this.getSelectedOverlayRect();
-            if( COL.util.isObjectInvalid(selectedOverlayRect) )
-            {
+            if( COL.util.isObjectInvalid(selectedOverlayRect) ) {
                 // sanity check
                 throw new Error('selectedOverlayRect is invalid');
             }
@@ -2900,208 +2758,128 @@ class Layer {
 
             let rotationVal = 0;
             let flipY = true;
-            if(COL.util.isObjectValid(COL.util.getNestedObject(imageInfo, ['imageTags', 'imageOrientation'])))
-            {
+            if(COL.util.isObjectValid(COL.util.getNestedObject(imageInfo, ['imageTags', 'imageOrientation']))) {
                 let rotationParams = COL.OrbitControlsUtils.getRotationParams(Number(imageInfo.imageTags.imageOrientation));
                 rotationVal = rotationParams.rotationVal;
                 flipY = rotationParams.flipY;
             }
 
-            textureObj.flipY = flipY;
+            texture.flipY = flipY;
 
             // --------------------------------------------------------------
             // attenuate the image by drawing the image on a canvas and changing the globalAlpha 
-            let image = textureObj.image;
+            let image = texture.image;
 
-            let canvas1 = document.getElementById('canvas1');
-            
-            // see section "canvas1 and canvasTex are both needed" in notesConstructionOverlay.WebServer.v3.txt
-            // hide canvas1 - only see canvasTex
-            $("#canvas1").hide();
-
-            
-            if(COL.util.isObjectInvalid(canvas1))
-            {
-                throw new Error('canvas for texture is invalid');
-            }
-            
-            // setting width height to values that are different than image_width/height
-            // ruins the image proportions...
-            // 2^11 = 1024
-            // 2^12 = 2048
-            let factor = 0.5;
-            canvas1.width = image.width * factor;
-            canvas1.height = image.height * factor;
-            
-            const context = canvas1.getContext( '2d' );
-
-            
-            // set background for the image
-            // combination of black background (rgba(0, 0, 0, 1)) and low globalAlpha (0.2) will show a darken image
-            // combination of black background (rgba(255, 255, 255, 0.9)) and low globalAlpha (0.2) will show a bright image
-
-            let doEnableAlpha = false;
-            if(doEnableAlpha)
-            {
-                // context.clearRect(0, 0, canvas1.width, canvas1.height).
-                context.fillStyle = 'rgba(255, 255, 255, 1)';
-                context.fillRect(0, 0, canvas1.width, canvas1.height);
-                console.log('foo3');
-             
-                if( imageInfo.isImageInRange !== ImageInfo.IsImageInRangeEnum.NOT_IN_RANGE )
-                {
-                    // console.log('image is filteredIn, i.e. either in the milestoneDate range, or date is na');
-                    context.globalAlpha = 1;
-                }
-                else
-                {
-                    console.log('image is filteredOut, i.e. not in the milestoneDate range'); 
-                    context.globalAlpha = 0.2;
-                }
-            }
-
-            context.drawImage( image, 0, 0, canvas1.width, canvas1.height);
-
-            const canvasTexture = new THREE_CanvasTexture(context.canvas);
-
-            let overlayTextureMaterial = new THREE_SpriteMaterial({
+            let spriteMaterial = new THREE_SpriteMaterial({
                 rotation: rotationVal,
-                map: canvasTexture,
+                map: texture,
                 transparent: true,
                 fog: true
             });
             
-            // overlayTextureMaterial.opacity = 1;
-            overlayTextureMaterial.opacity = 0.1;
-            let overlayTexture = new THREE_Sprite(overlayTextureMaterial);
-            overlayTexture.name = "overlayTexture";
-            overlayTexture.material.color.set(0xffffff)
-            // needsUpdate is also a Texture attribute: https://threejs.org/docs/#api/en/textures/Texture.needsUpdate
-            overlayTexture.material.map.needsUpdate = true;
-            // needsUpdate is also a Material attribute: https://threejs.org/docs/#api/en/materials/Material.needsUpdate
-            overlayTexture.material.needsUpdate = true;
+            spriteMaterial.opacity = 0.1;
+            let sprite = new THREE_Sprite(spriteMaterial);
+            sprite.name = 'sprite';
+            sprite.material.color.set(0xffffff);
+            sprite.material.map.needsUpdate = true;
+            sprite.material.needsUpdate = true;
 
-            this.setCurrentTextureImage(overlayTexture);
+            this.setSprite(sprite);
             
-            // the texture image finished openning from file. Load the texture image onto the pane
-            let texturePanelPlugin = this.getTexturePanelPlugin();
-            texturePanelPlugin.loadTextureImageToTexturePane(this, overlayTexture);
+            // the image finished openning from file. Load the image onto the pane
+            let imageView = this.getImageView();
+            imageView.loadImageToCanvas(this, sprite);
 
-            // console.log( "texturePanelPlugin.texRenderer.info.programs.length1", texturePanelPlugin.texRenderer.info.programs.length );
-            // console.log( "texturePanelPlugin.texRenderer.info.memory.textures1", texturePanelPlugin.texRenderer.info.memory.textures );
-            
-            texturePanelPlugin.texRenderer.renderLists.dispose();
+            imageView.renderer.renderLists.dispose();
 
-            // console.log( "texturePanelPlugin.texRenderer.info.programs.length2", texturePanelPlugin.texRenderer.info.programs.length );
-            // console.log( "texturePanelPlugin.texRenderer.info.memory.textures2", texturePanelPlugin.texRenderer.info.memory.textures );
-            
             return true;
         } 
         catch(err) {
             console.error('err', err);
 
             // raise a toast to indicate the failure
-            let toastTitleStr = "loadOverlayTextureFromFile";
-            let msgStr = 'Failed to loadOverlayTextureFromFile, while trying to load from THREE_TextureLoader.loadAsync. textureFileUrl: ' + textureFileUrl + ', err: ' + err;
-            // let msgStr = 'Failed to loadOverlayTextureFromFile. err: ' + err;
+            let toastTitleStr = 'loadSelectedImageTextureFromUrl';
+            let msgStr = 'Failed to loadSelectedImageTextureFromUrl, while trying to load from THREE_TextureLoader.loadAsync. blobUrl: ' + blobUrl + ', err: ' + err;
             toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
             throw new Error(msgStr);
         }
-    };
+    }
 
-    onLoadTopDownTexture = async function (textureObj) {
-        // console.log('BEG onLoadTopDownTexture');
+    async loadPlanViewTextureFromBlobUrl (blobUrl) {
+        // console.log('BEG loadPlanViewTextureFromBlobUrl');
 
-        textureObj.wrapS = THREE_ClampToEdgeWrapping;
-        textureObj.wrapT = THREE_ClampToEdgeWrapping;
-
-        // Prevent warning when texture is not a power of 2
-        // https://discourse.threejs.org/t/warning-from-threejs-image-is-not-power-of-two/7085
-        textureObj.minFilter = THREE_LinearFilter;
-        // texture.generateMipmaps = false;
-
-        let floorPlanObj = this.getFloorPlanMeshObj();
-        let meshObj1 = floorPlanObj.children[0];
-        // this._floorPlanMeshObj.floorPlanObj.children[0];
-        meshObj1.material.map = textureObj;
-        
-        let floorPlanImageFilename = this.getFloorPlanImageFilename();
-        let imagesInfo = this.getImagesInfo();
-        let imageInfo = imagesInfo.getByKey(floorPlanImageFilename);
-
-        let rotationVal = 0;
-        let flipY = true;
-        if(COL.util.isObjectValid(COL.util.getNestedObject(imageInfo, ['imageTags', 'imageOrientation'])))
-        {
-            let rotationParams = COL.OrbitControlsUtils.getRotationParams(Number(imageInfo.imageTags.imageOrientation));
-            rotationVal = rotationParams.rotationVal;
-            flipY = rotationParams.flipY;
-        }
-
-        textureObj.flipY = flipY;
-        
-        // https://stackoverflow.com/questions/36668836/threejs-displaying-a-2d-image
-        let spriteMaterial = new THREE_SpriteMaterial( { map: textureObj,
-                                                         color: 0xffffff,
-                                                         rotation: rotationVal,
-                                                         fog: true } );
-        
-        let sprite2 = new THREE_Sprite( spriteMaterial );
-
-        return true;
-    };
-
-    loadTopDownTextureFromFile = async function (textureFileUrl) {
-        // console.log('BEG loadTopDownTextureFromFile');
-
-        // based on three.js/three.js-r135/examples/webgl_loader_obj_mtl.html
         try{
-            let textureObj = await new THREE_TextureLoader().loadAsync(textureFileUrl);
-            await this.onLoadTopDownTexture(textureObj);
+            let texture = await new THREE_TextureLoader().loadAsync(blobUrl);
+
+            texture.wrapS = THREE_ClampToEdgeWrapping;
+            texture.wrapT = THREE_ClampToEdgeWrapping;
+    
+            // Prevent warning when texture is not a power of 2
+            // https://discourse.threejs.org/t/warning-from-threejs-image-is-not-power-of-two/7085
+            texture.minFilter = THREE_LinearFilter;
+            // texture.generateMipmaps = false;
+    
+            let floorPlanObj = this.getFloorPlanMeshObj();
+            let meshObj1 = floorPlanObj.children[0];
+            // this._floorPlanMeshObj.floorPlanObj.children[0];
+            meshObj1.material.map = texture;
+            
+            let floorPlanImageFilename = this.getFloorPlanImageFilename();
+            let imagesInfo = this.getImagesInfo();
+            let imageInfo = imagesInfo.getByKey(floorPlanImageFilename);
+    
+            let rotationVal = 0;
+            let flipY = true;
+            if(COL.util.isObjectValid(COL.util.getNestedObject(imageInfo, ['imageTags', 'imageOrientation']))) {
+                let rotationParams = COL.OrbitControlsUtils.getRotationParams(Number(imageInfo.imageTags.imageOrientation));
+                rotationVal = rotationParams.rotationVal;
+                flipY = rotationParams.flipY;
+            }
+    
+            texture.flipY = flipY;
+            
             return true;
         } 
         catch(err){
             console.error('err', err); 
-            let msgStr = 'Error while trying to load from THREE_TextureLoader.loadAsync. textureFileUrl: ' + textureFileUrl;
+            let msgStr = 'Error while trying to load from THREE_TextureLoader.loadAsync. blobUrl: ' + blobUrl;
             console.error(msgStr); 
             throw new Error(msgStr);
         }
-    };
+    }
 
-    toJSON = function () {
+    toJSON () {
         // console.log('BEG Layer.toJSON()'); 
 
         return {
-            scene3DtopDown: this.scene3DtopDown.toJSON(),
+            planView: this.planView.toJSON(),
             imagesInfo: this._imagesInfo.toJSON(),
             // tbd - add the other entries
         };
-    };
+    }
 
     // create a filtered/manipulated json, to be exported to file
     // e.g. without some members, and with some members manipulated (e.g. some nested entries removed)
-    toJSON_forFile = function () {
+    toJSON_forFile () {
         // console.log('BEG toJSON_forFile'); 
 
         let layer_asJson = {};
-        let scene3DtopDown_asJson = this.getScene3DtopDown().toJSON_forFile();
-        layer_asJson['scene3DtopDown'] = scene3DtopDown_asJson;
+        let planView_asJson = this.getPlanView().toJSON_forFile();
+        layer_asJson['planView'] = planView_asJson;
         layer_asJson['_imagesInfo'] = this.getImagesInfo().toJSON();
 
         let selectedOverlayRect = this.getSelectedOverlayRect();
-        if(COL.util.isObjectValid(selectedOverlayRect))
-        {
+        if(COL.util.isObjectValid(selectedOverlayRect)) {
             layer_asJson['selectedOverlayRect'] = this.getSelectedOverlayRect().toJSON_forFile();
         }
         
         return layer_asJson;
-    };
+    }
     
-    dispose = function () {
+    dispose () {
         console.log('BEG Layer::dispose()');
         
-        try
-        {
+        try {
             let typeof_planInfo = typeof this.planInfo;
             console.log('this.planInfo', this.planInfo); 
             console.log('typeof_planInfo', typeof_planInfo);
@@ -3118,18 +2896,9 @@ class Layer {
             COL.ThreejsUtil.disposeObject(this._removedOverlayMeshGroup);
             COL.ThreejsUtil.disposeObject(this.stickyNoteGroup);
 
-            this.scene3DtopDown.dispose();
-            if(!COL.doUseAnimateToRenderTopDownPane)
-            {
-                // comment out for now until animate() is disabled
-                this.scene3DtopDown = null;
-            }
+            this.planView.dispose();
 
-            this.texturePanelPlugin.dispose();
-            if(!COL.doUseAnimateToRenderTopDownPane)
-            {
-                this.texturePanelPlugin = null;
-            }
+            this.imageView.dispose();
 
             iter = this.noteArray.iterator();
             while (iter.hasNext()) {
@@ -3159,22 +2928,15 @@ class Layer {
             }
             this._removedImagesInfo.clear();
 
-            this._lastSelectedImageFilenames.clear();
+            this._cachedImages.clear();
 
             this._milestoneDatesInfo.clear();
 
-            if(COL.util.isObjectValid(this._selectedOverlayRect))
-            {
+            if(COL.util.isObjectValid(this._selectedOverlayRect)) {
                 this._selectedOverlayRect.dispose();
                 this._selectedOverlayRect = null;
             }
             
-            if(COL.util.isObjectValid(this._selectedOverlayRectPrev))
-            {
-                this._selectedOverlayRectPrev.dispose();
-                this._selectedOverlayRectPrev = null;
-            }
-
             iter = this._selectedForMergeOverlayRects.iterator();
             while (iter.hasNext()) {
                 let selectedForMergeOverlayRect = iter.next();
@@ -3182,10 +2944,9 @@ class Layer {
             }
             this._selectedForMergeOverlayRects.clear();
 
-            if(COL.util.isObjectValid(this._currentTextureImage))
-            {
-                // this._currentTextureImage is of type THREE_Sprite
-                COL.ThreejsUtil.disposeObject(this._currentTextureImage);
+            if(COL.util.isObjectValid(this._currentSprite)) {
+                // this._currentSprite is of type THREE_Sprite
+                COL.ThreejsUtil.disposeObject(this._currentSprite);
             }
 
             COL.ThreejsUtil.disposeObject(this._floorPlanMeshObj);
@@ -3201,14 +2962,14 @@ class Layer {
             console.error('err', err);
 
             // raise a toast to indicate the failure
-            let toastTitleStr = "Dispose Layer";
-            let msgStr = "Failed to dispose the layer.";
+            let toastTitleStr = 'Dispose Layer';
+            let msgStr = 'Failed to dispose the layer.';
             toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
         }
         
-    };
+    }
 
-    updateIsDirtyInAllOverlayRects = function (overlayRectIsDirty2) {
+    updateIsDirtyInAllOverlayRects (overlayRectIsDirty2) {
         // console.log('BEG updateIsDirtyInAllOverlayRects');
         
         let iter = this._overlayRects.iterator();
@@ -3216,33 +2977,29 @@ class Layer {
             let overlayRect1 = iter.next();
             overlayRect1.setIsDirty2(overlayRectIsDirty2);
         }
-    };
+    }
 
-    static CreateLayerName = function (planInfo) {
-        let layerName = planInfo.siteName + '__' + planInfo.name;
+    static CreateLayerName (siteName, planName) {
+        let layerName = siteName + '__' + planName;
         return layerName;
-    };
+    }
 
-    static GetSiteIdPlanIdAndFilePath = function (planInfo) {
+    static GetSiteIdPlanIdAndFilePath (planInfo) {
         console.log('BEG GetSiteIdPlanIdAndFilePath'); 
 
         let siteId;
-        if(planInfo['newSiteId'])
-        {
+        if(planInfo['newSiteId']) {
             siteId = planInfo['newSiteId'];
         }
-        else
-        {
+        else {
             siteId = planInfo['siteId'];
         }
         
         let planId;
-        if(planInfo['newPlanId'])
-        {
+        if(planInfo['newPlanId']) {
             planId = planInfo['newPlanId'];
         }
-        else
-        {
+        else {
             planId = planInfo['id'];
         }
 
@@ -3253,9 +3010,9 @@ class Layer {
             planId: planId,
             filePath: filePath
         };
-    };
+    }
 
-};
+}
 
 // Layer.maxNumImageBlobsInMeomry = 10;
 // Layer.maxNumImageBlobsInMeomry = 3;

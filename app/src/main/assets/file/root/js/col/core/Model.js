@@ -1,30 +1,33 @@
+/* eslint-disable no-unreachable */
+/* eslint-disable new-cap */
+/* eslint-disable max-len */
 // =========================================================
 // Copyright 2018-2022 Construction Overlay Inc.
 // =========================================================
 
 'use strict';
 
-////////////////////////////////////////////////////////////////
+// //////////////////////////////////////////////////////////////
 //
 // The Model file is 
 //
-////////////////////////////////////////////////////////////////
+// //////////////////////////////////////////////////////////////
 
 import {WebGLRenderer as THREE_WebGLRenderer,
-       } from '../../static/three.js/three.js-r135/build/three.module.js';
+} from '../../static/three.js/three.js-r135/build/three.module.js';
 
 //        WebGLRenderer as THREE_WebGL1Renderer,
 
-import { COL } from  "../COL.js";
-import { Scene3DtopDown } from "./Scene3DtopDown.js";
+import { COL } from  '../COL.js';
+import { PlanView } from './PlanView.js';
 // import { Whiteboard } from "./Whiteboard.js";
-import "../util/Util.js";
-import "../util/Util.AssociativeArray.js";
-import "./Core.js";
-import { Layer } from "./Layer.js";
-import { SceneBar } from "../gui/SceneBar.js";
-import { BrowserDetect } from "../util/browser_detect.js";
-
+import '../util/Util.js';
+import '../util/Util.AssociativeArray.js';
+import './Core.js';
+import { Layer } from './Layer.js';
+import { SceneBar } from '../gui/SceneBar.js';
+import { BrowserDetect } from '../util/browser_detect.js';
+// import { ManageGUI } from "../manageGUI.js";
 
 /**
  * @file Defines the Model class
@@ -42,77 +45,92 @@ class Model {
         this.modelVersion = undefined;
         this.minZipVersion = undefined;
         this.fileZip = undefined;
-        this._urlBase = window.location.origin + '/';
         this._layers = new COL.util.AssociativeArray();
         this._selectedLayer = null;
         this._zipFilesInfo = new COL.util.AssociativeArray();
         this._selectedZipFileInfo = undefined;
         this.sceneBar = undefined;
         this.isUserLoggedIn = false;
-        this._renderer3DtopDown2 = undefined;
-        this._rendererTexturePane = undefined;
+        this._rendererPlanView2 = undefined;
+        this._rendererImageViewPane = undefined;
+        this.planThumbnailsPaneScrollPosition = undefined;
 
         // container for the db operations that are executed in single request
         this.image_db_operations_array = [];
 
+        // context-menu related variables
+        this.timeoutID = undefined;
+        this.isPlanThumbnailMenuVisible = false;
+
         this.csrf_token = COL.util.getCSRFToken();
+
+        $('#planThumbnailsMenuId li').click(async function(event) {
+            console.log('BEG #planThumbnailsMenuId li click');
+
+            {
+                // Prevent multiple click events firing JQuery
+                // https://stackoverflow.com/questions/12708691/prevent-multiple-click-events-firing-jquery
+                event.stopImmediatePropagation();
+                event.preventDefault();
+            }
+            
+            switch($(this).attr('data-action')) {
+                case 'third': 
+                    console.log('third');
+                    break;
+            }
+        });
     }
 
-    getTexCanvasWrapperSize2 = function() {
-        // console.log('BEG getTexCanvasWrapperSize2');
-        let texCanvasWrapper = $('#texCanvasWrapperId');
-        let texCanvasWrapperSize = {width: texCanvasWrapper.innerWidth(),
-                                    height: texCanvasWrapper.innerHeight()};
+    getimageViewPaneSize2() {
+        // console.log('BEG getimageViewPaneSize2');
+        let imageViewPaneEl = $('#imageViewPaneId');
+        let imageViewPaneSize = {width: imageViewPaneEl.innerWidth(),
+            height: imageViewPaneEl.innerHeight()};
 
-        return texCanvasWrapperSize;
-    };
+        return imageViewPaneSize;
+    }
 
-    setRendererTexturePane = function () {
-        if(COL.doUseWebGL2)
-        {
-            this._rendererTexturePane = new THREE_WebGLRenderer({
+    setRendererImageViewPane () {
+
+        let selectedImage3dCanvasEl = document.getElementById('selectedImage3dCanvasId');
+
+        if(COL.doUseWebGL2) {
+            this._rendererImageViewPane = new THREE_WebGLRenderer({
                 preserveDrawingBuffer: false,
-                alpha: true});
+                alpha: true,
+                canvas: selectedImage3dCanvasEl});
         }
-        else
-        {
+        else {
             // force webGL1
-            this._rendererTexturePane = new THREE_WebGL1Renderer({
+            this._rendererImageViewPane = new THREE_WebGL1Renderer({
                 preserveDrawingBuffer: false,
-                alpha: true});
+                alpha: true,
+                canvas: selectedImage3dCanvasEl});
         }
 
         
-        let _rendererTexturePane_isWebGL2 = this._rendererTexturePane.capabilities.isWebGL2;
-        console.log('_rendererTexturePane_isWebGL2', _rendererTexturePane_isWebGL2);
-
-        console.log('window.devicePixelRatio', window.devicePixelRatio); 
-        this._rendererTexturePane.domElement.id = 'canvasTex';
-        // this._rendererTexturePane.setPixelRatio(window.devicePixelRatio);
+        let _rendererImageViewPane_isWebGL2 = this._rendererImageViewPane.capabilities.isWebGL2;
+        console.log('_rendererImageViewPane_isWebGL2', _rendererImageViewPane_isWebGL2);
 
         let factor = 0.5;
         // factor = 0.1;
         factor = 1.0;
         console.log('factor', factor); 
         
-        this._rendererTexturePane.setPixelRatio(window.devicePixelRatio * factor);
-        let texCanvasWrapperSize = this.getTexCanvasWrapperSize2();
-        console.log('texCanvasWrapperSize', texCanvasWrapperSize); 
-        this._rendererTexturePane.setSize( texCanvasWrapperSize.width, texCanvasWrapperSize.height );
+        this._rendererImageViewPane.setPixelRatio(window.devicePixelRatio * factor);
+        let imageViewPaneSize = this.getimageViewPaneSize2();
+        this._rendererImageViewPane.setSize( imageViewPaneSize.width, imageViewPaneSize.height );
         
-        this._rendererTexturePane.setClearColor(0XDBDBDB, 1); //Webgl canvas background color
+        // Webgl canvas background color
+        this._rendererImageViewPane.setClearColor(0XDBDBDB, 1);
 
-        let rendererTexturePaneJqueryObject = $('#' + this._rendererTexturePane.domElement.id);
-        rendererTexturePaneJqueryObject.addClass("showFullSize");
-
-        let texCanvasWrapper = $('#texCanvasWrapperId');
-        texCanvasWrapper.append(this._rendererTexturePane.domElement);
-    };
+        let rendererImageViewPaneJqueryObject = $('#' + this._rendererImageViewPane.domElement.id);
+        rendererImageViewPaneJqueryObject.addClass('showFullSize');
+    }
     
-    
-    initModel = async function (doSetupTopDownAndTextureGui) {
+    async initModel() {
         // console.log('BEG initModel');
-        // console.log('doSetupTopDownAndTextureGui', doSetupTopDownAndTextureGui);
 
         console.log('COL.doWorkOnline before', COL.doWorkOnline);
         try {
@@ -121,34 +139,28 @@ class Model {
             // throw new Error('dummy throw');
             
             this.setSystemParams(systemParamsAsJson);
-            this._urlBase = window.location.origin + '/';
             COL.doWorkOnline = true;
-        } catch(err){
+        }
+        catch(err){
             // getSystemParams failed with exception.
             // This indicates that the system is in offline mode (i.e. no web server)
             // this can happen:
             // - if there is no connection to the server (e.g. server is down, or internet is down, etc..)
             // - if working from files within a mobile device with the "Offline" button (i.e. working from from files)
             console.log('Detected offline mode.');
-
-            // dymmy origin to satisfy fetch ?
-            this._urlBase = "https://192.168.1.79/";
             COL.doWorkOnline = false;
         }
         console.log('COL.doWorkOnline after', COL.doWorkOnline);
-        console.log('this._urlBase', this._urlBase);
 
         let getCurrentUserResultAsJson = {dummy_val: 'True'};
-        if(COL.doWorkOnline)
-        {
-            ////////////////////////////////////////////////////////////////////////////////
+        if(COL.doWorkOnline) {
+            // //////////////////////////////////////////////////////////////////////////////
             // check if the user is logged-on
-            ////////////////////////////////////////////////////////////////////////////////
+            // //////////////////////////////////////////////////////////////////////////////
 
             // http://localhost/api/v1_2/get_current_user
             getCurrentUserResultAsJson = await this.get_current_user();
-            if(getCurrentUserResultAsJson['user_email'])
-            {
+            if(getCurrentUserResultAsJson['user_email']) {
                 COL.model.setLoggedInFlag(true);
             }
         }
@@ -156,90 +168,87 @@ class Model {
         this._browserDetect = undefined;
         this.detectUserAgent();
         
-        if(doSetupTopDownAndTextureGui)
-        {
-            this.sceneBar = new SceneBar(COL.component);
+        this.sceneBar = new SceneBar(COL.component);
 
-            let user_role = getCurrentUserResultAsJson['user_role'];
-            console.log('user_role', user_role); 
+        let user_role = getCurrentUserResultAsJson['user_role'];
+        console.log('user_role', user_role); 
 
+        if(COL.isOldGUIEnabled) {
             await this.sceneBar.initSceneBar(user_role, COL.component);
-
-            ////////////////////////////////////////////////////////////////////////////////
-            // Set renderers:
-            // - this._renderer3DtopDown2
-            // - this._rendererTexturePane
-            ////////////////////////////////////////////////////////////////////////////////
-
-            // https://stackoverflow.com/questions/21548247/clean-up-threejs-webgl-contexts
-            // set the _renderer3DtopDown2 as a member of Model, so that it does
-            // not get disposed when disposing Layer::scene3DtopDown.
-
-            if(COL.doUseWebGL2)
-            {
-                this._renderer3DtopDown2 = new THREE_WebGLRenderer();
-            }
-            else
-            {
-                // force webGL1
-                this._renderer3DtopDown2 = new THREE_WebGL1Renderer();
-            }
-
-            let _renderer3DtopDown2_isWebGL2 = this._renderer3DtopDown2.capabilities.isWebGL2;
-            console.log('_renderer3DtopDown2_isWebGL2', _renderer3DtopDown2_isWebGL2);
-            
-            // Set the background color, and the opacity of the canvas
-            // https://threejs.org/docs/#api/en/renderers/WebGLRenderer.setClearColor
-            this._renderer3DtopDown2.setClearColor (0xffffff, 0.9);
-
-            let topDownPaneEl = document.getElementById("topDownPaneId");
-
-            // Add id and class to _renderer3DtopDown.domElement (the topDown canvas)
-            let canvasTopDownEl = this._renderer3DtopDown2.domElement;
-            canvasTopDownEl.id = 'canvasTopDownId';
-            canvasTopDownEl.classList.add("canvasTopDownClass");
-            
-            topDownPaneEl.appendChild(this._renderer3DtopDown2.domElement);
-
-            this.setRendererTexturePane();
-
-            if(COL.doEnableWhiteboard)
-            {
-                ////////////////////////////////////////////////////////////////////////////////
-                // Set floorPlanWhiteboard
-                ////////////////////////////////////////////////////////////////////////////////
-
-                // let floorPlanWhiteboard = document.getElementById("floorPlanWhiteboardId");
-                // topDownPaneEl.appendChild(floorPlanWhiteboard);
-            }
-            
-            ////////////////////////////////////////////////////////////////////////////////
-            // Report _renderer3DtopDown2 webGL capabilities
-            ////////////////////////////////////////////////////////////////////////////////
-
-            let isWebGL2 = this._renderer3DtopDown2.capabilities.isWebGL2;
-            console.log('isWebGL2', isWebGL2);
-            console.log('Layer.maxNumImageBlobsInMeomry', Layer.maxNumImageBlobsInMeomry);
-            
-            // console.log('this._renderer3DtopDown2.capabilities', this._renderer3DtopDown2.capabilities);
-            // console.log('this._renderer3DtopDown2.capabilities.maxTextureSize', this._renderer3DtopDown2.capabilities.maxTextureSize);
-
-            if(!COL.doWorkOnline && COL.util.isObjectValid(window.$agent_jasonette_android))
-            {
-                // in mobile app (e.g. jasonette-android), and offline mode
-                // load canned demo siteplan.
-                // in online mode, the demo_site is loaded from the webserver)
-                window.$agent_jasonette_android.trigger("media.loadDemoZipFileHeaders");
-            }
-
-            await this.sceneBar.renderSelectedPlan(getCurrentUserResultAsJson);
         }
 
-        this.detectWebGL(doSetupTopDownAndTextureGui);
+        // //////////////////////////////////////////////////////////////////////////////
+        // Set renderers:
+        // - this._rendererPlanView2
+        // - this._rendererImageViewPane
+        // //////////////////////////////////////////////////////////////////////////////
 
-    };
+        // https://stackoverflow.com/questions/21548247/clean-up-threejs-webgl-contexts
+        // set the _rendererPlanView2 as a member of Model, so that it does
+        // not get disposed when disposing Layer::planView.
 
-    detectUserAgent = function () {
+        let canvasPlanViewEl = document.getElementById('planView3dCanvasId');
+        if(COL.doUseWebGL2) {
+            this._rendererPlanView2 = new THREE_WebGLRenderer({antialias: true, canvas: canvasPlanViewEl});
+        }
+        else {
+            // force webGL1
+            this._rendererPlanView2 = new THREE_WebGL1Renderer({antialias: true, canvas: canvasPlanViewEl});
+        }
+
+        let _rendererPlanView2_isWebGL2 = this._rendererPlanView2.capabilities.isWebGL2;
+        console.log('_rendererPlanView2_isWebGL2', _rendererPlanView2_isWebGL2);
+            
+        // Set the background color, and the opacity of the canvas
+        // https://threejs.org/docs/#api/en/renderers/WebGLRenderer.setClearColor
+        this._rendererPlanView2.setClearColor (0xffffff, 0.9);
+
+        let planViewPaneEl = document.getElementById('planViewPaneId');
+
+        const toggleToolbar = document.querySelectorAll('.toggle-toolbar');
+        const stickyToolbarContainer1 = document.querySelector(
+            '.sticky-toolbar-container1'
+        );
+                
+        toggleToolbar.forEach(function (element) {
+            element.addEventListener('click', function () {
+                stickyToolbarContainer1.classList.toggle('show-toolbar');
+            });
+        });
+    
+        this.setRendererImageViewPane();
+
+        if(COL.doEnableWhiteboard) {
+            // //////////////////////////////////////////////////////////////////////////////
+            // Set floorPlanWhiteboard
+            // //////////////////////////////////////////////////////////////////////////////
+
+            // let floorPlanWhiteboard = document.getElementById("floorPlanWhiteboardId");
+            // planViewPaneEl.appendChild(floorPlanWhiteboard);
+        }
+            
+        // //////////////////////////////////////////////////////////////////////////////
+        // Report _rendererPlanView2 webGL capabilities
+        // //////////////////////////////////////////////////////////////////////////////
+
+        let isWebGL2 = this._rendererPlanView2.capabilities.isWebGL2;
+        console.log('isWebGL2', isWebGL2);
+        console.log('Layer.maxNumImageBlobsInMeomry', Layer.maxNumImageBlobsInMeomry);
+            
+        // console.log('this._rendererPlanView2.capabilities', this._rendererPlanView2.capabilities);
+        // console.log('this._rendererPlanView2.capabilities.maxTextureSize', this._rendererPlanView2.capabilities.maxTextureSize);
+
+        if(!COL.doWorkOnline && COL.util.isObjectValid(window.$agent_jasonette_android)) {
+            // in mobile app (e.g. jasonette-android), and offline mode
+            // load canned demo siteplan.
+            // in online mode, the demo_site is loaded from the webserver)
+            window.$agent_jasonette_android.trigger('media.loadDemoZipFileHeaders');
+        }
+
+        this.detectWebGL();
+    }
+
+    detectUserAgent () {
         // console.log('BEG detectUserAgent');
         
         this._browserDetect = new BrowserDetect();
@@ -252,129 +261,155 @@ class Model {
         console.log('this._browserDetect.browser', this._browserDetect.browser);
         console.log('this._browserDetect.version', this._browserDetect.version);
 
+
+        // window.resizeTo(
+        //     window.screen.availWidth / 2,
+        //     window.screen.availHeight / 2
+        // );
+
+        // console.log('window.innerWidth2:', window.innerWidth);
+        // console.log('window.screen.availWidth2:', window.screen.availWidth);
+        // console.log('document.documentElement.clientWidth2:', document.documentElement.clientWidth);
+        // console.log('window.devicePixelRatio2', window.devicePixelRatio); 
         // raise a toast to show the browser type
-        let toastTitleStr = "BrowserDetect";
+        let toastTitleStr = 'BrowserDetect';
         let msgStr = navigator.userAgent + ', OS: ' +
-            this._browserDetect.OS + ", Browser: " +
-            this._browserDetect.browser + ", Version: " +
+            this._browserDetect.OS + ', Browser: ' +
+            this._browserDetect.browser + ', Version: ' +
             this._browserDetect.version;
         // toastr.success(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
         console.log('msgStr', msgStr); 
-    };
+    }
 
-    getBrowserDetect = function () {
+    getBrowserDetect () {
         return this._browserDetect;
-    };
+    }
 
-    detectWebGL = function (doSetupTopDownAndTextureGui) {
+    detectWebGL () {
         // console.log('BEG detectWebGL');
         
         // https://stackoverflow.com/questions/23769780/how-to-get-opengl-version-using-javascript
-        const gl = document.createElement("canvas").getContext("webgl");
-        if(gl)
-        {
+        const gl = document.createElement('canvas').getContext('webgl');
+        if(gl) {
             // console.log(gl.getParameter(gl.VERSION));
             // console.log(gl.getParameter(gl.SHADING_LANGUAGE_VERSION));
             // console.log(gl.getParameter(gl.VENDOR));
         }
-        else
-        {
+        else {
             // console.log('webgl is not supported'); 
         }
 
-        const gl2 = document.createElement("canvas").getContext("webgl2");
-        if(gl2)
-        {
+        const gl2 = document.createElement('canvas').getContext('webgl2');
+        if(gl2) {
             // console.log(gl2.getParameter(gl2.VERSION));
             // console.log(gl2.getParameter(gl2.SHADING_LANGUAGE_VERSION));
             // console.log(gl2.getParameter(gl2.VENDOR));
         }
-        else
-        {
+        else {
             // console.log('webgl2 is not supported'); 
         }
+    }
 
-    };
+    getRendererPlanView () {
+        return this._rendererPlanView2;
+    }
 
-    getRenderer3DtopDown = function () {
-        return this._renderer3DtopDown2;
-    };
-
-    getRendererTexturePane = function () {
-        return this._rendererTexturePane;
-    };
+    getRendererImageViewPane () {
+        return this._rendererImageViewPane;
+    }
     
-    getSceneBar = function () {
+    getSceneBar () {
         return this.sceneBar;
-    };
+    }
 
-    getUrlImagePathBase = function () {
+    getUrlImagePathBase () {
         return 'avner/img';
-    };
+    }
 
-    getUrlBase = function () {
-        // console.log('BEG getUrlBase');
-        // console.log('this._urlBase', this._urlBase);
+    static GetUrlBase () {
+        console.log('BEG GetUrlBase444');
+
+        console.log('window.$agent_jasonette_android', window.$agent_jasonette_android);
+        console.log('window.location.origin', window.location.origin);
+        let urlBase;
+        if(window.location.origin == 'file://'){
+            // In mobile app, and using the local html,js,css files.
+            // Add dummy origin to satisfy the fetch request.
+            // (e.g. change from file:///android_asset/file/root/js/col/core/Model.js 
+            // to https://192.168.1.79/android_asset/file/root/js/col/core/Model.js)
+            // 
+            // Webview will then intercept the fetch the request and respond properly.
+            // (if not adding the dummy origin, an error occurs: 'URL scheme "file" is not supported')
+            console.log('foo1');
+            urlBase ='https://192.168.1.79/';
+        }
+        else{
+            // In browser (e.g. chrome, firefox), and pointing to remote server (e.g. https://bldlog.com, https://192.168.1.74), or
+            // in mobile app, and pointing to remote server.
+            console.log('foo2');
+            urlBase = window.location.origin + '/';
+        }
         
-        return this._urlBase;
-    };
-    
-    static GetUrlBase = function () {
-        console.log('BEG GetUrlBase');
+        console.log('urlBase', urlBase);
 
-        let urlBase = window.location.origin + '/';
-        // console.log('urlBase', urlBase); 
         return urlBase;
-    };
+    }
 
-    get_current_user = async function () {
+    async get_current_user() {
         // console.log('BEG get_current_user'); 
 
         // console.log('COL.model', COL.model); 
         let queryUrl = Model.GetUrlBase() + 'api/v1_2/get_current_user';
         let dataAsJson = await fetch(queryUrl).then(response => response.json());
         return dataAsJson;
-    };
+    }
 
-    getZipFilesInfo = function () {
+    getZipFilesInfo () {
         return this._zipFilesInfo;
-    };
+    }
 
-    setZipFilesInfo= function (zipFileInfo) {
+    setZipFilesInfo (zipFileInfo) {
         this._zipFilesInfo.set(zipFileInfo.zipFileName, zipFileInfo);
-    };
+    }
 
-    getSelectedZipFileInfo = function () {
+    getSelectedZipFileInfo () {
         return this._selectedZipFileInfo;
-    };
+    }
 
-    setSelectedZipFileInfo = function (zipFileInfo) {
+    setSelectedZipFileInfo (zipFileInfo) {
         this._selectedZipFileInfo = zipFileInfo;
-    };
+    }
 
-    getModelVersion = function () {
+    getModelVersion () {
         return this.modelVersion;
-    };
+    }
 
-    setModelVersion = function (modelVersion) {
+    setModelVersion (modelVersion) {
         this.modelVersion = modelVersion;
-    };
+    }
 
-    getMinZipVersion = function () {
+    getMinZipVersion () {
         return this.minZipVersion;
-    };
+    }
 
-    setMinZipVersion = function (minZipVersion) {
+    setMinZipVersion (minZipVersion) {
         this.minZipVersion = minZipVersion;
-    };
+    }
     
-    createLayer = function (planInfo) {
+    getPlanThumbnailsPaneScrollPosition () {
+        return this.planThumbnailsPaneScrollPosition;
+    }
+
+    setPlanThumbnailsPaneScrollPosition (planThumbnailsPaneScrollPosition) {
+        this.planThumbnailsPaneScrollPosition = planThumbnailsPaneScrollPosition;
+    }
+
+    createLayer (planInfo, isLayerFromZipFile=false) {
         // console.log('BEG createLayer');
 
-        let layerName = Layer.CreateLayerName(planInfo);
+        let layerName = Layer.CreateLayerName(planInfo.siteName, planInfo.name);
         let layer = this._layers.getByKey(layerName);
-        if(COL.util.isObjectValid(layer))
-        {
+        if(COL.util.isObjectValid(layer)) {
             // tbd - currently - removing the existing layer - still leaves the existing layer in the sitePlan menu
             //       Remove from the site plan as well? or only after syncing to the webserver ??
             //       Add a warning that syncing to the webserver will wipe previous data of the layer ??
@@ -386,20 +421,19 @@ class Model {
         }
 
         // console.log('this._layers.size()', this._layers.size()); 
-        layer = new Layer(layerName, planInfo);
+        layer = new Layer(layerName, planInfo, isLayerFromZipFile);
         layer.initLayer();
         return layer;
-    };
+    }
 
-    getLayerByName = function (name) {
+    getLayerByName (name) {
         // this.printLayersInfo2();
         return this._layers.getByKey(name);
-    };
+    }
 
-    getLayerByPlanInfo = function (planInfo) {
+    getLayerFromLayersList (planInfo) {
 
-        if(COL.util.isObjectInvalid(planInfo))
-        {
+        if(COL.util.isObjectInvalid(planInfo)) {
             // at this point planInfo must be defined
             throw new Error('planInfo is invalid');
         }
@@ -415,17 +449,16 @@ class Model {
             // console.log('layerVal', layerVal);
 
             let layerPlanInfo = layerVal.getPlanInfo();
-            if(layerPlanInfo && (layerPlanInfo.siteId == planInfo.siteId) && (layerPlanInfo.id == planInfo.id))
-            {
+            if(layerPlanInfo && (layerPlanInfo.siteId == planInfo.siteId) && (layerPlanInfo.id == planInfo.id)) {
                 layer = layerVal;
                 break;
             }
         }
         
         return layer;
-    };
+    }
     
-    printLayersInfo2 = function () {
+    printLayersInfo2 () {
 
         console.log('_layers.size()', this._layers.size());
         
@@ -440,27 +473,51 @@ class Model {
             // let imagesInfo = layer.getImagesInfo();
             // imagesInfo.printKeysAndValues();
         }
-    };
+    }
     
-    addLayer = function (layer) {
-        // console.log('BEG addLayer'); 
+    async loadLayerFromWebServer(planInfo) {
+        let layer = COL.model.createLayer(planInfo);
+
+        // "https://192.168.1.75/avner/img/168/188/general_metadata.json"
+        let general_metadata_filename = 'general_metadata.json';
+        let queryUrl = Model.GetUrlBase() + COL.model.getUrlImagePathBase() +
+            '/' + planInfo.siteId + '/' +
+            planInfo.id + '/' + general_metadata_filename;
+        
+        let response = await fetch(queryUrl);
+        await COL.errorHandlingUtil.handleErrors(response);
+        let dataAsJson = await response.json();
+        // console.log('dataAsJson', dataAsJson);
+        layer.setGeneralMetadata(dataAsJson);
+        
+        let layerGeneralMetadata = layer.getGeneralMetadata();
+        await COL.loaders.CO_ObjectLoader.loadLayerJson_fromWebServer(layer, planInfo.siteId, planInfo.id);
+    
+        COL.model.addLayerToList(layer);
+
+        return layer;
+    }
+
+
+    addLayerToList (layer) {
+        // console.log('BEG addLayerToList'); 
         // TBD - why add Layer is called multiple times
         
         if (!(layer instanceof Layer)) {
-            console.error("The parameter must be an instance of Layer");
+            console.error('The parameter must be an instance of Layer');
             return;
         }
 
-        //Add/update layer to _layers            
+        // Add/update layer to _layers            
         this._layers.set(layer.name, layer);
-    };
+    }
 
-    selectLayerByName = async function (layerName) {
+    async selectLayerByName (layerName) {
         let layer = this._layers.getByKey(layerName);
         await this.setSelectedLayer(layer);
-    };
+    }
 
-    removeLayerByName = function (name) {
+    removeLayerByName (name) {
         // console.log('BEG removeLayerByName');
 
         // console.log('this._layers', this._layers);
@@ -485,87 +542,49 @@ class Model {
                 this._selectedLayer = undefined;
             }
         }
-    };
+    }
 
-    setSelectedLayer = async function (layer) {
+    async setSelectedLayer(layer) {
         console.log('BEG setSelectedLayer'); 
 
-        ////////////////////////////////////////////////////////////////////////////////
+        // //////////////////////////////////////////////////////////////////////////////
         // Setup the new selectedLayer
-        ////////////////////////////////////////////////////////////////////////////////
+        // //////////////////////////////////////////////////////////////////////////////
 
         this._selectedLayer = layer;
         
-        if(COL.util.isObjectInvalid(layer))
-        {
+        if(COL.util.isObjectInvalid(layer)) {
             // unselect the layer
-
-            if(COL.colJS.floorPlanToggleButton.isOn())
-            {
-	        // toggle to hide the topDownPane
-                document.getElementById('floorPlanToggleButtonId').click();
-            }
-
-            // disable the floorPlanToggleButton
-            COL.colJS.floorPlanToggleButton.disabled(true);
-
-            $("#texturePaneWrapperId").hide();
-
             // mark the plan in the siteplan menu to the "No sites selected"
             $('#sitesId')[0].selectedIndex = 0;
 
         }
-        else
-        {
-            // show the topDownPane
-            $("#topDownPaneWrapperId").show();
-            $("#texturePaneWrapperId").show();
-
-            // enable the floorPlanToggleButton
-            COL.colJS.floorPlanToggleButton.disabled(false);
-
-            if(!COL.colJS.floorPlanToggleButton.isOn())
-            {
-	        // toggle to show the topDownPane
-                document.getElementById('floorPlanToggleButtonId').click();
-            }
-
+        else {
             await this._selectedLayer.updateLayerImageRelatedRenderring();
-            if(COL.doWorkOnline)
-            {
-                ////////////////////////////////////////////////////////////////////////////////
-                // Sync the buttons in the scenebar to the state of the layer.
-                // For example, if the new selectedLayer is in edit mode
-                // make the editOverlayRect button in the scenbar reflect that.
-                // (the scenbar maybe out of sync if the previous select layer was not in editing mode)
-                ////////////////////////////////////////////////////////////////////////////////
 
-                let sceneBar = this.getSceneBar();
-                sceneBar.sync_editOverlayRectButton_toStateOf_selectedLayerEditOverlayRectFlag();
-            }
+            // //////////////////////////////////////////////////////////////////////////////
+            // Adjust the camera, canvas, renderer, and viewport1 to the planViewPane
+            // //////////////////////////////////////////////////////////////////////////////
 
-            ////////////////////////////////////////////////////////////////////////////////
-            // Adjust the camera, canvas, renderer, and viewport1 to the selected topDown pane
-            ////////////////////////////////////////////////////////////////////////////////
-
-            let scene3DtopDown = this._selectedLayer.getScene3DtopDown();
+            let planView = this._selectedLayer.getPlanView();
             // Set doRescale so that the camera position is restored from the layer.json file
             let doRescale = false;
-            scene3DtopDown.set_camera_canvas_renderer_and_viewport1(doRescale);
-            $(document).trigger("SceneLayerSelected", [this._selectedLayer]);
+            doRescale = true;
+            planView.set_camera_canvas_renderer_and_viewport1(doRescale);
+            $(document).trigger('SceneLayerSelected', [this._selectedLayer]);
         }
         
-    };
+    }
 
-    getSelectedLayer = function () {
+    getSelectedLayer () {
         return this._selectedLayer;
-    };
+    }
     
-    getLayers = function () {
+    getLayers () {
         return this._layers;
-    };
+    }
 
-    getSiteByName = async function (siteName) {
+    async getSiteByName(siteName) {
         
         // ////////////////////////////////////////////////
         // Query - get_site_by_name
@@ -574,7 +593,7 @@ class Model {
         // http://localhost/api/v1_2/get_site_by_name/modelWith4Images
         console.log('Query - get_site_by_name'); 
         
-        let queryUrl = this.getUrlBase() + 'api/v1_2/get_site_by_name/' + siteName;
+        let queryUrl = Model.GetUrlBase() + 'api/v1_2/get_site_by_name/' + siteName;
         console.log('queryUrl', queryUrl);
 
         let response = await fetch(queryUrl);
@@ -582,44 +601,44 @@ class Model {
 
         let dataAsJson = await response.json();
         return dataAsJson;
-    };
+    }
     
     
     /**
      * Removes the object from memory
      */
-    dispose = function () {
+    dispose () {
         console.log('BEG Model::dispose()');
         throw('Not implemented yet');
 
         // https://github.com/mrdoob/three.js/blob/master/examples/webgl_test_memory2.html
-        // renderer -> _renderer3DtopDown
-        // this._renderer3DtopDown.forceContextLoss();
-        // this._renderer3DtopDown.context = null;
-        // this._renderer3DtopDown.domElement = null;
-        // this._renderer3DtopDown = null;
-        // this._renderer3DtopDown.dispose();
+        // renderer -> _rendererPlanView
+        // this._rendererPlanView.forceContextLoss();
+        // this._rendererPlanView.context = null;
+        // this._rendererPlanView.domElement = null;
+        // this._rendererPlanView = null;
+        // this._rendererPlanView.dispose();
         
         this.name = null;
-    };
+    }
 
-    isStickyNotesEnabled = function () {
+    isStickyNotesEnabled () {
         return false;
         // return true;
     }
 
-    getLoggedInFlag = function () {
+    getLoggedInFlag () {
         return this.isUserLoggedIn;
     }
 
-    setLoggedInFlag = function (isUserLoggedIn) {
+    setLoggedInFlag (isUserLoggedIn) {
         this.isUserLoggedIn = isUserLoggedIn;
     }
 
-    getSystemParams = async function () {
+    async getSystemParams () {
         // console.log('BEG getSystemParams');
         
-        let queryUrl = this.getUrlBase() + 'api/v1_2/get_system_params';
+        let queryUrl = Model.GetUrlBase() + 'api/v1_2/get_system_params';
         // https://localhost/api/v1_2/get_system_params
         // console.log('queryUrl', queryUrl); 
         let response = await fetch(queryUrl);
@@ -627,15 +646,55 @@ class Model {
         let systemParamsAsJson = await response.json();
         // console.log('systemParamsAsJson', systemParamsAsJson); 
         return systemParamsAsJson;
-    };
+    }
 
-    setSystemParams = function (systemParamsAsJson) {
+    setSystemParams (systemParamsAsJson) {
         // console.log('systemParamsAsJson', systemParamsAsJson);
 
-        this.setModelVersion( parseFloat(systemParamsAsJson['modelVersion']) )
+        this.setModelVersion( parseFloat(systemParamsAsJson['modelVersion']) );
         this.setMinZipVersion( parseFloat(systemParamsAsJson['minZipVersion']) );
     }
-};
+
+    // /////////////////////////////////
+    // BEG Add context-menu to ThumbnailPlan
+    // /////////////////////////////////
+
+    delayedMenuThumbnailPlan(event) {
+        console.log('BEG delayedMenuThumbnailPlan');
+        
+        if(this.isPlanThumbnailMenuVisible) {
+            // a previous menu exist. Clear it first before setting a new menu.
+            this.clearMenuThumbnailPlan();
+        }
+
+        let timeIntervalInMilliSec = 500;
+        this.timeoutID = window.setTimeout(this.showMenuThumbnailPlan.bind(this, event), timeIntervalInMilliSec);
+    }
+    
+    showMenuThumbnailPlan(event) {
+        console.log('BEG showMenuThumbnailPlan');
+        
+        $('#planThumbnailsMenuId').finish().toggle(100).css({
+            top: event.pageY + 'px',
+            left: event.pageX + 'px'
+        });
+        this.isPlanThumbnailMenuVisible = true;
+        // this.setState(OverlayRect.STATE.CONTEXT_MENU);
+    }
+
+    clearMenuThumbnailPlan() {
+        console.log('BEG clearMenuThumbnailPlan');
+
+        window.clearTimeout(this.timeoutID);
+        this.isPlanThumbnailMenuVisible = false;
+        $('#planThumbnailsMenuId').hide(100);
+    }
+
+    // /////////////////////////////////
+    // END Add context-menu to ThumbnailPlan
+    // /////////////////////////////////
+
+}
 
 export { Model };
 

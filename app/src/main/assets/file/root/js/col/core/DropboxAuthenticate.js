@@ -4,7 +4,7 @@
 
 'use strict';
 
-import { Model } from "./Model.js";
+import { Model } from './Model.js';
 
 var CLIENT_ID = '42zjexze6mfpf7x';
 // Parses the url and gets the access token if it is in the urls hash
@@ -50,10 +50,9 @@ else {
     showPageSection('pre-auth-section');
     // Set the login anchors href using dbx.getAuthenticationUrl()
     var dbx = new Dropbox.Dropbox({ clientId: CLIENT_ID });
-    // COL.model.getUrlBase()
     // var authUrl = dbx.getAuthenticationUrl('http://localhost:8080/auth');
 
-    // let urlStr = COL.model.getUrlBase() + '8080/auth';
+    // let urlStr = Model.GetUrlBase() + '8080/auth';
 
     let URL_BASE = 'http://192.168.1.74';
     let urlStr = URL_BASE + ':8080/auth';

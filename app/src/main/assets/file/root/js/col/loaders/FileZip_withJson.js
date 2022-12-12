@@ -8,11 +8,10 @@ import { COL } from  "../COL.js";
 import { Model } from "../core/Model.js";
 import { Layer } from "../core/Layer.js";
 import { BlobInfo } from "../core/BlobInfo.js";
-import { ApiService } from "../core/ApiService.js";
 import "../core/Core.js";
 import { ImageInfo } from "../core/ImageInfo.js";
 import { ZipLoader } from "../../static/ZipLoader.module.js";
-import { Scene3DtopDown } from "../core/Scene3DtopDown.js";
+import { PlanView } from "../core/PlanView.js";
 import "../util/Util.js";
 import "../util/Util.AssociativeArray.js";
 import "../util/ErrorHandlingUtil.js";
@@ -194,11 +193,11 @@ class FileZip_withJson {
             COL.model.image_db_operations_array = [];
             
             /////////////////////////////////////////////
-            // getLayerByPlanInfo
+            // getLayerFromLayersList
             /////////////////////////////////////////////
             
             let syncRetVals = [];
-            let layer = COL.model.getLayerByPlanInfo(plan_inFileZip);
+            let layer = COL.model.getLayerFromLayersList(plan_inFileZip);
             if(COL.util.isObjectInvalid(layer)) {
                 // sanity check
                 console.error('plan_inFileZip', plan_inFileZip); 
@@ -305,7 +304,7 @@ class FileZip_withJson {
 
                 
                 // queryUrl - e.g. http://192.168.1.74/api/v1_2/insert_update_delete_images_in_db
-                let queryUrl = COL.model.getUrlBase() + 'api/v1_2/insert_update_delete_images_in_db';
+                let queryUrl = Model.GetUrlBase() + 'api/v1_2/insert_update_delete_images_in_db';
 
                 let response = await fetch(queryUrl, fetchData);
                 await COL.errorHandlingUtil.handleErrors(response);
@@ -488,7 +487,7 @@ class FileZip_withJson {
         // @bp.route('/admin/delete/site/<site_id>', methods=['DELETE'])
         // @bp.route('/admin/delete/site/<site_id>', methods=['POST'])
         // https://localhost/api/v1_2/admin/delete/site/71
-        let queryUrl = COL.model.getUrlBase() + 'api/v1_2/admin/delete/site/' + siteInfo_inBackend.siteId;
+        let queryUrl = Model.GetUrlBase() + 'api/v1_2/admin/delete/site/' + siteInfo_inBackend.siteId;
 
         let fetchData = { 
             method: 'GET'
@@ -698,7 +697,7 @@ class FileZip_withJson {
         // loop over keys
         let zipFileInfo = COL.model.getSelectedZipFileInfo();
         let filenames = Object.keys(zipFileInfo.files);
-        console.log('filenames', filenames);
+        // console.log('filenames', filenames);
         let numFiles = filenames.length;
         console.log('numFiles', numFiles); 
         let countIndex = 0;
@@ -714,7 +713,7 @@ class FileZip_withJson {
                 // that were loaded so far
                 let msgStr = countIndex + " out of " + numFiles;
                 console.log(msgStr);
-                let spinnerEl = document.getElementById('cssLoaderId');
+                let spinnerEl = document.getElementById('inProgressSpinnerId');
                 spinnerEl.setAttribute('data-text', msgStr);
             }
             countIndex += 1;
@@ -764,7 +763,12 @@ class FileZip_withJson {
                 case "jpg":
                 case "png": {
 
-                    // imagesInfo is loaded from the json file
+                    // imagesInfo is loaded from the json file (tbd - fix dirName)
+
+                    let blobInfo = new BlobInfo({filenameFullPath: filenameFullPath, blobUrl: undefined, isDirty: false});
+                    let imageInfo = new ImageInfo({filename: filename, blobInfo: blobInfo});
+                    planImagesInfo.set(filename, imageInfo);
+
                     break;
                 }
                 case "json": {
@@ -855,7 +859,9 @@ class FileZip_withJson {
         let zipFileInfo = COL.model.getSelectedZipFileInfo();
         let siteInfo;
         switch(modelVersionInZipFile) {
-            case 1.1: {
+            case 1.1: 
+            case 1.2: 
+            {
                 siteInfo = new SiteInfo({siteId: siteInfo_asJson.id,
                                          siteName: siteInfo_asJson.name,
                                          plans: new COL.util.AssociativeArray()});
@@ -866,7 +872,7 @@ class FileZip_withJson {
                     // add zipFileName field to planInfo - this indicates,
                     // when selecting a siteplan in the dropdown divSitePlanMenu
                     // to load the layer from the zip file and not from the webserver
-                    console.log('planInfoDict', planInfoDict); 
+                    // console.log('planInfoDict', planInfoDict); 
                     let planInfo = new PlanInfo({id: planInfoDict.id,
                                                  name: planInfoDict.name,
                                                  url: planInfoDict.url,
@@ -966,7 +972,7 @@ class FileZip_withJson {
 
                 // Set the option value (as json-string) in the sitePlan menu
                 let planInfoJsonStr = planInfo_inFileZip.toJsonString();
-                console.log('planInfoJsonStr', planInfoJsonStr); 
+                // console.log('planInfoJsonStr', planInfoJsonStr); 
                 let optionVal = planInfoJsonStr;
                 
                 let optionEl = $('<option />');
@@ -984,13 +990,13 @@ class FileZip_withJson {
 
         for (let index in this.layerJsonFilenames) {
 
-            let topDownJsonFullPath = this.layerJsonFilenames[index];
+            let planViewJsonFullPath = this.layerJsonFilenames[index];
 
-            let pathElements = COL.util.getPathElements(topDownJsonFullPath);
+            let pathElements = COL.util.getPathElements(planViewJsonFullPath);
             let dirname = pathElements['dirname'];
             let layerJsonFilename = pathElements['filename'];
 
-            let retVal = this.sortFileToPlan(topDownJsonFullPath);
+            let retVal = this.sortFileToPlan(planViewJsonFullPath);
             // let imagesInfo = retVal.imagesInfo;
             let planMetaDataFilesInfo = retVal.planMetaDataFilesInfo;
             // let otherDataSharedBetweenAllSitePlans = retVal.otherDataSharedBetweenAllSitePlans;
@@ -1012,8 +1018,9 @@ class FileZip_withJson {
             let selectedZipFileInfo = COL.model.getSelectedZipFileInfo();
             let planInfo = selectedZipFileInfo.getPlanInfoBySiteIdAndPlanId(origSiteId, origPlanId);
 
-            let layer = COL.model.createLayer(planInfo);
-            COL.model.addLayer(layer);
+            let isLayerFromZipFile = true;
+            let layer = COL.model.createLayer(planInfo, isLayerFromZipFile);
+            COL.model.addLayerToList(layer);
         }
     };
 
@@ -1031,14 +1038,14 @@ class FileZip_withJson {
         
         for (let index in this.layerJsonFilenames) {
 
-            let topDownJsonFullPath = this.layerJsonFilenames[index];
+            let planViewJsonFullPath = this.layerJsonFilenames[index];
             
-            let retVal = this.sortFileToPlan(topDownJsonFullPath);
+            let retVal = this.sortFileToPlan(planViewJsonFullPath);
             let origSiteId = retVal.origSiteId;
             let origPlanId = retVal.origPlanId;
             let imagesInfo = sitesFilesInfo["sites"][origSiteId][origPlanId].imagesInfo;
             let metaDataFilesInfo = sitesFilesInfo["sites"][origSiteId][origPlanId].metaDataFilesInfo;
-            let pathElements = COL.util.getPathElements(topDownJsonFullPath);
+            let pathElements = COL.util.getPathElements(planViewJsonFullPath);
             let layerJsonFilename = pathElements['filename'];
             
             // Get the plan from the path
@@ -1046,7 +1053,7 @@ class FileZip_withJson {
 
             if(COL.util.isObjectInvalid(planInfo))
             {
-                // The .zip file has topDownJsonFullPath (e.g. 1/2/modelWith4Images.structure.layer0.json)
+                // The .zip file has planViewJsonFullPath (e.g. 1/2/modelWith4Images.structure.layer0.json)
                 // that is not in the file sitesInfo.json (e.g. that includes only part of the json files, e.g.
                 // 6/8/modelWith4Images.structure.layer0.json, 6/9/modelWith4Images.structure.layer0.json, 7/10/modelWith4Images.structure.layer0.json
                 // but not 1/2/modelWith4Images.structure.layer0.json)
@@ -1058,7 +1065,7 @@ class FileZip_withJson {
                 continue;
             }
 
-            let layer = COL.model.getLayerByPlanInfo(planInfo);
+            let layer = COL.model.getLayerFromLayersList(planInfo);
             if(COL.util.isObjectInvalid(layer)) {
                 // sanity check
                 // At this point the layer should already be created (pre-exists before reading from the zip file or added in the block above)
@@ -1073,21 +1080,21 @@ class FileZip_withJson {
             layer.setImagesInfo(imagesInfo);
             layer.setMetaDataFilesInfo(metaDataFilesInfo);
 
-            let topDownJsonFileInfo = metaDataFilesInfo.getByKey(layerJsonFilename); 
-            let topDownJsonBlobInfo = topDownJsonFileInfo.blobInfo;
-            if(COL.util.isObjectInvalid(topDownJsonBlobInfo) || COL.util.isObjectInvalid(topDownJsonBlobInfo.blobUrl))
+            let planViewJsonFileInfo = metaDataFilesInfo.getByKey(layerJsonFilename); 
+            let planViewJsonBlobInfo = planViewJsonFileInfo.blobInfo;
+            if(COL.util.isObjectInvalid(planViewJsonBlobInfo) || COL.util.isObjectInvalid(planViewJsonBlobInfo.blobUrl))
             {
                 metaDataFilesInfo.printKeysAndValues();
                 let msgStr = 'Invalid blobInfo for layerJsonFilename: ' + layerJsonFilename;
                 throw new Error(msgStr);
             }
-            await FileZipUtils.loadFile_viaFetch(layerJsonFilename, topDownJsonBlobInfo, "json");
+            await FileZipUtils.loadFile_viaFetch(layerJsonFilename, planViewJsonBlobInfo, "json");
 
             //////////////////////////////////////////////////////////////////////////////////
             // populate the layer with imagesInfo
             //////////////////////////////////////////////////////////////////////////////////
 
-            // Load files related to topDownJson file (e.g. floorPlan image file,  overlay image files) into imageInfoVec
+            // Load files related to planViewJson file (e.g. floorPlan image file,  overlay image files) into imageInfoVec
             await COL.loaders.CO_ObjectLoader.loadLayerJsonFile_fromZipFile(layerJsonFilename, layer);
 
             let imageInfoVec = layer.getImagesInfo();
@@ -1118,16 +1125,12 @@ class FileZip_withJson {
 
         await COL.model.setSelectedLayer(layer0);
 
-        $(document).trigger("SceneLayerAdded", [layer0, COL.model.getLayers().size()]);
-        // console.log('layer0', layer0);
-        // console.log('layer0.planInfo', layer0.planInfo);
-
         // e.g. '"site_id":"369","id":"123"'
         let matchPattern = '\\"site_id\\"\\:\\"' + layer0.planInfo.siteId + '\\",' +
             '\\"id\\"\\:\\"' + layer0.planInfo.id + '\\"';
 
         let sceneBar = COL.model.getSceneBar();
-        let optionIndex = sceneBar.findPlanInSiteplanMenu(matchPattern);
+        let optionIndex = sceneBar.FindPlanInSiteplanMenu(matchPattern);
         // mark the plan in the siteplan menu
         $('#sitesId')[0].selectedIndex = optionIndex;
         
@@ -1346,6 +1349,7 @@ class FileZip_withJson {
     // Loads slice from the zip file in pure webapp or in jasonette_android
     static getZipFileSlice = async function(sliceBeg, sliceEnd)
     {
+        console.log('BEG getZipFileSlice');
         try
         {
             const zipFileInfo = COL.model.getSelectedZipFileInfo();
@@ -1394,7 +1398,7 @@ class FileZip_withJson {
                 // console.log('queryParamsStr: ', queryParamsStr);
                 
                 // create the url string
-                let url = COL.model.getUrlBase() + 'zipfile?' + queryParamsStr;
+                let url = Model.GetUrlBase() + 'zipfile?' + queryParamsStr;
                 let response = await fetch(url);
                 // console.log('response.status', response.status); 
 
@@ -1529,8 +1533,6 @@ class FileZip_withJson {
                 // console.log('blobSliceArrayBuffer.byteLength', blobSliceArrayBuffer.byteLength);
                 // let dataView = new DataView(blobSliceArrayBuffer);
                 
-                ApiService.LOAD_FROM_TYPE = ApiService.API_SERVICE_TYPES.ApiServiceZip;
-
                 // console.log('doSkipFileData', doSkipFileData);
                 var zipLoader = new ZipLoader();
                 await ZipLoader.unzip( zipLoader, blobSliceArrayBuffer, doSkipFileData );
@@ -1549,8 +1551,6 @@ class FileZip_withJson {
 
                 let blobSliceArrayBuffer = await blobSlice.arrayBuffer();
                 // console.log('blobSliceArrayBuffer.byteLength', blobSliceArrayBuffer.byteLength);
-                
-                ApiService.LOAD_FROM_TYPE = ApiService.API_SERVICE_TYPES.ApiServiceZip;
                 
                 zipFileInfo.files[filenameInZipFile].buffer = blobSliceArrayBuffer;
             }
@@ -1635,7 +1635,7 @@ class FileZip_withJson {
     openSingleZipFile = async function (zipFile) {
         console.log('BEG openSingleZipFile'); 
 
-        let spinnerJqueryObj = $('#cssLoaderId');
+        let spinnerJqueryObj = $('#inProgressSpinnerId');
         spinnerJqueryObj.addClass("is-active");
 
         let toastTitleStr = "Load from zip file";
@@ -1685,7 +1685,7 @@ class FileZip_withJson {
             let sceneBar = COL.model.getSceneBar();
             const zipFileInfo = COL.model.getSelectedZipFileInfo();
             let matchPattern = '\\"zipFileName\\"\\:\\"' + zipFileInfo.zipFileName;
-            let optionIndex = sceneBar.findPlanInSiteplanMenu(matchPattern);
+            let optionIndex = sceneBar.FindPlanInSiteplanMenu(matchPattern);
             
             if(optionIndex == 0)
             {
@@ -1697,7 +1697,9 @@ class FileZip_withJson {
 
             await this.populateLayers();
             
-            await COL.colJS.onSitesChanged();
+            let selectedLayer = COL.model.getSelectedLayer();
+
+            await COL.colJS.onSitesChanged(selectedLayer.name);
 
             let msgStr = "Succeeded to load";
             toastr.success(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
@@ -1780,7 +1782,7 @@ class FileZip_withJson {
         
         let zipFileInfo = COL.model.getSelectedZipFileInfo();
         let zipFileInfoFile = zipFileInfo.files[filename];
-        console.log('zipFileInfo.files[filename]', zipFileInfo.files[filename]); 
+        // console.log('zipFileInfo.files[filename]', zipFileInfo.files[filename]); 
         let sliceBeg = zipFileInfo.files[filename].offsetInZipFile;
         let sliceEnd = sliceBeg +
             zipFileInfo.files[filename].headerSize +
@@ -1842,7 +1844,7 @@ class FileZip_withJson {
             let jsonDataAsStr = JSON.stringify(jsonData);
             console.log('jsonDataAsStr', jsonDataAsStr);
             
-            let postNewSitePlanUrl = COL.model.getUrlBase() + 'api/v1_2/create_plan';
+            let postNewSitePlanUrl = Model.GetUrlBase() + 'api/v1_2/create_plan';
 
             let headersData = {
                 'Content-Type': 'application/json',

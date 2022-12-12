@@ -1,0 +1,87 @@
+{% extends "layout.html" %}
+
+{% block head %}
+<link rel="manifest" href="/V1/manifest.json">
+{% endblock %}
+
+
+<!-- {% block body %}
+     {% endblock %}
+   -->
+
+{% block content1 %}
+
+<div id="admin-view-groups-id" "class="admin-view-groups">
+    <div id="admin-view-groups-page-header-id" class="page-header">
+        <h2>Administrative Page: List of Groups</h2>
+    </div>
+    <div>
+        <table id="admin-view-groups-table-id" class="table">
+            <thead id="admin-view-groups-table-header-id" class="row">
+                <tr>
+                    <th>Group ID</th>
+                    <th>Group name</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for group in groups %}
+                {% if ((group.id == current_user.group_id) and (current_user.role == "group_owner")) or (current_user.role == "admin") %}
+                <tr>
+                    <td> {{ group.id }} </td>
+                    <td> {{ group.group_name }} </td>
+                    <td>
+                        <a href="{{ url_for('api.admin_delete_group', group_id = group.id) }}">Delete</a>
+                        <a href="{{ url_for('api.admin_edit_group', group_id = group.id) }}">Edit</a>
+                        {% if (current_user.role == "admin") %}
+                        <button id="downloadGroupButton{{group.id}}">Download Group Sites</button>
+
+                        {% if flask_env == "development" %}
+                        <!-- ############################ -->
+                        <!-- development -->
+                        <!-- ############################ -->
+                        <script type="module">
+                         import { FileZipUtils } from '/V1/js/col/loaders/FileZipUtils.js';
+                         document.querySelector('#downloadGroupButton{{group.id}}').addEventListener('click', () => {
+                             FileZipUtils.saveFromWebServerToZipFile_viaRegularZip({{ group.id }});
+                         });
+                        </script>
+                        {% else %}
+                        <!-- ############################ -->
+                        <!-- production -->
+                        <!-- ############################ -->
+                        <script>
+                         document.querySelector('#downloadGroupButton{{group.id}}').addEventListener('click', () => {
+                             /* console.log('bar3')
+                              * console.log(lib1)*/
+                             /* console.log('bar4')
+                              * console.log('lib2.COL', lib1.COL)*/
+                             console.log('before saveFromWebServerToZipFile_viaRegularZip2')
+                             lib1.FileZipUtils.saveFromWebServerToZipFile_viaRegularZip({{ group.id }});
+                             /* console.log('bar6')*/
+                         });
+                        </script>
+                        {% endif %}
+
+
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endif %}
+                {% endfor %}
+            </tbody>
+        </table>
+        {% if (current_user.role == "admin") %}
+        <a class="btn btn-sm btn-success" href="{{ url_for('api.admin_add_group') }}">Add New Group</a>
+        {% endif %}
+        <a class="btn btn-sm btn-success" href="{{ url_for('api.view_sites') }}">Cancel</a>
+    </div>
+    <div id="saveFromWebServerToZipFileStatusId">
+        <div></div>
+        <div>0%</div>
+        <div>...</div>
+        <div>&nbsp;</div>
+    </div>
+</div>
+
+{% endblock %}

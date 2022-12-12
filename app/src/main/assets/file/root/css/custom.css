@@ -1,0 +1,647 @@
+body,
+html {
+  min-height: 50vh;
+  max-height: 99vh;
+  height: 99vh;
+  max-width: 99vw;
+}
+
+body {
+  /* https://stackoverflow.com/questions/7923042/when-specifying-a-0-value-in-css-should-i-explicitly-mark-the-units-or-omit
+  for value of 0 Omit the units in 0. They're not needed and confusing. */
+  padding: 0;
+  margin: 0;
+  background-color: #7a7a7a;
+  /* https://www.freecodecamp.org/news/html-page-width-height/ */
+  /* min-height: 100vh; */
+}
+
+/* avner: everything under body is limites to the upper element */
+.body * {
+  max-height: 100%;
+  max-width: 100%;
+  height: 100%;
+}
+
+/* make every under a row not exceed the row height */
+/* .row * {
+  max-height: 100%;
+  height: 100%;
+} */
+
+.fillViewPort {
+  /* block-size: 100vh; */
+  height: 100%;
+}
+
+.fillHalfViewPort {
+  /* block-size: 50vh; */
+  height: 50%;
+}
+
+.container_mainAnchor {
+  position: absolute;
+  /* position: relative; */
+
+  left: 0;
+  right: 0;
+  padding-left: 0;
+  padding-right: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.mainMenuToolbar {
+  --bs-gutter-x: 0;
+  padding: 0;
+  margin: 0;
+  border-top: 1rem;
+  background-color: rgb(167 167 167);
+}
+
+.hamburgerColClass {
+  padding: 0;
+  margin: 0;
+  border-top: 0;
+}
+
+.sticky-toolbar-container1 {
+    position: relative;
+    display:block;
+    padding-left: 0;
+    padding: 0;
+    margin: 0;
+    border-top: 0;
+    background-color: orange;
+    z-index: 11;
+  }
+
+.openToolbarClass {
+    position: relative;
+    display:block;
+    padding-left: 0;
+    padding: 0;
+    margin: 0;
+    border-top: 0;
+    background-color: orange;
+    z-index: 11;
+  }
+ 
+.backBtnClass {
+  position: relative;
+  /* Set to 100% of the parent height (which is set from the row class in bootstrap.css ) */
+  height: 100%;
+  
+  /* set width to 1/24 of the entire window */
+  /* option1 - set width to 50%
+  the parent element has col-1 which means 1/12 from the window
+  width 50% causes the button to be 1/24 from the entire window */
+  /* width: 50%; */
+  /* option2 - set width to 5vw (=~((1/24)*100)vw) */
+  /* width: 1/24 vw; */
+
+  /* set width to fit-content to adjust the width to cover the arrow */
+  width: fit-content;
+
+  background-color: black;
+  z-index: 3;
+  /* increase font-size to 2rem (instead of the default 1rem from bootstrap .btn class) to increases the size of the arrow */
+  font-size: 2rem;
+
+
+  /* set line-height to normal (instead of inherit) to position the symbol (e.g. arrow) in the middle
+  Otherwise the height is inherited from the body element (where line-height is 1.5 rem, set by bootstrap.css)
+  which causes the symbol to appear off from the center */
+  line-height: normal;
+}
+
+.hamburgerBtnClass {
+  background-color: red;
+}
+
+.planViewBackBtnClass {
+  background-color: yellow;
+}
+
+.imagesBackBtnClass {
+  background-color: orange;
+}
+
+.imageViewBackBtnClass {
+  background-color: blueviolet;
+}
+ 
+.container_projectMenu {
+  position: absolute;
+  /* height: 100%; */
+  /* will grow to fit the title and list? */
+  height: auto;
+
+  /* width - set to 1/4 of the width of the image. columns are relative to this size */
+  width: 25vw;
+  z-index: 4;
+  top: 0;
+}
+
+.projectMenu_title {
+  /* doesn't inherit the max-height from parent container_projectMenu because parent 
+  is set to grow with content? so I need to define height here? 
+  setting height=100% does not work because there is no reference height in the parent?
+  The parent element to projectMenu_title (div with class row) height changes grows
+  depending on the height of the child?*/
+  /* height: 100%; */
+  height: 50px;
+}
+
+.just-padding {
+  padding: 15px;
+}
+
+.list-group.list-group-root {
+  padding: 0;
+  overflow: hidden;
+}
+
+/* .list-group.list-group-root .list-group {
+  margin-bottom: 0;
+}
+
+.list-group.list-group-root .list-group-item {
+  border-radius: 0;
+  border-width: 1px 0 0 0;
+}
+
+.list-group.list-group-root > .list-group-item:first-child {
+  border-top-width: 0;
+} */
+
+.list-group.list-group-root > .list-group > .list-group-item {
+  padding-left: 30px;
+}
+
+.list-group.list-group-root > .list-group > .list-group > .list-group-item {
+  padding-left: 45px;
+}
+
+.imageClass {
+  object-fit: contain;
+  /* height: auto; */
+  max-height: 100%;
+  max-width: 100%;
+}
+
+.rowPlanPane {
+  position: relative;
+  /* top: 0;
+    left: 0; */
+  z-index: 0;
+  /* 50% of the viewport */
+  /* height: 50vh; */
+  width: auto;
+  margin: auto;
+  margin-top: 5px;
+  background-color: aqua;
+  /* border-top: 1rem;
+    border-bottom: 1rem; */
+  border-color: red;
+
+  /* center the image horizontally - using "display" and "justify-content" 
+    https://www.freecodecamp.org/news/how-to-center-an-image-in-css/ */
+  display: flex;
+  justify-content: center;
+}
+
+.vertical-align {
+  display: flex;
+  align-items: center;
+}
+
+
+/* RESET RULES
+–––––––––––––––––––––––––––––––––––––––––––––––––– */
+:root {
+  --black: #1a1a1a;
+  --white: #fff;
+  --gray: #ccc;
+  --darkgreen: #18846c;
+  --lightbrown: antiquewhite;
+  --darkblack: rgba(0, 0, 0, 0.8);
+  --minRangeValue: 280px;
+}
+
+/* https://www.geeksforgeeks.org/what-is-the-use-of-asterisk-selector-in-css/ 
+The asterisk (*) is the CSS universal selectors. 
+It is used to select any and all types of elements.
+*/
+/* * {
+    margin: 0;
+    padding: 0;  
+    outline: none;
+    border: none;
+  } */
+
+button {
+  cursor: pointer;
+  background: none;
+}
+
+img {
+  display: block;
+
+  /* height, width needs to be specified for object-fit to take effect */
+  /* https://stackoverflow.com/questions/34247337/object-fit-not-affecting-images */
+  height: 100%;
+  width: 100%;
+
+  /* object-fit: contain - preserves the aspect ratio of the image */
+  object-fit: contain;
+
+  margin: auto auto;
+}
+
+ol,
+ul {
+  list-style: none;
+}
+
+a {
+  color: inherit;
+}
+
+.container {
+  margin: 0;
+  padding: 0;
+  max-width: 100%;
+}
+
+.d-none {
+  display: none;
+}
+
+/* TOOLBAR
+  –––––––––––––––––––––––––––––––––––––––––––––––––– */
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.toolbar ::placeholder {
+  color: var(--gray);
+}
+
+.toolbar .counter {
+  position: absolute;
+  left: 0;
+  top: calc(100% + 5px);
+  font-size: 0.9rem;
+  color: var(--gray);
+}
+
+.view-options {
+  display: flex;
+  align-items: center;
+}
+
+.view-options li:not(:last-child) {
+  margin-right: 1.2rem;
+}
+
+.view-options button {
+  padding: 2px;
+  border: 3px solid transparent;
+}
+
+.view-options .active button {
+  border-color: var(--darkgreen);
+}
+
+/* IMAGE LIST
+  –––––––––––––––––––––––––––––––––––––––––––––––––– */
+.image-list {
+  padding: 0;
+  margin: 0;
+  overflow-y: scroll;
+}
+
+.image-list li {
+  background-color: aqua;
+  height: 100%;
+}
+
+.image-list p:first-child {
+  font-weight: bold;
+  font-size: 1.15rem;
+}
+
+.image-list p:last-child {
+  margin-top: 0.5rem;
+}
+
+/* equivalent to div class .wrap in in https://output.jsbin.com/utupuw/5  */
+ 
+.overlayrect-thumbnail-images{
+    display: block;
+    /* shows the scrolbar */
+    overflow: auto;
+    padding: 2%;
+}
+
+/* GRID VIEW
+  –––––––––––––––––––––––––––––––––––––––––––––––––– */
+.grid-view {
+  display: grid;
+  height: 100vh;
+  width: 100vw;
+  grid-gap: 2rem;
+  /* grid-template-columns: repeat(auto-fit, minmax(var(--minRangeValue), 1fr)); */
+}
+
+/* https://stackoverflow.com/questions/2636379/what-is-the-difference-between-and-a-space-in-css-selectors
+A B will select any B that are inside A, even if there are other elements between them. */
+.grid-view figcaption {
+  padding: 1rem;
+}
+
+#plan-list figcaption {
+  /* height2 - (height1 + height2 = 80 + 20 = 100%) */
+  height: 20%;
+}
+
+figure {
+  height: 100vh;
+  background-color: beige;
+  margin: 0;
+}
+
+.plan-image {
+  /* height1 - (height1 + height2 = 80 + 20 = 100%) */
+  height: 80%;
+}
+
+/* equivalent to class .box in https://output.jsbin.com/utupuw/5  */
+.image-thumbnail-wrapper {
+    float: left;
+    display: block;
+    padding: 2%;
+}
+
+/* portrait mode */
+@media only screen and (orientation: portrait) {
+    .image-thumbnail-wrapper {
+    /* set the thumbnail width to 50% of the entire width, i.e. 2 thumbnails in a row */
+    width: 50%;
+    }
+  }
+  
+  /* landscape mode */
+  @media only screen and (orientation: landscape) {
+    .image-thumbnail-wrapper {
+    /* set the thumbnail width to 25% of the entire width, i.e. 4 thumbnails in a row */
+    width: 25%;
+    }
+  }
+  
+/* equivalent to class .boxInner in https://output.jsbin.com/utupuw/5  */
+.image-thumbnail {
+    overflow: hidden;
+}
+
+/* sets the height of the footer */
+.footer-class{
+    font-size: 2rem;
+    z-index: 11;
+}
+
+.planThumbnailsPaneFooter-class {
+    /* red, semi-transparent */
+    background: rgba(255, 0, 0, 0.3);
+}
+
+.planViewPane-footer-class {
+    /* yellow, semi-transparent */
+    background: rgba(255, 255, 0, 0.3);
+}
+
+.overlayRectImageThumbnailsPane-footer-class{
+    /* orange, semi-transparent */
+    background: rgba(255, 165, 0, 0.3);
+}
+
+#imageViewPaneFooterId {
+    text-align: center;
+    height: 50px;
+}
+
+.dateCreatedClass {
+    color: darkgrey;
+    background-color: black;
+    font-size: 14px;
+    display: inline-block;
+}
+
+.openZipFileBtnClass {
+    float: right;
+    display: inline-flex;
+    align-items: center;
+    border-style: outset;
+  }
+
+.addOverlayRect-class {
+    float: right;
+    display: inline-flex;
+    align-items: center;
+    border-style: outset;
+  }
+
+  .syncFromZipFileToWebServerBtn-class {
+    float: right;
+    display: inline-flex;
+    align-items: center;
+    border-style: outset;
+  }
+
+
+  /* MQ */
+  @media screen and (max-width: 900px) {
+    .toolbar input[type="range"] {
+      display: none;
+    }
+  }
+  
+  @media screen and (max-width: 700px) {
+    .grid-view li {
+      text-align: center;
+      padding: 0.5rem;
+    }
+  
+    .grid-view figcaption {
+      padding: 0.5rem 0 0;
+    }
+  }
+  
+  .p-class {
+    text-align: center;
+  }
+  
+
+/* // ---------------------------------------------------
+// BEG img gallery flex
+// https://codepen.io/maxvoltar/pen/eYOPdMG
+// --------------------------------------------------- */
+
+.gallery {
+  display: flex;
+  flex-wrap: wrap;
+  padding: 0;
+}
+
+.gallery-item {
+  /* the height is derived from the width, and keeping the image proportion */
+  height: fit-content;
+  /* xxx% of the viewport width */
+  width: 30vw;
+
+  /* https://medium.com/@tiffnogueira/understanding-flex-shrink-flex-grow-and-flex-basis-and-using-these-properties-to-their-full-e4b4afd2c930
+  Flex-grow tells our element whether or not it can take up additional space.
+  An element with a flex-grow value set to 0 will not grow to take up available space
+  https://stackoverflow.com/questions/19625702/css-flex-grid-same-width-for-last-item
+  set flex-grow: 0 to prevent the last reminder images from being different in size from the other images */
+  flex-grow: 0;
+
+  padding: 1.5rem;
+}
+
+.gallery img:hover {
+  box-shadow: 0 0 32px #333;
+}
+
+.gallery .gallery-item:hover {
+  transform: scale(1.025);
+}
+/* // ---------------------------------------------------
+// END img gallery flex
+// --------------------------------------------------- */
+
+
+/* // ---------------------------------------------------
+// BEG editMode toolbar. Based on:
+// https://webdesign.tutsplus.com/tutorials/how-to-create-a-sticky-toolbar-with-css-and-javascript--cms-40630
+// --------------------------------------------------- */
+
+  .sticky-toolbar-container1 .toggle-toolbar {
+    background: var(--cyan);
+  }
+   
+  .sticky-toolbar-container1 .sticky-toolbar {
+    display: none;
+  }
+   
+  .sticky-toolbar-container1 svg {
+    fill: var(--darkblue);
+  }
+   
+  .sticky-toolbar-container1 .sticky-toolbar a {
+    position: relative;
+    display: inline-block;
+    margin-bottom: 1px;
+    background: var(--darkcyan);
+  }
+   
+  .sticky-toolbar-container1 .sticky-toolbar a::before,
+  .sticky-toolbar-container1 .sticky-toolbar a::after {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+   
+  .sticky-toolbar-container1 .sticky-toolbar a::before {
+    content: attr(data-tooltip);
+    right: calc(100% + 5px);
+    font-size: 14px;
+    white-space: nowrap;
+    padding: 4px 8px;
+    color: yellow;
+    background: red;
+  }
+   
+  .sticky-toolbar-container1 .sticky-toolbar a::after {
+    content: "";
+    right: 100%;
+    width: 0;
+    height: 0;
+    border-top: 5px solid transparent;
+    border-bottom: 5px solid transparent;
+    border-left: 5px solid var(--darkblue);
+  }
+   
+  .sticky-toolbar-container1 .sticky-toolbar a:hover::before,
+  .sticky-toolbar-container1 .sticky-toolbar a:hover::after {
+    opacity: 1;
+  }
+
+  /*CLASSES*/
+  .sticky-toolbar-container1.show-toolbar .open-toolbar {
+    display: none;
+  }
+    
+  .sticky-toolbar-container1.show-toolbar .sticky-toolbar {
+    display: block;
+  }
+
+  .sticky-toolbar-container1 .toggle-toolbar {
+    background: var(--cyan);
+  }
+
+/* // ---------------------------------------------------
+// END sticky toolbar
+// --------------------------------------------------- */
+
+/* // ---------------------------------------------------
+// BEG selected plan - context-menu
+// --------------------------------------------------- */
+
+.context-menu {
+    display: none;
+    z-index: 1000;
+    position: absolute;
+    overflow: hidden;
+    border: 1px solid #CCC;
+    white-space: nowrap;
+    font-family: sans-serif;
+    background: #FFF;
+    color: #333;
+    border-radius: 5px;
+}
+
+
+.context-menu li {
+    padding: 8px 12px;
+    cursor: pointer;
+}
+
+.context-menu li:hover {
+    background-color: #DEF;
+}
+
+
+/* // ---------------------------------------------------
+// END selected plan - context-menu
+// --------------------------------------------------- */
+
+.addPhotoBtnClass {
+    z-index: 11;
+    float: right;
+    display: inline-flex;
+    align-items: center;
+    border-style: outset;
+  }
+
+
+/* show the input buttons as icons, i.e. without the input "Choose file" */
+#addPhotoInputId, #openZipFileInputId{
+    display: none;
+}

@@ -1,0 +1,32 @@
+{% extends "layout.html" %}
+{% from "_form_macros.html" import render_errors, render_field %}
+
+{% block content1 %}
+
+<div id="admin-edit-group-id" "class="admin-edit-group">
+    <div id="admin-edit-group-page-header-id" class="page-header">
+        <h2>Edit Group</h2>
+    </div>
+
+    <div class="container">
+        <form action="{{ url_for('api.admin_edit_group', group_id=group.id) }}" method="post" enctype="multipart/form-data">
+            {{ form.csrf_token }}
+
+            <div class="form-group row">
+                <label for="group_name" class="col">Group_Name</label>
+                <input type="text" class="form-control" id="group_name" name="group_name" value="{{ group.group_name }}">
+                    {{ render_errors(form.group_name) }}
+            </div>
+
+            <div class="form-group row">
+                <div class="offset-sm-2 col-sm-10">
+                    <button type="submit" class="btn btn-success">Edit Group</button>
+                    <a class="btn btn-sm btn-success" href="{{ url_for('api.admin_view_groups') }}">Cancel</a>
+                </div>
+            </div>
+
+        </form>
+    </div>
+</div>
+
+{% endblock %}

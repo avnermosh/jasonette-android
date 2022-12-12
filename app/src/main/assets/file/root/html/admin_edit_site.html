@@ -1,0 +1,74 @@
+{% from "_form_macros.html" import render_errors, render_field %}
+{% from "_modal_macros.html" import confirm_modal %}
+
+{% extends "layout.html" %}
+
+{% block head %}
+{% endblock %}
+
+{% block content1 %}
+
+<div id="admin-edit-site-id" "class="admin-edit-site">
+    <div id="admin-edit-site-page-header-id" class="page-header">
+        <h2>Edit Site</h2>
+    </div>
+    <form action="{{ url_for('api.admin_edit_site', site_id=site.id) }}" method="post" enctype="multipart/form-data">
+        {{ form.csrf_token }}
+
+        <div class="form-edit-site-id row">
+            <label for="site_name" class="col">Site_Name</label>
+            <input type="text" class="form-control" id="site_name" name="site_name" value="{{ site.site_name }}">
+            {{ render_errors(form.site_name) }}
+        </div>
+
+        <div class="form-edit-site-id row">
+            <label for="group_id" class="col">Site Group</label>
+            <select class="form-control" id="group_id" name="group_id">
+                {% for group2 in groups2 %}
+                <option value={{group2.id}}  {% if group2.id == site.group_id %} selected {% endif %}>{{group2.group_name}}</option>
+                {% endfor %}
+            </select>
+            {{ render_errors(form.group_id) }}
+        </div>
+        <div>
+            <table id="admin-edit-site-table-id" class="table">
+                <thead id="admin-edit-site-table-header-id" class="row">
+                    <tr>
+                        <th class="table-heading-entry-class">Plan ID</th>
+                        <th class="table-heading-entry-class">Plan name</th>
+                        <th class="table-heading-entry-class">Actions</th>
+                    </tr>
+                </thead>
+
+                {% if plans2|length > 0 %}
+                <tbody id="admin-edit-site-table-body-id">
+
+                    {% for site_plan_entry_form in form.site_plans3 %}
+                    {% set plan2 = plans2[loop.index-1] %}
+                    <tr>
+                        <td class="admin-edit-site-site_name-class"> {{ plan2.id }} </td>
+                        <td class="admin-edit-site-site_name-class"> {{ site_plan_entry_form.plan_name(class_="admin-edit-site-site_name-class2") }} </td>
+                        <td class="admin-edit-site-site_name-class">
+                            {% if (current_user.role == "admin") %}
+                            <button type="button" class="btn btn-danger" data-toggle="modal" data-target="#confirmDeletePlanModal{{plan2.id}}">
+                                Delete Plan
+                            </button>
+                            {{ confirm_modal("confirmDeletePlanModal", plan2.id, plan2.plan_name, "Deleting Plan Permanently", url_for('api.admin_delete_plan', plan_id = plan2.id)) }}
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                {% endif %}
+
+            </table>
+        </div>
+        <div id="admin-edit-site-buttons-id" class="form-edit-site-id row">
+            <button type="submit" class="btn btn-success">Edit Site</button>
+            <a class="btn btn-sm btn-success" href="{{ url_for('api.admin_view_sites') }}">Cancel</a>
+        </div>
+    </form>
+
+</div>
+
+{% endblock %}

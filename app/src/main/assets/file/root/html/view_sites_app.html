@@ -1,0 +1,184 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+    <meta name="description" content="Construction Overlay App" />
+    <meta name="author" content="Avner M." />
+    <title>Construction Overlay App</title>
+    <script src="../js/static/jquery/3.6.0/jquery.js"></script>
+
+    <script src="../js/static/nanobar/0.2.1/js/nanobar.min.js"></script>
+    <script src="../js/static/toastr/2.1.4/toastr.min.js"></script>
+
+    <script src="../js/static/bootstrap/5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+
+    <script src="../js/static/bootstrap/libs/bootstrap-slider/11.0.2/bootstrap-slider.min.js"></script>
+    <script src="../js/static/bootstrap/libs/bootstrap-datepicker/1.9.0/bootstrap-datepicker.min.js"></script>
+    <script src="../js/static/moment/2.22.2/min/moment.min.js"></script>
+    <script src="../js/static/quilljs/1.3.7/quill.min.js"></script>
+    <script src="../js/static/exif-reader/3.5.0/exif-reader.js"></script>
+    <script src="../js/static/bootstrap/libs/bootstrap-table/1.18.3/bootstrap-table.min.js"></script>
+
+    <link rel="shortcut icon" href="#" />
+    <!-- need to disable the next 2 lines to run guiMockup -->
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" href="../js/static/pure-css-loader/dist/css-loader.css" />
+
+    <link href="../js/static/bootstrap/5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous" />
+
+    <link rel="stylesheet" type="text/css" href="../css/custom.css" />
+    <link rel="stylesheet" href="../js/static/bootstrap/libs/bootstrap-icons/1.9.1/font/bootstrap-icons.css" />
+
+    <link rel="manifest" href="../manifest.json" />
+  </head>
+
+  <body>
+    <!-- block for e.g. admin_add_site.html, admin_view_sites.html, masterButtonGroup, toolbarGroupId, etc ... -->
+    <main id="main-container-id" class="d-flex flex-column" role="main">
+        <meta content="{{ csrf_token() }}" name="csrf-token" />
+    
+      <select id="sitesId" style="display: none"> </select>
+        <div id="container-main-anchor-id" class="container-fluid container_mainAnchor">
+          <div id="inProgressSpinnerId" class="loader loader-default"></div>
+            <div id="main-menu-toolbar-id" class="row mainMenuToolbar">
+                <div class="col-1">
+                  <button id="hamburgerBtnId" class="btn backBtnClass hamburgerBtnClass button-div" type="button"> &#9776; </button>
+                  <button id="planViewBackBtnId" class="btn backBtnClass planViewBackBtnClass button-div" type="button">
+                    <!-- https://www.w3schools.com/howto/howto_css_icon_buttons.asp -->
+                    <i class="bi bi-arrow-left text-primary" aria-label="Back"></i>
+                  </button>
+                  <button id="imageViewBackBtnId" class="btn backBtnClass imageViewBackBtnClass button-div" type="button">
+                    <i class="bi bi-arrow-left text-primary" aria-label="Back"></i>
+                  </button>
+          
+                  <button id="imagesBackBtnId" class="btn backBtnClass imagesBackBtnClass button-div" type="button">
+                    <i class="bi bi-arrow-left text-primary" aria-label="Back"></i>
+                  </button>
+                </div>
+                <div class="col-11">
+                  <h1 class="text-center">Plans2</h1>
+                </div>
+            </div>
+    
+        <div id="planPaneWrapperId" class="pane-div">
+          <div id="planThumbnailsPaneId" class="planThumbnailsPaneClass pane-div">
+            <footer id="planThumbnailsPaneFooterId" class="fixed-bottom footer-class planThumbnailsPaneFooter-class">
+                FOOTER
+                <div class="openZipFileBtnClass" type="button">
+                    <i id="openZipFileIconId" class="bi bi-files"></i>
+                    <input id="openZipFileInputId" type="file" />
+                  </div>
+    
+              </footer>
+              <div class="container">
+              <ol id="plan-list"> </ol>
+              <ul id="planThumbnailsMenuId" class="context-menu">
+                <li data-action="third">Third thing</li>
+                
+              </ul>
+    
+            </div>
+          </div>
+    
+          <div id="planViewPaneId" class="planViewPaneClass pane-div">
+    
+            <canvas id="planView3dCanvasId" class="canvasPlanViewClass"></canvas>
+            
+            <ul id="planViewMenuId" class="context-menu">
+              <li data-action="moveOverlayRect">Move OverlayRect</li>
+              <li data-action="deleteOverlayRect">Delete OverlayRect</li>
+              <li data-action="mergeOverlayRectStart">Merge OverlayRect - start</li>
+              <li data-action="mergeOverlayRectEnd">Merge OverlayRect - end</li>
+            </ul>
+    
+              <!-- keep the footer fixed at the bottom of the page even for long scrollable content -->
+              <!-- https://mdbootstrap.com/snippets/jquery/mdbootstrap/2886080 -->
+              <footer id="planViewPane-footer-id" class="fixed-bottom footer-class planViewPane-footer-class">
+                  FOOTER
+                  <button id="syncFromZipFileToWebServerBtnId" type="button" class="syncFromZipFileToWebServerBtn-class">
+                    <a data-tooltip="Sync From Zip File To Web Server">
+                      <i class="bi bi-cloud-arrow-up"></i>
+                    </a>
+                  </button>
+                  <button id="addOverlayRectId" type="button" class="addOverlayRect-class">
+                    <a data-tooltip="add overlayRect">
+                      <i class="bi bi-camera-fill"></i>
+                    </a>
+                  </button>
+              </footer>
+    
+          </div>
+        </div>
+    
+        <div id="overlayRectPaneWrapperId" class="overlayRectPaneWrapperClass pane-div">
+          <div id="overlayRectImageThumbnailsPaneId" class="overlayRectImageThumbnailsPaneClass pane-div">
+            <ol id="overlayrect-thumbnail-images-id" class="overlayrect-thumbnail-images"></ol>
+    
+            <footer id="overlayRectImageThumbnailsPaneId-footer-id" class="fixed-bottom footer-class overlayRectImageThumbnailsPane-footer-class">
+              FOOTER
+              <div class="addPhotoBtnClass" type="button">
+                <i id="addPhotoIconId" class="bi bi-plus-lg"></i>
+                <input id="addPhotoInputId" type="file" />
+              </div>
+            </footer>
+          </div>
+    
+          <ul id="overlayRectImageThumbnailsMenuId" class="context-menu">
+            <li id="deletePhotoId" data-action="deletePhoto">Delete Photo</li>
+            <li id="splitImageFromOverlayRectId" data-action="splitImageFromOverlayRect">Split Image from OverlayRect</li>
+          </ul>
+    
+          <div id="imageViewPaneId" class="pane-div"> 
+            <canvas id="selectedImage3dCanvasId" class="canvasPlanViewClass"></canvas>
+            <div id="imageTextInfoId" class="imageTextInfoClass"> </div>
+            <footer id="imageViewPaneFooterId" class="fixed-bottom footer-class imageViewPaneFooter-class">
+              <p><span id="dateCreatedId" class="dateCreatedClass">xxxx</span></p>
+            </footer>
+          </div>
+    
+        </div>
+    
+        <div id="project-menu-id" class="container-fluid container_projectMenu">
+          <div class="row">
+            <div id="projectMenu_title" class="projectMenu_title col-12 bg-dark text-white vertical-align">Construction Overlay</div>
+          </div>
+          <div class="row">
+            <div id="projectMenu_actions" class="col-12 list-group list-group-root" role="tablist">
+              <a id="list-option-plans" class="list-group-item list-group-item-action active" data-bs-toggle="list">Plans</a>
+              <a id="list-option-photos" class="list-group-item list-group-item-action" data-bs-toggle="list">Photos</a>
+              <a id="list-option-people" class="list-group-item list-group-item-action" data-bs-toggle="list">People</a>
+              <a id="list-option-settings" class="list-group-item list-group-item-action" data-bs-toggle="list">Settings</a>
+              <a id="list-option-logInId" class="list-group-item list-group-item-action" href="https://192.168.1.74/login">Log In</a>
+              <a id="list-option-logOutId" class="list-group-item list-group-item-action" href="https://192.168.1.74/logout">Log Out</a>
+              <div>
+                <span id="userProfileId" class="nav navbar-nav"> </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+    <!-- main-container-id -->
+    
+    <!-- need to disable the next 2 lines to run guiMockup -->
+    <!-- <div id="floorplanButtonGroupId"></div> -->
+    <!-- <div id="toolbarGroupId"></div> -->
+    
+    <script type="module" src="../js/col/main.js"></script>
+
+    <link rel="preload" href="../js/static/bootstrap/libs/bootstrap-slider/11.0.2/bootstrap-slider.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'" />
+    <link rel="preload" href="../js/static/bootstrap/libs/bootstrap-datepicker/1.9.0/bootstrap-datepicker3.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'" />
+    <link rel="preload" href="../js/static/quilljs/1.3.7/quill.snow.css" as="style" onload="this.onload=null;this.rel='stylesheet'" />
+    <link rel="preload" href="../js/static/toastr/2.1.4/toastr.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'" />
+    <link rel="preload" href="../js/static/bootstrap/libs/bootstrap-table/1.18.3/bootstrap-table.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'" />
+  </body>
+</html>
+
+
+

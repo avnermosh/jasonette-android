@@ -1,18 +1,21 @@
+/* eslint-disable no-case-declarations */
+/* eslint-disable new-cap */
+/* eslint-disable max-len */
 // =========================================================
 // Copyright 2018-2022 Construction Overlay Inc.
 // =========================================================
 
 'use strict';
 
-import { COL } from  "../COL.js";
-import "./Component.js";
-import "../core/Core.js";
-import { FileZip_withJson } from "../loaders/FileZip_withJson.js";
-import { Layer } from "../core/Layer.js";
-import { Model } from "../core/Model.js";
-import { Scene3DtopDown } from "../core/Scene3DtopDown.js";
-import { EditOverlayRect_Scene3DtopDown_TrackballControls } from "../orbitControl/EditOverlayRect_Scene3DtopDown_TrackballControls.js";
-import { ZipFileInfo } from "../core/ZipFileInfo.js";
+import { COL } from  '../COL.js';
+import './Component.js';
+import '../core/Core.js';
+import { FileZip_withJson } from '../loaders/FileZip_withJson.js';
+import { Layer } from '../core/Layer.js';
+import { Model } from '../core/Model.js';
+import { PlanView } from '../core/PlanView.js';
+import { OrbitControlsPlanView } from '../orbitControl/OrbitControlsPlanView.js';
+import { ZipFileInfo } from '../core/ZipFileInfo.js';
 
 
 class SceneBar {
@@ -21,134 +24,93 @@ class SceneBar {
 
         this._toolBar = new component.ToolBar();
 
-        let iconPath = "";
-        let iconDir = "V1/img/icons/IcoMoon-Free-master/PNG/48px";
+        let iconPath = '';
+        let iconDir = 'V1/img/icons/IcoMoon-Free-master/PNG/48px';
         console.log('iconDir1', iconDir); 
 
         // --------------------------------------------------------------
 
-        iconPath = iconDir + "/0278-play2.png";
+        iconPath = iconDir + '/0278-play2.png';
         this._playImagesInAllOverlayRectsButton = new component.ToggleButton({
-            id: "playImagesInAllOverlayRectsButtonId",
-            tooltip: "Play images in all overlayRects",
+            id: 'playImagesInAllOverlayRectsButtonId',
+            tooltip: 'Play images in all overlayRects',
             icon: iconPath,
             on: false
         });
         let jqueryObj = $(this._playImagesInAllOverlayRectsButton.$);
-        jqueryObj.addClass("ui-button");
+        jqueryObj.addClass('ui-button');
 
         // --------------------------------------------------------------
         
-        iconPath = iconDir + "/0303-loop2.png";
+        iconPath = iconDir + '/0303-loop2.png';
         this._reloadPageButton = new component.Button({
-            id: "reloadPageButtonId",
-            tooltip: "Reload site",
+            id: 'reloadPageButtonId',
+            tooltip: 'Reload site',
             icon: iconPath,
             multiple: true
         });
-        $(this._reloadPageButton.$).addClass("ui-button");
+        $(this._reloadPageButton.$).addClass('ui-button');
         
-        if(COL.doWorkOnline)
-        {
+        if(COL.doWorkOnline) {
             this._editOverlayRectButton = undefined;
 
-            // tbd - _editOverlayRect -> _editMode
+            // tbd - _editOverlayRect -> _editMode -> _state
             
-            if(COL.doEnableWhiteboard)
-            {
-                iconPath = iconDir + "/0345-make-group.png";
+            if(COL.doEnableWhiteboard) {
+                iconPath = iconDir + '/0345-make-group.png';
                 this._editOverlayRect_editFloorPlanWhiteboard = new component.Button({
-                    tooltip: "Edit Whiteboard",
+                    tooltip: 'Edit Whiteboard',
                     icon: iconPath
                 });
-                $(this._editOverlayRect_editFloorPlanWhiteboard.$).addClass("ui-button");
+                $(this._editOverlayRect_editFloorPlanWhiteboard.$).addClass('ui-button');
             }
 
-            iconPath = iconDir + "/0272-cross.png";
+            iconPath = iconDir + '/0272-cross.png';
             this._editOverlayRect_deleteButton = new component.Button({
-                tooltip: "Delete image / overlayRect",
+                tooltip: 'Delete image / overlayRect',
                 icon: iconPath
             });
-            $(this._editOverlayRect_deleteButton.$).addClass("ui-button");
+            $(this._editOverlayRect_deleteButton.$).addClass('ui-button');
 
-            iconPath = iconDir + "/0015-images.png";
+            iconPath = iconDir + '/0015-images.png';
             this._openImageFileButton = new component.FileButton({
-                tooltip: "Open image file",
+                tooltip: 'Open image file',
                 icon: iconPath,
                 multiple: true
             });
-            $(this._openImageFileButton.$).addClass("ui-button");
+            $(this._openImageFileButton.$).addClass('ui-button');
 
-            iconPath = iconDir + "/0102-undo.png";
+            iconPath = iconDir + '/0102-undo.png';
             this._reconcileFrontEndButton = new component.Button({
-                tooltip: "Reconcile front-end inconcitencies",
+                tooltip: 'Reconcile front-end inconcitencies',
                 icon: iconPath,
                 multiple: true
             });
-            $(this._reconcileFrontEndButton.$).addClass("ui-button");
-
-            // this._mergeOverlayRectsButton = new component.Button({
-            iconPath = iconDir + "/0141-shrink2.png";
-            this._mergeOverlayRectsButton = new component.ToggleButton({
-                tooltip: "Merge overlayRect",
-                icon: iconPath,
-                multiple: true
-            });
-            $(this._mergeOverlayRectsButton.$).addClass("ui-button");
-
-            iconPath = iconDir + "/0140-enlarge2.png";
-            this._splitOverlayRectButton = new component.Button({
-                tooltip: "Split overlayRect",
-                icon: iconPath,
-                multiple: true
-            });
-            $(this._splitOverlayRectButton.$).addClass("ui-button");
-
-            iconPath = iconDir + "/0152-magic-wand.png";
-            this._editOverlayRect_syncWithBackendBtn = new component.Button({
-                tooltip: "Sync to backend",
-                icon: iconPath
-            });
-            $(this._editOverlayRect_syncWithBackendBtn.$).addClass("ui-button");
+            $(this._reconcileFrontEndButton.$).addClass('ui-button');
 
             // --------------------------------------------------------------
-            // BEG Set the TopDown Settings Modal
+            // BEG Set the PlanView Settings Modal
             // --------------------------------------------------------------
             
-            // define the TopDown Settings Modal button
-            this._topDownSettingModalBtnEl = '<a href="#" class="ui-button" data-toggle="modal" data-target="#basicModal" id="topdown-settings-modal-btn"><img src="V1/img/icons/IcoMoon-Free-master/PNG/48px/0009-pen.png"/></a>';
+            // define the PlanView Settings Modal button
+            this._planViewSettingModalBtnEl = '<a href="#" class="ui-button" data-toggle="modal" data-target="#basicModal" id="planview-settings-modal-btn"><img src="V1/img/icons/IcoMoon-Free-master/PNG/48px/0009-pen.png"/></a>';
 
             // --------------------------------------------------------------
-            // END Set the TopDown Settings Modal
+            // END Set the PlanView Settings Modal
             // --------------------------------------------------------------
             
             
             this._addStickyNoteButton = undefined;
-
-            iconPath = iconDir + "/0009-pen.png";
-            this._syncFromZipFileToWebServerButton = new component.Button({
-                tooltip: "Sync from zip file to web server",
-                icon: iconPath,
-                id: "syncFromZipFileToWebServerButton",
-                disabled: true
-            });
-            $(this._syncFromZipFileToWebServerButton.$).addClass("ui-button");
-            $(this._syncFromZipFileToWebServerButton.$).addClass("admin-feature");
         }
-        else
-        {
+        else {
             // work offline
         }
         
-        
-        this._isTexturePaneMaximized = false;
-
         // skipping row 0 (the header row)
         this._milestoneDatesRowNum = 1;
-        
-    };
+    }
 
-    createTopDownSettingModal = function () {
+    createPlanViewSettingModal () {
         // --------------------------------------------------------------
         // http://jsfiddle.net/Transformer/5KK5W/
         // for date setting
@@ -156,7 +118,7 @@ class SceneBar {
         // https://mdbootstrap.com/docs/standard/forms/checkbox/
         // for checkbox setting in table cell
 
-        // define the TopDown Settings Modal, which includes:
+        // define the PlanView Settings Modal, which includes:
         // - slider for the radius of the overlayRect
         // - milestoneDates table
         // - tbd - option to see cross-hair between the 2 fingers
@@ -165,13 +127,13 @@ class SceneBar {
         let rowNum = this._milestoneDatesRowNum;
         
         // value="Remove1" sets the label inside the button (as opposed to setting it besides the button if used after the element)
-        let topDownSettingModalEl = `
+        let planViewSettingModalEl = `
 <div class="modal fade" id="basicModal" tabindex="-1" role="dialog" aria-labelledby="basicModal" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-        <h3 class="modal-title" id="myModalLabel">TopDown Settings Modal</h3>
+        <h3 class="modal-title" id="myModalLabel">PlanView Settings Modal</h3>
       </div>
       <div id="modalBodyId" class="modal-body">
         <p>slider</p>
@@ -182,8 +144,8 @@ class SceneBar {
           <thead>
             <tr>
               <th data-field="date">Date</th>
-              <th data-field="date_name">Event</th>
-              <th Enable data-field="state" data-checkbox="true"></th>
+              <th data-field="date_name">Event Name</th>
+              <th Enable data-field="state" data-checkbox="true">Active</th>
               <th data-field="button">Button</th>";
             </tr>
           </thead>
@@ -198,39 +160,39 @@ class SceneBar {
         </table>
       </div>
       <div class="modal-footer">
-        <input type="checkbox" id="enableMilestoneDatesId" class="checkbox-inline" value="" checked>
-        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-        <button type="button" id="topDownSettingSaveBtnId" class="btn btn-primary">Save changes</button>
+        <input type="checkbox" id="enableMilestoneDatesId" class="checkbox-inline" value="" checked>Edit Dates</input>
+        <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+        <button type="button" id="planViewSettingSaveBtnId" class="btn btn-primary">Save changes</button>
       </div>
     </div>
   </div>
 </div>
 `;
         
-        $('#grid-container1').append(topDownSettingModalEl);
-    };
+        $('#main-container-id').append(planViewSettingModalEl);
+    }
     
-    initTopDownSettingModal = function () {
-        // console.log('BEG initTopDownSettingModal');
+    initPlanViewSettingModal () {
+        // console.log('BEG initPlanViewSettingModal');
 
-        this.createTopDownSettingModal();
+        this.createPlanViewSettingModal();
         
-        $('#toolbarGroupId').append(this._topDownSettingModalBtnEl);
+        $('#toolbarGroupId').append(this._planViewSettingModalBtnEl);
 
-        $("#topdown-settings-modal-btn").click(function() {
+        $('#planview-settings-modal-btn').click(function() {
 
             let selectedLayer = COL.model.getSelectedLayer();
-            let scene3DtopDown = selectedLayer.getScene3DtopDown();
-            let overlayRectScale = scene3DtopDown.getOverlayRectScale();
+            let planView = selectedLayer.getPlanView();
+            let overlayRectScale = planView.getOverlayRectScale();
             let sliderVal = SceneBar.OverlayRectScale_to_sliderVal(overlayRectScale);
 
-            let overlayrectSizeSlider = $("#overlayrect-size-slider-id").slider();
+            let overlayrectSizeSlider = $('#overlayrect-size-slider-id').slider();
             overlayrectSizeSlider.slider('setValue', sliderVal, true, true);
             
             $('#overlayrect-size-slider-id').slider({
-	        formatter: function(value) {
-	            return 'Current value: ' + value;
-	        },
+                formatter: function(value) {
+                    return 'Current value: ' + value;
+                },
                 // change: function( event, ui ) {
                 //     // ui.value is the slider value after the change.
                 // }               
@@ -250,14 +212,13 @@ class SceneBar {
             let selectedLayer = COL.model.getSelectedLayer();
 
             let isMilestoneDatesFilterEnabled = false;
-            if(this.checked)
-            {
+            if(this.checked) {
                 isMilestoneDatesFilterEnabled = true;
             }
             selectedLayer.setIsMilestoneDatesFilterEnabled(isMilestoneDatesFilterEnabled);
             
             // This will disable all the children of the div
-            var nodes = document.getElementById("datesId").getElementsByTagName('*');
+            var nodes = document.getElementById('datesId').getElementsByTagName('*');
             for(var i = 0; i < nodes.length; i++){
                 nodes[i].disabled = !isMilestoneDatesFilterEnabled;
             }
@@ -267,15 +228,15 @@ class SceneBar {
         });
 
         
-        document.getElementById('topDownSettingSaveBtnId').onclick = function() {
-            // console.log('BEG topDownSettingSaveBtnId'); 
+        document.getElementById('planViewSettingSaveBtnId').onclick = function() {
+            // console.log('BEG planViewSettingSaveBtnId'); 
             let sceneBar = COL.model.getSceneBar();
             sceneBar.validateMilestoneDatesAndUpdateScene();
         };            
 
-    };
+    }
     
-    initOverlayRectSlider = function () {
+    initOverlayRectSlider () {
 
         // get the value of the slider after it stops moving
         $('#overlayrect-size-slider-id').slider().on('slideStop', function(ev){
@@ -295,21 +256,20 @@ class SceneBar {
             let selectedLayer = COL.model.getSelectedLayer();
             selectedLayer.updateOverlayRectScale(overlayRectScale);
         });
-    };
+    }
 
     
-    validateMilestoneDatesAndUpdateScene = function () {
+    validateMilestoneDatesAndUpdateScene () {
         console.log('BEG validateMilestoneDatesAndUpdateScene');
         
         // validate cells and update milestoneDates
-        if(!this.validateMilstoneDateTable())
-        {
+        if(!this.validateMilstoneDateTable()) {
             throw new Error('MilstoneDateTable is invalid');
         }
         this.filterOverlayRectsByMilestoneDates();
-    };
+    }
     
-    initMilstoneDateTable = function () {
+    initMilstoneDateTable () {
 
         // // https://www.w3schools.com/jquery/event_on.asp
         // var checkedRows = [];
@@ -321,12 +281,12 @@ class SceneBar {
         //     console.log(checkedRows);
         // });        
 
-        ////////////////////////////////////////////////////////////
+        // //////////////////////////////////////////////////////////
         // interaction with any of the milestone rows
         // (with class .date_row_class)
-        ////////////////////////////////////////////////////////////
+        // //////////////////////////////////////////////////////////
 
-        $("body").on("click", ".date_row_class", function () {
+        $('body').on('click', '.date_row_class', function () {
             // clicking anywhere in the row will trigger this function
             // console.log('BEG clicked on element with class date_row_class');
             let msg1 = `clicked on ${this.id}`;
@@ -334,9 +294,9 @@ class SceneBar {
         });
 
 
-        ////////////////////////////////////////////////////////////
+        // //////////////////////////////////////////////////////////
         // interaction with date_pickr_start_date
-        ////////////////////////////////////////////////////////////
+        // //////////////////////////////////////////////////////////
 
         var projectStartDate;
 
@@ -344,7 +304,7 @@ class SceneBar {
         // $("#date_pickr_start_date").datepicker('update');  //update the bootstrap datepicker
         
         // $("#date_pickr_start_date").datepicker({
-        $(".date_pickr").datepicker({
+        $('.date_pickr').datepicker({
             format: 'yyyy/mm/dd',
             // setDate: setDate1,
             todayBtn:  1,
@@ -358,8 +318,7 @@ class SceneBar {
             // clicked on the projectStartDate milestoneDate rubric
             // Set the start date.
             
-            if(this.id === 'date_pickr_start_date')
-            {
+            if(this.id === 'date_pickr_start_date') {
                 // console.log('BEG date_pickr_start_date .changeDate');
                 
                 projectStartDate = new Date(selected.date.valueOf());
@@ -368,8 +327,7 @@ class SceneBar {
                 // loop over all the date rubrics and verify that the date is not earlier than projectStartDate
                 let eventDates = $('.date_pickr');
                 for (const eventDate of eventDates){
-                    if(eventDate.id !== 'date_pickr_start_date')
-                    {
+                    if(eventDate.id !== 'date_pickr_start_date') {
                         let eventDate2 = $(`#${eventDate.id}`).val();
                         let eventDate2_date = new Date (eventDate2);
 
@@ -378,8 +336,7 @@ class SceneBar {
                         
                         // https://poopcode.com/compare-two-dates-in-javascript-using-moment/
                         let isEventDateBeforeStartDate = moment(eventDate2_date).isBefore(selected.date);
-                        if(isEventDateBeforeStartDate)
-                        {
+                        if(isEventDateBeforeStartDate) {
                             // The event date is earlier than projectStartDate.
                             // Adjust the event date - clamp it to be the projectStartDate
                             $(`#${eventDate.id}`).datepicker('setDate', projectStartDate);
@@ -391,10 +348,10 @@ class SceneBar {
             // $('#enddate').datepicker('setStartDate', projectStartDate);
         });
 
-        ////////////////////////////////////////////////////////////
+        // //////////////////////////////////////////////////////////
         // interaction with any of the milestone date elements
         // (with class .date_pickr)
-        ////////////////////////////////////////////////////////////
+        // //////////////////////////////////////////////////////////
         
         // https://stackoverflow.com/questions/203198/event-binding-on-dynamically-created-elements
         // event delegation - need to bind the event to a parent which already exists
@@ -412,8 +369,7 @@ class SceneBar {
             // console.log('msg333333333333333333333333', msg1);
             // console.log('.date_pickr11', $('.date_pickr'));
 
-            if(COL.util.isObjectInvalid(projectStartDate))
-            {
+            if(COL.util.isObjectInvalid(projectStartDate)) {
                 throw new Error('Invalid projectStartDate');
             }
             
@@ -429,37 +385,36 @@ class SceneBar {
 
 
 
-        ////////////////////////////////////////////////////////////
+        // //////////////////////////////////////////////////////////
         // interaction with any of the chekboxes 
-        ////////////////////////////////////////////////////////////
+        // //////////////////////////////////////////////////////////
 
         // need to use existing element, e.g. "body" to bind the dynamically added 'checkbox' elements
         // (event delegation) so
         // - cannot use "$(".checkbox-inline").on('click'..."
         // - need to use e.g. "$("body").on("click"..."
         
-        $("body").on("click", ".checkbox-inline", function () {
+        $('body').on('click', '.checkbox-inline', function () {
             // clicking anywhere in the row will trigger this function
             // console.log('BEG clicked on element with class checkbox-inline');
             let msg1 = `clicked on ${this.id}`;
             // console.log('msg1', msg1); 
         });
 
-        $("#addRowBtnId").click(function() {
+        $('#addRowBtnId').click(function() {
             // console.log('BEG addRowBtnId.click'); 
 
             let sceneBar = COL.model.getSceneBar();
             let retval = sceneBar.validateMilstoneDateTable();
-            if(!retval)
-            {
+            if(!retval) {
                 console.error('table is invalid. Cannot add new row');
                 return;
             }
             
-            //add row with date_pickrs
+            // add row with date_pickrs
             // rowNum++;
             sceneBar._milestoneDatesRowNum++;
-            let rowNum = sceneBar._milestoneDatesRowNum
+            let rowNum = sceneBar._milestoneDatesRowNum;
 
             let nu_row = `
 <tr id="rowNum${rowNum}" class="date_row_class">
@@ -482,9 +437,9 @@ class SceneBar {
                 selector.parentNode.parentNode.parentNode.removeChild(selector.parentNode.parentNode);
             };            
         });
-    };
+    }
     
-    validateMilstoneDateTable = function () {
+    validateMilstoneDateTable () {
         // console.log('BEG validateMilstoneDateTable');
 
         let retval = true;
@@ -496,16 +451,15 @@ class SceneBar {
             let eventDate2_date = new Date(eventDate2);
             // console.log('eventDate2_date', eventDate2_date);
 
-            if(COL.util.isDateInvalid(eventDate2_date))
-            {
+            if(COL.util.isDateInvalid(eventDate2_date)) {
                 retval = false;
                 break;
             }
         }
         return retval;
-    };
+    }
     
-    filterOverlayRectsByMilestoneDates = function () {
+    filterOverlayRectsByMilestoneDates () {
         // console.log('BEG filterOverlayRectsByMilestoneDates');
         
         // https://stackoverflow.com/questions/3072233/getting-value-from-table-cell-in-javascript-not-jquery
@@ -537,9 +491,9 @@ class SceneBar {
         // sort dates by date (enabled, and disabled)
         let milestoneDatesInfo_sortedByDate = selectedLayer._milestoneDatesInfo.sortByVal('date');
 
-        ////////////////////////////////////////////////////////////////////
+        // //////////////////////////////////////////////////////////////////
         // create the filter conditions
-        ////////////////////////////////////////////////////////////////////
+        // //////////////////////////////////////////////////////////////////
 
         // create the filter conditions, e.g.
         //   ((milstoneDate >= startDate0) && (milstoneDate < endDate0)) ||
@@ -565,8 +519,7 @@ class SceneBar {
             let milestoneDateInfoCurr = milestoneDateInfoNext;
             milestoneDateInfoNext = iter.next();
 
-            if (milestoneDateInfoNext.isEnabled)
-            {
+            if (milestoneDateInfoNext.isEnabled) {
                 let startDate0 = new Date (milestoneDateInfoCurr.date);
                 let endDate0 = new Date (milestoneDateInfoNext.date);
 
@@ -579,12 +532,10 @@ class SceneBar {
                 let type_milestoneDateInfoNext_date = typeof milestoneDateInfoNext.date;
                 let type_endDate0 = typeof endDate0;
 
-                if(isFirstTime)
-                {
+                if(isFirstTime) {
                     isFirstTime = false;
                 }
-                else
-                {
+                else {
                     conditionStr += ' || ';
                 }
                 conditionStr += `((milstoneDate >= ${startDate0.getTime()}) && (milstoneDate < ${endDate0.getTime()}))`;
@@ -593,130 +544,58 @@ class SceneBar {
 
         // update the attribute isImageInRange in imagesInfo
         selectedLayer.updateImagesInfoAttr_isImageInRange(conditionStr);
-    };
+    }
     
-    
-    renderSelectedPlan = async function (getCurrentUserResultAsJson) {
-        console.log('BEG renderSelectedPlan');
+
+    async initSceneBar (user_role, component) {
+        console.log('BEG SceneBar::initSceneBar1');
         
-        ////////////////////////////////////////////////////////////////////////////////
-        // - set the selected index for the option in optgroup (global running index throughout multiple optgroups)
-        // - render the selected plan 
-        ////////////////////////////////////////////////////////////////////////////////
+        let zipFileOptions_admin = new component.Group({id: 'zipFileOptions_adminId'});
+        let editOptions = new component.Group({id: 'editOptionsId'});
 
-        // console.log('set the selected index for the option in optgroup'); 
-        if(getCurrentUserResultAsJson['selected_plan_id'])
-        {
-            // set the selected index for the option in optgroup according to selected_plan_id
-            //
-            // find (optionIndex, plan_id) in planInfoStr in all options
-            // plan_id - search in planInfoStr for string "id": (e.g. "id":"3" -> 3
-            //
-            // match plan_id with selected_plan_id
-            // when matched, set selectedIndex to optionIndex
-
-            let selected_plan_id = getCurrentUserResultAsJson['selected_plan_id'];
-            // console.log('selected_plan_id', selected_plan_id); 
-            
-            // https://stackoverflow.com/questions/5090103/javascript-regexp-dynamic-generation-from-variables
-            // e.g. "id":"3"
-            let matchPattern = '\\"id\\"\\:\\"' + selected_plan_id + '\\"';
-            let optionIndex = this.findPlanInSiteplanMenu(matchPattern);
-
-            // mark the plan in the siteplan menu
-            $('#sitesId')[0].selectedIndex = optionIndex;
-
-            // render the selected plan
-            await COL.colJS.onSitesChanged();
-        }
-        else
-        {
-            // set the selected index for the option in optgroup to the first available plan
-            let numPlans = $("#sitesId option").length;
-            console.log('numPlans', numPlans);
-
-            if(numPlans > 0)
-            {
-                // there is at least one plan - set to the first plan
-                $('#sitesId')[0].selectedIndex = 0;
-
-                // render the selected plan
-                await COL.colJS.onSitesChanged();
-            }
-        }
-    };
-    
-
-    initSceneBar = async function (user_role, component) {
-        console.log('BEG SceneBar::initSceneBar');
-        
-        let zipFileOptions_admin = new component.Group({id: "zipFileOptions_adminId"});
-        let editOptions = new component.Group({id: "editOptionsId"});
-
-        let iconDir = "V1/img/icons/IcoMoon-Free-master/PNG/48px";
+        let iconDir = 'V1/img/icons/IcoMoon-Free-master/PNG/48px';
         console.log('iconDir2', iconDir); 
         
-        let iconPath = iconDir + "/0049-folder-open.png";
-        let openZipFileButton = new component.FileButton({
-            tooltip: "Open zip file1",
-            icon: iconPath,
-            id: "openZipFileButton",
-            multiple: true
-        });
+        let iconPath = iconDir + '/0049-folder-open.png';
 
-        let openZipFileButtonJqueryObject = $(openZipFileButton.$);
-        openZipFileButtonJqueryObject.addClass("ui-button");
-        openZipFileButtonJqueryObject.addClass("admin-feature");
-        
-        zipFileOptions_admin.add(openZipFileButton);
-
-        if(COL.doWorkOnline)
-        {
+        if(COL.doWorkOnline) {
             
-            zipFileOptions_admin.add(this._syncFromZipFileToWebServerButton);
-
-            iconPath = iconDir + "/0146-wrench.png";
+            iconPath = iconDir + '/0146-wrench.png';
             this._editOverlayRectButton = new component.ToggleButton({
-                tooltip: "Edit model overlay",
+                tooltip: 'Edit model overlay',
                 icon: iconPath,
                 on: false
             });
             let jqueryObj = $(this._editOverlayRectButton.$);
-            jqueryObj.addClass("ui-button");
+            jqueryObj.addClass('ui-button');
             this.disabledOnSceneEmpty(this._editOverlayRectButton);
 
-            iconPath = iconDir + "/0035-file-text.png";
+            iconPath = iconDir + '/0035-file-text.png';
             this._addStickyNoteButton = new component.Button({
-                tooltip: "Add sticky note",
+                tooltip: 'Add sticky note',
                 icon: iconPath
             });
-            $(this._addStickyNoteButton.$).addClass("ui-button");
+            $(this._addStickyNoteButton.$).addClass('ui-button');
             this.disabledOnSceneEmpty(this._addStickyNoteButton);
 
             editOptions.add(this._editOverlayRectButton);
-            if(COL.doEnableWhiteboard)
-            {
+            if(COL.doEnableWhiteboard) {
                 editOptions.add(this._editOverlayRect_editFloorPlanWhiteboard);
             }
             editOptions.add(this._editOverlayRect_deleteButton);
             editOptions.add(this._openImageFileButton);
             editOptions.add(this._reconcileFrontEndButton);
-            editOptions.add(this._mergeOverlayRectsButton);
-            editOptions.add(this._splitOverlayRectButton);       
-            editOptions.add(this._editOverlayRect_syncWithBackendBtn);
             // editOptions.add(this._addStickyNoteButton);
         }
 
-        ////////////////////////////////////////////////////////////////////////////////
+        // //////////////////////////////////////////////////////////////////////////////
         // - set the buttons (hide/show) according to the user role
-        ////////////////////////////////////////////////////////////////////////////////
+        // //////////////////////////////////////////////////////////////////////////////
 
         let loggedInFlag = COL.model.getLoggedInFlag();
         // console.log('loggedInFlag', loggedInFlag); 
-        if(loggedInFlag)
-        {
-            if(user_role === 'admin' )
-            {
+        if(loggedInFlag) {
+            if(user_role === 'admin' ) {
                 // admin user
                 this._toolBar.add(
                     zipFileOptions_admin,
@@ -726,8 +605,7 @@ class SceneBar {
                 );
                 
             }
-            else
-            {
+            else {
                 // non-admin user (e.g. group_owner, or regular user)
                 // hide buttons group: zipFileOptions_admin
                 this._toolBar.add(
@@ -738,205 +616,57 @@ class SceneBar {
             }
 
         }
-        else
-        {
-            // non logged-in user
-	    // enable to load from zip file and read only
-            this._toolBar.add(
-                openZipFileButton,
-                this._playImagesInAllOverlayRectsButton,
-                this._reloadPageButton
-                
-            );
-        }
 
-
-        ////////////////////////////////////////////////////////////////////////////////
+        // //////////////////////////////////////////////////////////////////////////////
         // SCENE BAR EVENT HANDLERS
-        ////////////////////////////////////////////////////////////////////////////////
+        // //////////////////////////////////////////////////////////////////////////////
 
-        openZipFileButton.onClick(async function (input) {
-            console.log('BEG openZipFileButton.onClick');
+        if(COL.doWorkOnline) {
 
-            if( COL.util.isObjectValid(window.$agent_jasonette_android))
-            {
-                // in mobile app (e.g. jasonette), 
-                // read the file headers in the .zip file from the mobile device
-                window.$agent_jasonette_android.trigger("media.loadZipFileHeaders");
-            }
-        });
-        
-        openZipFileButton.onChange(async function (input) {
-            console.log('BEG openZipFileButton.onChange'); 
-
-            let sceneBar = COL.model.getSceneBar();
-            // Convert from FileList to array
-            // https://stackoverflow.com/questions/25333488/why-isnt-the-filelist-object-an-array
-            let filesToOpenArray = Array.from(input.files);
-            let fileToOpen = filesToOpenArray[0];
-
-            console.log('COL.util.isObjectValid(window.$agent_jasonette_ios)4', COL.util.isObjectValid(window.$agent_jasonette_ios)); 
-            if(COL.util.isObjectValid(window.$agent_jasonette_ios))
-            {
-                // In mobile app jasonette-ios, 
-                // read the file headers in the .zip file from the mobile device
-                // window.$agent_jasonette_ios.trigger("media.loadZipFileHeaders1");
-
-                console.log('fileToOpen', fileToOpen);
-                
-                let options = {"filename1": fileToOpen.name};
-                window.$agent_jasonette_ios.trigger("media.loadZipFileHeaders2", options);
-            }
-            else
-            {
-                // In:
-                // 1. native webapp, or
-                // 2. mobile app - android
-                sceneBar.onChange_openZipFileButton(fileToOpen);
-            }
-        });
-
-        if(COL.doWorkOnline)
-        {
-            this._syncFromZipFileToWebServerButton.onClick(async function () {
-                console.log('BEG _syncFromZipFileToWebServerButton'); 
-
-                // let doUploadToWebServer = confirm("Uploading to the webserver will overwrite all pre-existing data for the site!");
-                // if(!doUploadToWebServer)
-                // {
-                //     // The user cancelled the operation. Do not upload.
-                //     return;
-                // }
-
-                let spinnerJqueryObj = $('#cssLoaderId');
-                spinnerJqueryObj.addClass("is-active");
-                
-                let toastTitleStr = "Sync site plans from the zip file to the webserver";
-                try {
-
-                    ///////////////////////////////////////////
-                    // sync the site to the webserver
-                    // do
-                    // - syncZipSitesWithWebServer2
-                    //   - syncZipSiteWithWebServer2
-                    //     - syncZipSitePlanWithWebServer2
-                    //       - syncZipSitePlanEntryWithWebServer2
-                    //       - syncZipSitePlanFilesWithWebServer2
-                    //         - syncFilesOfTheCurrentZipFileLayer2(imagesInfo, imageFilenames, syncRetVals)
-                    //         - syncFilesOfTheCurrentZipFileLayer2(metaDataFilesInfo, metaDataFilenames, syncRetVals)
-                    ///////////////////////////////////////////
-
-                    let retval1 = await COL.model.fileZip.syncZipSitesWithWebServer2();
-
-                    let retval = retval1.retval;
-                    let syncZipSitesWithWebServer_statusStr = retval1.syncZipSitesWithWebServer_statusStr;
-
-
-                    // // Reload the page with the updated sitesInfo
-                    // document.location.reload(true);
-
-                    // disable the button
-                    let sceneBar = COL.model.getSceneBar();
-                    sceneBar._syncFromZipFileToWebServerButton.disabled(true);
-
-                    //////////////////////////////////////////////////////
-                    // raise a toast
-                    //////////////////////////////////////////////////////
-                    
-                    if(retval)
-                    {
-                        let msgStr = "Succeeded to sync: " + syncZipSitesWithWebServer_statusStr;
-                        toastr.success(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
-
-                        let msgStr1 = toastTitleStr + ': ' + msgStr;
-                        console.log('msgStr1', msgStr1); 
-                        // alert(msgStr1);
-                    }
-                    else
-                    {
-                        let msgStr = "Failed to sync:" + syncZipSitesWithWebServer_statusStr;
-                        toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
-                    }
-                }
-                catch(err) {
-                    console.error('Error from _syncFromZipFileToWebServerButton:', err);
-
-                    let msgStr = "Failed to sync. " + err;
-                    toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
-
-                    // enable the button
-                    let sceneBar = COL.model.getSceneBar();
-                    sceneBar._syncFromZipFileToWebServerButton.disabled(false);
-                }
-
-                spinnerJqueryObj.removeClass("is-active");
-                
-            });
-
-            this._editOverlayRectButton.onClick( async function () {
-                let sceneBar = COL.model.getSceneBar();
-                await sceneBar.editOverlayRectButton_onClick();
-            });
-
-            if(COL.doEnableWhiteboard)
-            {
+            if(COL.doEnableWhiteboard) {
                 this._editOverlayRect_editFloorPlanWhiteboard.onClick(async function () {
                     console.log('BEG _editOverlayRect_editFloorPlanWhiteboard'); 
                     let selectedLayer = COL.model.getSelectedLayer();
-                    let scene3DtopDown = selectedLayer.getScene3DtopDown();
+                    let planView = selectedLayer.getPlanView();
                 });
             }
 
-            this._editOverlayRect_deleteButton.onClick(async function () {
-                let selectedLayer = COL.model.getSelectedLayer();
-                let scene3DtopDown = selectedLayer.getScene3DtopDown();
-                let intersectedOverlayRectInfo = scene3DtopDown.getIntersectionOverlayRectInfo();
-                let selectedOverlayRectObj = COL.util.getNestedObject(intersectedOverlayRectInfo, ['currentIntersection', 'object']);
+            if(COL.isOldGUIEnabled) {
+                this._editOverlayRect_deleteButton.onClick(async function () {
+                    let selectedLayer = COL.model.getSelectedLayer();
+                    let planView = selectedLayer.getPlanView();
+                    let intersectedOverlayRectInfo = planView.getIntersectionOverlayRectInfo();
+                    let selectedOverlayRectObj = COL.util.getNestedObject(intersectedOverlayRectInfo, ['currentIntersection', 'object']);
+    
+                    if(selectedOverlayRectObj) {
+    
+                        // disable buttons related to editOverlayRect, so that while syncing to the backend, the user cannot make updates, e.g.
+                        //   add a new overlayRect, change location of overlayRect, delete image from overlayRect etc...
+                        sceneBar.disableEditOverlayRectRelatedButtons(true);
+                        
+                        let selectedOverlayRect = selectedLayer.getSelectedOverlayRect();
+                        let imageFilenameToRemove = selectedOverlayRect.getSelectedImageFilename();
+                        await selectedLayer.deleteImageFromLayer(selectedOverlayRect, imageFilenameToRemove);
+                    }
+                });
+            }
 
-                if(selectedOverlayRectObj)
-                {
-                    // disable editOverlayRect_syncWithBackendBtn
-                    let sceneBar = COL.model.getSceneBar();
-                    sceneBar.disable_editOverlayRect_syncWithBackendBtn(true);
+            if(COL.isOldGUIEnabled) {
+                this._openImageFileButton.onClick(async function (input) {
+                    console.log('BEG _openImageFileButton.onClick');
+    
+                    // the onClick event is fired when clicking on the button
+    
+                    if( COL.util.isObjectValid(window.$agent_jasonette_android) ) {
+                        // window.$agent_jasonette_android is defined, i.e. the client is the jasonette mobile app
+                        // trigger a request to add an image from the camera or from the
+                        // file system on the mobile device
+                        console.log('Before trigger media.pickerAndCamera'); 
+                        window.$agent_jasonette_android.trigger('media.pickerAndCamera');
+                    }
+                });
+            }
 
-                    // disable buttons related to editOverlayRect, so that while syncing to the backend, the user cannot make updates, e.g.
-                    //   add a new overlayRect, change location of overlayRect, delete image from overlayRect etc...
-                    sceneBar.disableEditOverlayRectRelatedButtons(true);
-                    
-                    let selectedOverlayRect = selectedLayer.getSelectedOverlayRect();
-                    let imageFilenameToRemove = selectedOverlayRect.getSelectedImageFilename();
-                    await selectedLayer.deleteImageFromLayer(selectedOverlayRect, imageFilenameToRemove);
-
-                    sceneBar.disableEditOverlayRectRelatedButtons(false);
-                    sceneBar.disable_editOverlayRect_syncWithBackendBtn(false);
-                }
-            });
-
-            this._openImageFileButton.onClick(async function (input) {
-                console.log('BEG _openImageFileButton.onClick');
-
-                // the onClick event is fired when clicking on the button
-
-                // avner: comment1_partA (see also comment1_partB in window.addEventListener("focus")):
-                //  we may not need to disable the button here, because merely by
-                //  openning the file-input-modal-dialog-box may not do anything (e.g. if we don't select any image)
-                //  and in any case, before adding the image (the call to COL.core.ImageFile.openImageFiles) the button is disabled
-                //
-                // // disable enable editOverlayRect_syncWithBackendBtn
-                // // (this button is re-enabled when editing operation is finished, e.g.
-                // //  in "window.addEventListener(focus)" when the file modal dialog-box is closed)
-                // let sceneBar = COL.model.getSceneBar();
-                // sceneBar.disable_editOverlayRect_syncWithBackendBtn(true);
-
-                if( COL.util.isObjectValid(window.$agent_jasonette_android) )
-                {
-                    // window.$agent_jasonette_android is defined, i.e. the client is the jasonette mobile app
-                    // trigger a request to add an image from the camera or from the
-                    // file system on the mobile device
-                    console.log('Before trigger media.pickerAndCamera'); 
-                    window.$agent_jasonette_android.trigger("media.pickerAndCamera");
-                }
-            });
             
             this._openImageFileButton.onChange(async function (input) {
                 // console.log('BEG _openImageFileButton.onChange');
@@ -957,94 +687,18 @@ class SceneBar {
                 await selectedLayer.reconcileFrontEndInconcitencies();
             });
 
-            this._mergeOverlayRectsButton.onClick(async function () {
-                // console.log('BEG _mergeOverlayRectsButton.onClick');
-
-                // disable editOverlayRect_syncWithBackendBtn
-                let sceneBar = COL.model.getSceneBar();
-                sceneBar.disable_editOverlayRect_syncWithBackendBtn(true);
-
-                let selectedLayer = COL.model.getSelectedLayer();
-                await selectedLayer.mergeOverlayRects();
-
-                // enable editOverlayRect_syncWithBackendBtn
-                sceneBar.disable_editOverlayRect_syncWithBackendBtn(false);
-                
-            });
-            
-            this._splitOverlayRectButton.onClick(async function () {
-                // console.log('BEG _splitOverlayRectButton.onClick');
-
-                let sceneBar = COL.model.getSceneBar();
-                try {
-
-                    // disable editOverlayRect_syncWithBackendBtn
-                    sceneBar.disable_editOverlayRect_syncWithBackendBtn(true);
-                    
-                    // disable the button (successive clicks, before the first click is processed
-                    // cause, e.g. to miss split images? (172 images in total but after rapid splitting shows only 162 images??))
-                    sceneBar._splitOverlayRectButton.disabled(true);
-                    
+            if(COL.isOldGUIEnabled) {
+                this._addStickyNoteButton.onClick(function () {
                     let selectedLayer = COL.model.getSelectedLayer();
-                    await selectedLayer.splitOverlayRect();
-                    Scene3DtopDown.render1();
-                }
-                catch(err) {
-                    let toastTitleStr = "Split overlayRect";
-                    let msgStr = "Failed to split the overlayRect. " + err;
-                    toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
-                }
-
-                // enable the button
-                sceneBar._splitOverlayRectButton.disabled(false);
-
-                // enable editOverlayRect_syncWithBackendBtn
-                sceneBar.disable_editOverlayRect_syncWithBackendBtn(false);
-            });
-
-            this._editOverlayRect_syncWithBackendBtn.onClick(async function () {
-                // console.log('BEG _editOverlayRect_syncWithBackendBtn'); 
-
-                let sceneBar = COL.model.getSceneBar();
-                // disable buttons related to editOverlayRect, so that while syncing to the backend, the user cannot make updates, e.g.
-                // add a new overlayRect, change location of overlayRect, delete image from overlayRect etc...
-                sceneBar.disableEditOverlayRectRelatedButtons(true);
-
-                // persist changes in layer.json (e.g. adding new circle)
-                let selectedLayer = COL.model.getSelectedLayer();
-                let syncStatus = await selectedLayer.syncBlobsWithWebServer();
-                if(syncStatus)
-                {
-                    try {
-                        // after update from memory to webserver re-render the plan with the new changes
-                        await COL.colJS.onSitesChanged();
-                    }
-                    catch(err) {
-                        console.error('Error from _syncWithBackendBtn:', err);
-                        throw new Error('Error from _syncWithBackendBtn');
-                    }
-                }
-
-                // enable buttons related to editOverlayRect
-                sceneBar.disableEditOverlayRectRelatedButtons(false);
-            });
-
-            this._addStickyNoteButton.onClick(function () {
-                let selectedLayer = COL.model.getSelectedLayer();
-                selectedLayer.addStickyNote();
-            });
-
-            // disable the button _syncFromZipFileToWebServerButton
-            this._syncFromZipFileToWebServerButton.disabled(true);
-
+                    selectedLayer.addStickyNote();
+                });
+            }
+            
             // buttons related to editSpecificOverlayRect
             this.disableEditOverlayRectRelatedButtons(true);
             
-            // disable editOverlayRect_syncWithBackendBtn
-            this.disable_editOverlayRect_syncWithBackendBtn(true);
-
-            // create the topDownSetting modal (e.g. to filter dates, and overlayRect dot size)
-            this.initTopDownSettingModal();
+            // create the planViewSetting modal (e.g. to filter dates, and overlayRect dot size)
+            this.initPlanViewSettingModal();
             
         }
 
@@ -1069,7 +723,7 @@ class SceneBar {
             try {
                 // disable the button (successive clicks, before the first click is processed
                 // cause, e.g. to miss split images? (172 images in total but after rapid splitting shows only 162 images??))
-                let playImagesState = sceneBar._playImagesInAllOverlayRectsButton.isOn() ? Layer.PLAY_IMAGES_STATE.PLAY_IMAGES_IN_ALL_OVERLAY_RECTS : Layer.PLAY_IMAGES_STATE.NONE
+                let playImagesState = sceneBar._playImagesInAllOverlayRectsButton.isOn() ? Layer.PLAY_IMAGES_STATE.PLAY_IMAGES_IN_ALL_OVERLAY_RECTS : Layer.PLAY_IMAGES_STATE.NONE;
                 // console.log('playImagesState1', playImagesState); 
                 
                 selectedLayer.setPlayImagesState(playImagesState);
@@ -1078,8 +732,8 @@ class SceneBar {
             catch(err) {
                 console.error('err:', err);
                 
-                let toastTitleStr = "Play images in all overlayRects";
-                let msgStr = "Failed to play images in all overlayRects. " + err;
+                let toastTitleStr = 'Play images in all overlayRects';
+                let msgStr = 'Failed to play images in all overlayRects. ' + err;
                 toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
             }
 
@@ -1095,172 +749,136 @@ class SceneBar {
             selectedLayer.updatePreviousPlayNextImageButtons();
         });
         
-        let toolBar = this._toolBar.$.attr("id", "col-scenebarId");
+        let toolBar = this._toolBar.$.attr('id', 'col-scenebarId');
         
         let toolbarGroupJqueryElement = $('#toolbarGroupId');
-        $('#grid-container1').append(toolbarGroupJqueryElement);
+        $('#main-container-id').append(toolbarGroupJqueryElement);
         toolBar.appendTo('#toolbarGroupId');
 
         return;
-    };
+    }
 
-    
-    sync_editOverlayRectButton_toStateOf_selectedLayerEditOverlayRectFlag = function () {
-        // console.log('BEG sync_editOverlayRectButton_toStateOf_selectedLayerEditOverlayRectFlag');
-        
-        let selectedLayer = COL.model.getSelectedLayer();
-        let selectedLayer_editOverlayRectFlag = selectedLayer.getEditOverlayRectFlag();
-        if(this._editOverlayRectButton.isOn() !== selectedLayer_editOverlayRectFlag)
-        {
-            // change the state of scenebar::editOverlayRectButton without
-            // trigerring a call to editOverlayRectButton_onClick
-            let event = undefined;
-            this._editOverlayRectButton.toggle(null, event);
+    async onClick_openZipFileButton(input) {
+        console.log('BEG onClick_openZipFileButton');
 
-            let scene3DtopDown = selectedLayer.getScene3DtopDown();
-            scene3DtopDown.enableEditTopDownOverlayControl(selectedLayer_editOverlayRectFlag);
-
-            if(selectedLayer_editOverlayRectFlag)
-            {
-                // disable/enable editOverlayRect related buttons (openImageFileButton, editOverlayRect_deleteButton)
-                // depending on if the overlayRect is empty or not
-                let selectedOverlayRect = selectedLayer.getSelectedOverlayRect();
-                let doDisableEditOverlayRectRelatedButtons = true;
-                if( COL.util.isObjectValid(selectedOverlayRect))
-                {
-                    doDisableEditOverlayRectRelatedButtons = false;
-                }
-                
-                this.disableEditOverlayRectRelatedButtons(doDisableEditOverlayRectRelatedButtons)
-            }
-            else
-            {
-                // disable editOverlayRect related buttons (openImageFileButton, editOverlayRect_deleteButton)
-                this.disableEditOverlayRectRelatedButtons(true);
-            }
+        if( COL.util.isObjectValid(window.$agent_jasonette_android)) {
+            // in mobile app (e.g. jasonette), 
+            // read the file headers in the .zip file from the mobile device
+            window.$agent_jasonette_android.trigger('media.loadZipFileHeaders');
         }
-    };
+    }
+    
+    async onChange_openZipFileButton1(input) {
+        console.log('BEG onChange_openZipFileButton1'); 
 
-    onChange_openImageFileButton = async function (filesToOpenArray) {
+        let sceneBar = COL.model.getSceneBar();
+        // Convert from FileList to array
+        // https://stackoverflow.com/questions/25333488/why-isnt-the-filelist-object-an-array
+        let filesToOpenArray = Array.from(input.files);
+        let fileToOpen = filesToOpenArray[0];
+
+        console.log('COL.util.isObjectValid(window.$agent_jasonette_ios)4', COL.util.isObjectValid(window.$agent_jasonette_ios)); 
+        if(COL.util.isObjectValid(window.$agent_jasonette_ios)) {
+            // In mobile app jasonette-ios, 
+            // read the file headers in the .zip file from the mobile device
+            // window.$agent_jasonette_ios.trigger("media.loadZipFileHeaders1");
+
+            console.log('fileToOpen', fileToOpen);
+            
+            let options = {'filename1': fileToOpen.name};
+            window.$agent_jasonette_ios.trigger('media.loadZipFileHeaders2', options);
+        }
+        else {
+            // In:
+            // 1. native webapp, or
+            // 2. mobile app - android
+            await sceneBar.onChange_openZipFileButton(fileToOpen);
+        }
+    }
+
+    async onChange_openImageFileButton (filesToOpenArray) {
         console.log('BEG onChange_openImageFileButton111');
 
         // the onChange event is fired when selecting images
         // (if not selecting any images, and just canceling, the event s not fired..)
-
-        // disable editOverlayRect_syncWithBackendBtn
-        let sceneBar = COL.model.getSceneBar();
-        sceneBar.disable_editOverlayRect_syncWithBackendBtn(true);
-        
         try {
-            
             await COL.core.ImageFile.openImageFiles(filesToOpenArray);
         }
         catch(err) {
             console.error('Error from ImageFile.openImageFiles:', err);
 
-            let toastTitleStr = "Open image file";
-            let msgStr = "Failed to open the image. " + err;
+            let toastTitleStr = 'Open image file';
+            let msgStr = 'Failed to open the image. ' + err;
             toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
         }
-
-        // enable editOverlayRect_syncWithBackendBtn
-        sceneBar.disable_editOverlayRect_syncWithBackendBtn(false);
-    };
+    }
 
     // The variable zipFile is only used in non-mobile webapp.
     // In mobile app (android), the zipfile info is taken from model._selectedZipFileInfo
     // (therefore, for mobile app the value of zipFile is 'undefined' and it does not make any impact)
-    onChange_openZipFileButton = async function (zipFile = undefined) {
+    async onChange_openZipFileButton (zipFile = undefined) {
         // console.log('BEG onChange_openZipFileButton');
 
         COL.model.fileZip = new FileZip_withJson();
         await COL.model.fileZip.openSingleZipFile(zipFile);
 
-        if(COL.doWorkOnline)
-        {
+        if(COL.doWorkOnline) {
             // Finished loading the zip file
             // Reload the url to reflect the sitesInfo
-            let queryUrl = COL.model.getUrlBase() + 'view_sites';
+            let queryUrl = Model.GetUrlBase() + 'view_sites';
             // console.log('queryUrl', queryUrl); 
             await fetch(queryUrl);
-
-            // enable _syncFromZipFileToWebServerButton
-            let sceneBar = COL.model.getSceneBar();
-            sceneBar._syncFromZipFileToWebServerButton.disabled(false);
         }
-        else
-        {
+        else {
             // looks like we are ok without reloading the file view_sites.html ???
             // (the file index.html is similar to view_sites.html ???)
         }
-    };
+    }
     
-    editOverlayRectButton_onClick = async function () {
-        console.log('BEG editOverlayRectButton_onClick');
-        
-        if(COL.doWorkOnline)
-        {
+
+    handleEditOverlayRect (isEditOverlayRectEnabled) {
+
+        if(COL.doWorkOnline) {
             let selectedLayer = COL.model.getSelectedLayer();
-            let isEditOverlayRectEnabled = this._editOverlayRectButton.isOn();
 
-            selectedLayer.setEditOverlayRectFlag(isEditOverlayRectEnabled);
-            let scene3DtopDown = selectedLayer.getScene3DtopDown();
-            
-            // reset, in case that scene3DtopDown is stuck waiting for the following events
-            // tbd - move to e.g. scene3DtopDown.enableControls
-            // scene3DtopDown.enableControls(!isEditOverlayRectEnabled);
-            // scene3DtopDown.enableEditTopDownOverlayControl(isEditOverlayRectEnabled);
-            scene3DtopDown.onMouseUpOrTouchUpStillProcessing = false;
-            scene3DtopDown.onMouseDownOrTouchStartStillProcessing = false;
-            let editOverlayRectControls = scene3DtopDown._editOverlayRect_Scene3DtopDown_TrackballControls;
-            editOverlayRectControls.onMouseDownOrTouchStartEditOverlayStillProcessing = false;
-            editOverlayRectControls.onMouseUpOrTouchUpEditOverlayStillProcessing = false;
-
-            scene3DtopDown.enableControls(!isEditOverlayRectEnabled);
-            
-            scene3DtopDown.enableEditTopDownOverlayControl(isEditOverlayRectEnabled);
-
-            if(isEditOverlayRectEnabled)
-            {
+            let planView = selectedLayer.getPlanView();
+            let orbitControls = planView.getOrbitControls();
+            // planView.enableControls(isEditOverlayRectEnabled);
+        
+            if(isEditOverlayRectEnabled) {
                 // Enable editOverlayRect related buttons only if selectedOverlayRect is not empty
                 // (i.e. there is a selected, highlighted circle)
                 let selectedOverlayRect = selectedLayer.getSelectedOverlayRect();
                 let doDisableEditOverlayRectRelatedButtons = true;
-                if( COL.util.isObjectValid(selectedOverlayRect) )
-                {
+                if( COL.util.isObjectValid(selectedOverlayRect) ) {
                     doDisableEditOverlayRectRelatedButtons = false;
                 }
                 this.disableEditOverlayRectRelatedButtons(doDisableEditOverlayRectRelatedButtons);
-
-                // enable editOverlayRect_syncWithBackendBtn
-                this.disable_editOverlayRect_syncWithBackendBtn(false);
             }
-            else
-            {
-                ///////////////////////////////////////////
+            else {
+                // /////////////////////////////////////////
                 // edit mode is disabled
-                ///////////////////////////////////////////
+                // /////////////////////////////////////////
                 
                 // disable editOverlayRect related buttons
                 this.disableEditOverlayRectRelatedButtons(true);
-
-                // disable editOverlayRect_syncWithBackendBtn
-                this.disable_editOverlayRect_syncWithBackendBtn(true);
             }
         }
-    };
+    }
+    // editOverlayRectButton_onClick () {
+    //     let isEditOverlayRectEnabled = this._editOverlayRectButton.isOn();
+    //     this.handleEditOverlayRect(isEditOverlayRectEnabled);
+    // }
 
-    getEditOverlayRectButton = function () {
+    getEditOverlayRectButton () {
         return this._editOverlayRectButton;
     }
 
-    findPlanInSiteplanMenu = function (matchPattern) {
-        console.log('BEG findPlanInSiteplanMenu');
+    FindPlanInSiteplanMenu (matchPattern) {
 
         // Initially point to "no-site"
         let optionIndex = 0;
-        if(COL.util.isObjectValid(matchPattern))
-        {
+        if(COL.util.isObjectValid(matchPattern)) {
             // // print the optgroup options values
             // console.log('$("#sitesId option")', $("#sitesId option"));
             // let numPlans = $("#sitesId option").length;
@@ -1274,91 +892,50 @@ class SceneBar {
             
             // try to match the substring of the site-plan-id (matchPattern) in '#sitesId option'
             let matchPatternRE = new RegExp(matchPattern);
-            let optionsMatched = $("#sitesId option").filter(function() {
-                return $(this).val().match(matchPatternRE)
+            let optionsMatched = $('#sitesId option').filter(function() {
+                let val = $(this).val();
+                // console.log('val:', val);
+                return $(this).val().match(matchPatternRE);
             });
 
-            if(optionsMatched.length >= 1)
-            {
+            if(optionsMatched.length >= 1) {
                 optionIndex = optionsMatched[0].index;
             }
         }
         return optionIndex;
-    };
+    }
     
-    disableEditOverlayRectRelatedButtons = function (doDisable) {
+    // tbd - remove the function - only used for COL.isOldGUIEnabled
+    disableEditOverlayRectRelatedButtons (doDisable) {
         // console.log('BEG disableEditOverlayRectRelatedButtons');
         
-        if(COL.doWorkOnline)
-        {
-            if(COL.doEnableWhiteboard)
-            {
+        if(COL.doWorkOnline) {
+            if(COL.doEnableWhiteboard) {
                 this._editOverlayRect_editFloorPlanWhiteboard.disabled(doDisable);
             }
             this._editOverlayRect_deleteButton.disabled(doDisable);
             this._openImageFileButton.disabled(doDisable);
             this._reconcileFrontEndButton.disabled(doDisable);
-            this._mergeOverlayRectsButton.disabled(doDisable);
-
-            if(!doDisable)
-            {
-                // if the buttons are to be enabled, enable _splitOverlayRectButton 
-                // only if the selectedOverlayRect is valid and has more than 1 image
-                let selectedLayer = COL.model.getSelectedLayer();
-                let selectedOverlayRect = selectedLayer.getSelectedOverlayRect();
-                if(COL.util.isObjectValid(selectedOverlayRect))
-                {
-                    if (selectedOverlayRect.getNumImagesInOverlayRect() > 1)
-                    {
-                        // enable _splitOverlayRectButton
-                        this._splitOverlayRectButton.disabled(false);
-                    }
-                    else
-                    {
-                        // disable _splitOverlayRectButton
-                        this._splitOverlayRectButton.disabled(true);
-                    }
-                }
-            }
-            else
-            {
-                this._splitOverlayRectButton.disabled(doDisable);
-            }
         }
-    };
+    }
 
-    // tbd - also disable/enable according to isDirty (i.e. if no change set to disabled)
-    disable_editOverlayRect_syncWithBackendBtn = function (doDisable) {
-        // console.log('BEG disable_editOverlayRect_syncWithBackendBtn');
-        
-        this._editOverlayRect_syncWithBackendBtn.disabled(doDisable);
-    };
-
-    disableNextAndPreviousImageButtons = function (doDisable) {
+    disableNextAndPreviousImageButtons (doDisable) {
         // console.log('BEG disableNextAndPreviousImageButtons'); 
         COL.colJS.previousImageButton.disabled(doDisable);
         COL.colJS.nextImageButton.disabled(doDisable);
-    };
+    }
 
     // * Utility function to make a component automatically disabled if the scene doesn't contains layers
     // * or automatically enabled if the scene contains at least one layer
     // * @param {COL.component.Component} component The component to disable/enable
     
-    disabledOnSceneEmpty = function (component) {
+    disabledOnSceneEmpty (component) {
         $(window).ready(function () {
             component.disabled(true);
         });
+    }
 
-        $(document).on("SceneLayerAdded SceneLayerRemoved", function (ev, layer, layersNum) {
-            if (layersNum > 0) {
-                component.disabled(false);
-            } else {
-                component.disabled(true);
-            }
-        });
-    };
-
-    static SliderVal_to_overlayRectScale = function (sliderVal) {
+    static SliderVal_to_overlayRectScale (sliderVal) {
         let overlayRectScale = 1;
         switch (sliderVal) {
             case 1:
@@ -1375,9 +952,9 @@ class SceneBar {
                 console.warn(msgStr);
         }
         return overlayRectScale;
-    };
+    }
 
-    static OverlayRectScale_to_sliderVal = function (overlayRectScale) {
+    static OverlayRectScale_to_sliderVal (overlayRectScale) {
         let sliderVal = 1;
         switch (overlayRectScale) {
             case 0.5:
@@ -1394,7 +971,7 @@ class SceneBar {
                 console.warn(msgStr);
         }
         return sliderVal;
-    };
+    }
     
 }
 
@@ -1408,13 +985,8 @@ $(window).ready(function () {
     // https://stackoverflow.com/questions/4628544/how-to-detect-when-cancel-is-clicked-on-file-input
     // focus event is one option to detect when the File Imput modal Dialog-box is closed
     // (e.g. by clicking on the 'Cancel' button in the dialog, or by clicking 'Escape')
-    window.addEventListener("focus", function (e) {
+    window.addEventListener('focus', function (e) {
         // console.log('BEG window focus');
-
-        // avner: comment1_partB (see also comment1_partA in _openImageFileButton.onClick)
-        // // enable editOverlayRect_syncWithBackendBtn
-        // let sceneBar = COL.model.getSceneBar();
-        // sceneBar.disable_editOverlayRect_syncWithBackendBtn(false);
     });
 });
 
@@ -1437,7 +1009,7 @@ function savePhotoFromImageUrl(imageUrl) {
             let filename = COL.core.ImageFile.createFileNameWithTimestamp();
             console.log('filename', filename);
             
-            const file = new File([blob], filename,{ type: "image/png" })
+            const file = new File([blob], filename,{ type: 'image/png' });
             // const file = new File([blob], filename,{ type: "image" })
             
             let filesArray = [];
@@ -1446,8 +1018,8 @@ function savePhotoFromImageUrl(imageUrl) {
             console.log('filesArray.length', filesArray.length);
             
             sceneBar.onChange_openImageFileButton(filesArray);
-        })
-};
+        });
+}
 
 
 function callbackLoadZipFileHeaders(param) {
@@ -1460,8 +1032,7 @@ function callbackLoadZipFileHeaders(param) {
     let zipFileInfoFiles_asJson = JSON.parse( param.zipFileInfoFiles_asJsonStr );
     console.log('zipFileInfoFiles_asJson', zipFileInfoFiles_asJson); 
 
-    if(COL.util.isObjectValid(param.isJasonette_iOS))
-    {
+    if(COL.util.isObjectValid(param.isJasonette_iOS)) {
         console.log('In jasonette-ios'); 
         // populate the fields in zipFileInfo
         for (const filenameFullPath of Object.keys(zipFileInfoFiles_asJson)) {
@@ -1471,8 +1042,7 @@ function callbackLoadZipFileHeaders(param) {
             zipFileInfoFile.headerSize = 0;
         }
     }
-    else
-    {
+    else {
         console.log('In jasonette-android'); 
         // populate the fields sliceBeg, sliceEnd in zipFileInfo
         for (const filenameFullPath of Object.keys(zipFileInfoFiles_asJson)) {
@@ -1485,9 +1055,9 @@ function callbackLoadZipFileHeaders(param) {
     }
     
     let zipFileInfo = new ZipFileInfo({zipFile: null,
-                                       zipFileName: param.colZipPath,
-                                       zipFileUrl: null,
-                                       files: zipFileInfoFiles_asJson});
+        zipFileName: param.colZipPath,
+        zipFileUrl: null,
+        files: zipFileInfoFiles_asJson});
     
     COL.model.setZipFilesInfo(zipFileInfo);
     COL.model.setSelectedZipFileInfo(zipFileInfo);
@@ -1495,7 +1065,7 @@ function callbackLoadZipFileHeaders(param) {
     // load the rest of the zip file (e.g. individual files within the .zip file)
     let sceneBar = COL.model.getSceneBar();
     sceneBar.onChange_openZipFileButton();
-};
+}
 
 // Expose savePhoto to Jasonette
 window.callbackLoadZipFileHeaders = callbackLoadZipFileHeaders;

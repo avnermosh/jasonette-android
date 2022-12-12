@@ -4,10 +4,10 @@
 
 'use strict';
 
-import { COL } from '../COL.js'
-import { Model } from "./Model.js";
-import { BlobInfo } from "./BlobInfo.js";
-import { FileZip_withJson } from "../loaders/FileZip_withJson.js";
+import { COL } from '../COL.js';
+import { Model } from './Model.js';
+import { BlobInfo } from './BlobInfo.js';
+import { FileZip_withJson } from '../loaders/FileZip_withJson.js';
 
 COL.core.FileNotes = {
 };
@@ -23,13 +23,13 @@ COL.core.FileNotes = {
         let metaDataFileInfo = metaDataFilesInfo.getByKey(notesFilename);
         let blobInfo = metaDataFileInfo.blobInfo;
         
-        let notesArray1 = await FileZip_withJson.loadFile_viaFetch(blobInfo, "json");
+        let notesArray1 = await FileZip_withJson.loadFile_viaFetch(blobInfo, 'json');
 
         let stickyNoteGroup = layer.getStickyNoteGroup();
-        let texturePlugin = layer.getTexturePanelPlugin()
-        var texScene = texturePlugin.getTexScene();
-        var texCamera = texturePlugin.getTexCamera();
-        var texLabelRenderer = texturePlugin.getTexLabelRenderer();
+        let imageView = layer.getImageView();
+        var imageViewScene = imageView.getImageViewScene();
+        var camera = imageView.getCamera();
+        var labelRenderer = imageView.getlabelRenderer();
 
         var noteArray = layer.getNoteArray();
         
@@ -40,22 +40,22 @@ COL.core.FileNotes = {
             let noteStyle = notesArray1[index].style;
             let imageFilename = notesArray1[index].imageFilename;
             
-            let noteId = "note" + Number(index);
+            let noteId = 'note' + Number(index);
 
             let newNote = new Note(noteId,
-                                   noteData,
-                                   noteStyle,
-                                   imageFilename,
-                                   index,
-                                   layer,
-                                   texLabelRenderer,
-                                   texScene,
-                                   texCamera);
+                noteData,
+                noteStyle,
+                imageFilename,
+                index,
+                layer,
+                labelRenderer,
+                imageViewScene,
+                camera);
 
             noteArray.set(noteId, newNote);
         }
 
-        texScene.add( stickyNoteGroup );
+        imageViewScene.add( stickyNoteGroup );
         
         layer.setNoteArray(noteArray);
         
@@ -75,11 +75,11 @@ COL.core.FileNotes = {
             let notesDataExported = JSON.stringify(myDelta);
             
             let notes_style = {top: note.getStyle().top,
-                               left: note.getStyle().left};
+                left: note.getStyle().left};
 
             let noteExported = {data: notesDataExported,
-                                style: notes_style,
-                                imageFilename: note.getImageFilename()};
+                style: notes_style,
+                imageFilename: note.getImageFilename()};
 
             notesExported.push(noteExported);
         }
@@ -91,8 +91,7 @@ COL.core.FileNotes = {
         blobInfo.blobUrl = URL.createObjectURL(notesExportedBlob);
 
         let metaDataFileInfo = metaDataFilesInfo.getByKey(notesFilename);
-        if(COL.util.isObjectInvalid(metaDataFileInfo))
-        {
+        if(COL.util.isObjectInvalid(metaDataFileInfo)) {
             metaDataFileInfo = new ImageInfo({filename: notesFilename, blobInfo: blobInfo});
         }
         

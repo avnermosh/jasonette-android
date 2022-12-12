@@ -1,96 +1,51 @@
 <!DOCTYPE html>
 <html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+    <meta name="description" content="Construction Overlay App" />
+    <meta name="author" content="Avner M." />
+    <title>Construction Overlay App</title>
+    <script src="../js/static/nanobar/0.2.1/js/nanobar.min.js"></script>
+    <script src="../js/static/jquery/3.6.0/jquery.js"></script>
+    <script src="../js/static/toastr/2.1.4/toastr.min.js"></script>
+    <script src="../js/static/bootstrap/5.0.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../js/static/bootstrap/libs/bootstrap-slider/11.0.2/bootstrap-slider.min.js"></script>
+    <script src="../js/static/bootstrap/libs/bootstrap-datepicker/1.9.0/bootstrap-datepicker.min.js"></script>
+    <script src="../js/static/moment/2.22.2/min/moment.min.js"></script>
+    <script src="../js/static/quilljs/1.3.7/quill.min.js"></script>
+    <script src="../js/static/exif-reader/3.5.0/exif-reader.js"></script>
+    <script src="../js/static/bootstrap/libs/bootstrap-table/1.18.3/bootstrap-table.min.js"></script>
 
-    <head>
-        <meta charset="utf-8">
-        <meta http-equiv="X-UA-Compatible" content="IE=edge">
-        <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-        <meta http-equiv="Pragma" content="no-cache" />
-        <meta http-equiv="Expires" content="0" />
-        <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
-        <meta name="description" content="Construction Overlay App">
-        <meta name="author" content="Avner M.">
-        <title>Construction Overlay App</title>
-        <script src="../js/static/nanobar/0.2.1/js/nanobar.min.js"></script>
-        <script src="../js/static/jquery/3.6.0/jquery.js"></script>
-        <script src="../js/static/toastr/2.1.4/toastr.min.js"></script>
-        <script src="../js/static/bootstrap/bootstrap-4.4.1-dist/js/bootstrap.bundle.min.js"></script>
-        <script src="../js/static/bootstrap/libs/bootstrap-slider/11.0.2/bootstrap-slider.min.js"></script>
-        <script src="../js/static/bootstrap/libs/bootstrap-datepicker/1.9.0/bootstrap-datepicker.min.js"></script>
-        <script src="../js/static/moment/2.22.2/min/moment.min.js"></script>
-        <script src="../js/static/quilljs/1.3.7/quill.min.js"></script>
-        <script src="../js/static/exif-reader/3.5.0/exif-reader.js"></script>
-        <script src="../js/static/bootstrap/libs/bootstrap-table/1.18.3/bootstrap-table.min.js"></script>
+    <link rel="shortcut icon" href="#" />
+    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" href="../js/static/pure-css-loader/dist/css-loader.css" />
 
-        <link rel="shortcut icon" href="#">
-        <link rel="stylesheet" type="text/css" href="../css/style.css">
-        <link rel="stylesheet" href="../js/static/pure-css-loader/dist/css-loader.css">
-
-        <!-- {% block head %}
+    <!-- {% block head %}
              {% endblock %} -->
-        <link rel="manifest" href="../js/manifest.json">
+    <link rel="manifest" href="../js/manifest.json" />
+  </head>
 
-    </head>
+  <body>
 
-    
-    <body>
-
-        <div id="grid-container1">
-            <!-- _topDownPaneWrapper, texturePaneWrapper append to grid-container1 -->
-
-            <!--BEG NavbarMainMenu-->
-            <nav id="navbarMainMenuWrapperId" class="navbar navbar-light navbar-1 white">
-                <div id="navbar-headerId" class="">
-
-                    <!-- Navbar brand -->
-                    <a id="navbar-brandId" class="navbar-brand"></a>
-
-                    <!-- Collapse button -->
-                    <button id="navbarMainMenuButtonId" type="button" data-toggle="collapse" data-target="#navbarSupportedContent15Id">
-                        <span class="navbar-toggler-icon"></span>
-                    </button>
-
-                    <!-- BEG Collapsible content -->
-                    <div class="collapse navbar-collapse" id="navbarSupportedContent15Id">
-
-                        <!-- {% block content2 %}
-                             {% endblock %} -->
-                        <span id="divSitePlanMenuId" class="dropdown bootstrap-override">
-                            <select id="sitesId">
-                                <option value='{ "site_name":"No site selected" }'>
-                                No site selected
-                                </option>
-                            </select>
-                        </span>
-                    </div>
-                    <!-- END Collapsible content -->
-
-                </div>
-            </nav>
-            <!--END NavbarMainMenu-->
-            
-            <!-- {% block content0 %}
-                 {% endblock %} -->
-            <div id="floorplanButtonGroupId"></div>
-            <div id="toolbarGroupId"></div>
-            
-        </div><!-- grid-container1 -->
-
-        <!-- use main.js for development -->
-        <!-- see section "load from individual js module files not working beacuse of CORS error - android" in the notes,
+    <!-- use main.js for development -->
+    <!-- see section "load from individual js module files not working beacuse of CORS error - android" in the notes,
              on how to disable CORS on android, so we can run individual files (easier for debugging) instead of app.bundle -->
-        <script type="module" src="../js/col/main.js"></script>
+    <script type="module" src="../js/col/main.js"></script>
 
-        <!-- use app.bundle.xxx.js for production -->
-        <!-- <script src="../js/static/regenerator-runtime/0.13.1/runtime.js"></script>
-             <script src="../js/app_bundle_js_placeholder"></script> -->
-        
+    <!-- use app.bundle.xxx.js for production -->
+    <!-- <script src="../js/static/regenerator-runtime/0.13.1/runtime.js"></script>
+             <script src="../js/"></script> -->
 
-        <link rel="preload" href="../js/static/bootstrap/bootstrap-4.4.1-dist/css/bootstrap.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
-        <link rel="preload" href="../js/static/bootstrap/libs/bootstrap-slider/11.0.2/bootstrap-slider.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
-        <link rel="preload" href="../js/static/bootstrap/libs/bootstrap-datepicker/1.9.0/bootstrap-datepicker3.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
-        <link rel="preload" href="../js/static/quilljs/1.3.7/quill.snow.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
-        <link rel="preload" href="../js/static/toastr/2.1.4/toastr.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
-        <link rel="preload" href="../js/static/bootstrap/libs/bootstrap-table/1.18.3/bootstrap-table.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
-    </body>
+    <link rel="preload" href="../js/static/bootstrap/5.0.2/dist/css/bootstrap.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'" />
+    <link rel="preload" href="../js/static/bootstrap/libs/bootstrap-slider/11.0.2/bootstrap-slider.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'" />
+    <link rel="preload" href="../js/static/bootstrap/libs/bootstrap-datepicker/1.9.0/bootstrap-datepicker3.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'" />
+    <link rel="preload" href="../js/static/quilljs/1.3.7/quill.snow.css" as="style" onload="this.onload=null;this.rel='stylesheet'" />
+    <link rel="preload" href="../js/static/toastr/2.1.4/toastr.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'" />
+    <link rel="preload" href="../js/static/bootstrap/libs/bootstrap-table/1.18.3/bootstrap-table.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'" />
+  </body>
 </html>

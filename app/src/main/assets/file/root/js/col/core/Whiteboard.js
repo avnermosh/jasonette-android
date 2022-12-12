@@ -29,10 +29,9 @@ import {CSS2DObject, CSS2DRenderer} from "../../static/CSS2DRenderer.js";
 import { COL } from  "../COL.js";
 import { Model } from "./Model.js";
 import { OverlayRect } from "./OverlayRect.js";
-import { ApiService } from  "./ApiService.js";
 import { BlobInfo } from "./BlobInfo.js";
-import { Scene3DtopDown } from "./Scene3DtopDown.js";
-import { TexturePanelPlugin } from "./TexturePanelPlugin.js";
+// import { PlanView } from './PlanView.js';
+import { ImageView } from "./ImageView.js";
 import { Note } from "./Note.js";
 import { ImageInfo } from "./ImageInfo.js";
 import "./Core.js";
@@ -159,6 +158,7 @@ class Whiteboard {
         // we need to start drawing on mousedown
         // and stop drawing on mouseup
         stage.on('touchstart mousedown', function() {
+            console.log('BEG whiteboard::touchstart mousedown');
             isPaint = true;
             lastPointerPosition = stage.getPointerPosition();
         });

@@ -1,0 +1,54 @@
+{% from "_modal_macros.html" import confirm_modal %}
+
+{% extends "layout.html" %}
+
+{% block head %}
+{% endblock %}
+
+{% block content1 %}
+
+<div id="admin-view-sites-id" "class="admin-view-sites">
+    <div id="admin-view-sites-page-header-id" class="page-header">
+        <h2>Administrative Page: List of Sites</h2>
+    </div>
+    <div>
+        <table id="admin-view-sites-table-id" class="table">
+            <thead id="admin-view-sites-table-header-id" class="row">
+                <tr>
+                    <th>Site ID</th>
+                    <th>Group name</th>
+                    <th>Site name</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for site in sites %}
+                {% if ((site.group_id == current_user.group_id) and (current_user.role == "group_owner")) or (current_user.role == "admin") %}
+                <tr>
+                    <td> {{ site.id }} </td>
+                    <td> {{ site.group_name }} </td>
+                    <td> {{ site.site_name }} </td>
+                    <td>
+                        {% if (current_user.role == "admin") %}
+                        <button type="button" class="btn btn-danger" data-toggle="modal" data-target="#confirmDeleteSiteModal{{site.id}}">
+                            Delete Site
+                        </button>
+                        {{ confirm_modal("confirmDeleteSiteModal", site.id, site.site_name, "Deleting Site Permanently", url_for('api.admin_delete_site', site_id = site.id)) }}
+                        {% endif %}
+                        <a href="{{ url_for('api.admin_edit_site', site_id = site.id) }}">Edit</a>
+                    </td>
+                </tr>
+                {% endif %}
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div  id="admin-view-sites-buttons-id">
+        <a id="view_sites_button_id" class="btn btn-sm btn-success" href="{{ url_for('api.view_sites') }}">View Sites</a>
+        {% if (current_user.role == "admin") %}
+        <a id="add_new_site_button_id" class="btn btn-sm btn-success" href="{{ url_for('api.admin_add_site') }}">Add New Site</a>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}

@@ -57,10 +57,7 @@ class ManageGUI {
             .addEventListener('click', function(){
                 console.log('Clicked on openZipFileInputId');
                 if( COL.util.isObjectValid(window.$agent_jasonette_android) ) {
-                    // window.$agent_jasonette_android is defined, i.e. the client is the jasonette mobile app
-                    // trigger a request to load the .zip file from the file system on the mobile device.
-                    console.log('Before trigger media.loadZipFileHeaders'); 
-                    window.$agent_jasonette_android.trigger('media.loadZipFileHeaders');
+                    COL.manageGUI.loadModelFromFile();
                 }
                 else{
 	                $(openZipFileInputId).trigger('click');
@@ -184,14 +181,18 @@ class ManageGUI {
     }
 
     async loadModelFromFile(event) {
+        // the user clicked on the button openZipFileInputId
         console.log('BEG loadModelFromFile');
 
         if( COL.util.isObjectValid(window.$agent_jasonette_android) ) {
             // window.$agent_jasonette_android is defined, i.e. the client is the jasonette mobile app
-            // trigger a request to add an image from the camera or from the
-            // file system on the mobile device
-            console.log('Before trigger media.pickerAndCamera'); 
-            window.$agent_jasonette_android.trigger('media.pickerAndCamera');
+            // call loadModelFromFile() which will
+            // trigger a request to load the .zip file from the file system on the mobile device.
+            console.log('Before trigger media.loadZipFileHeaders'); 
+            window.$agent_jasonette_android.trigger('media.loadZipFileHeaders');
+
+            // (the callback from trigger media.loadZipFileHeaders internally calls
+            //  onChange_openZipFileButton, which calls setPane, to show the plan of the zipfile)
         }
         else{
             var input = event.srcElement;
@@ -205,20 +206,9 @@ class ManageGUI {
             
             // await sceneBar.onChange_openZipFileButton1(filesToOpenArray);
             await sceneBar.onChange_openZipFileButton1(input);
-            
-            // For jasonette
-            // onClick_openZipFileButton
-        }
-        let hamburgerBtnEl = document.getElementById('hamburgerBtnId');
-        console.log('hamburgerBtnEl: ', hamburgerBtnEl);
-        COL.manageGUI.setPane(hamburgerBtnEl);
-        COL.manageGUI.showHideProjectMenu(false);
-        
-        let selectedLayer = COL.model.getSelectedLayer();
-        let selectedOverlayRect = selectedLayer.getSelectedOverlayRect();
-        if(COL.util.isObjectValid(selectedOverlayRect)){
-            selectedLayer.showSelectedOverlayRect();
-            // selectedOverlayRect.setState(OverlayRect.STATE.ADD_PHOTO);
+
+            // (onChange_openZipFileButton1 internally calls onChange_openZipFileButton, 
+            //  which calls setPane, to show the plan of the zipfile)
         }
     }
 

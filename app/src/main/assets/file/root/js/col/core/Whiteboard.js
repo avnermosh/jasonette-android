@@ -42,7 +42,7 @@ import "../util/ThreejsUtil.js";
 // whiteboard a.k.a. plan a.k.a. floor
 class Whiteboard {
     constructor(){
-        console.log('foo1');
+        console.log('BEG Whiteboard constructor');
 
         this.initializeWhiteboard();
     };

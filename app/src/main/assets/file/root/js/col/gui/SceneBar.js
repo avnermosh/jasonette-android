@@ -768,6 +768,7 @@ class SceneBar {
         }
     }
     
+    // onChange_openZipFileButton1 is NOT called from mobile app - android
     async onChange_openZipFileButton1(input) {
         console.log('BEG onChange_openZipFileButton1'); 
 
@@ -789,9 +790,8 @@ class SceneBar {
             window.$agent_jasonette_ios.trigger('media.loadZipFileHeaders2', options);
         }
         else {
-            // In:
-            // 1. native webapp, or
-            // 2. mobile app - android
+            // In webapp (a.k.a. "native webapp" i.e. not mobile app)
+            // (cannot be in mobile app jasonette-android because onChange_openZipFileButton1 is NOT called from mobile app - android)
             await sceneBar.onChange_openZipFileButton(fileToOpen);
         }
     }
@@ -817,7 +817,7 @@ class SceneBar {
     // In mobile app (android), the zipfile info is taken from model._selectedZipFileInfo
     // (therefore, for mobile app the value of zipFile is 'undefined' and it does not make any impact)
     async onChange_openZipFileButton (zipFile = undefined) {
-        // console.log('BEG onChange_openZipFileButton');
+        console.log('BEG onChange_openZipFileButton');
 
         COL.model.fileZip = new FileZip_withJson();
         await COL.model.fileZip.openSingleZipFile(zipFile);
@@ -832,6 +832,19 @@ class SceneBar {
         else {
             // looks like we are ok without reloading the file view_sites.html ???
             // (the file index.html is similar to view_sites.html ???)
+        }
+
+        // set the pane to show the loaded zip file.
+        let hamburgerBtnEl = document.getElementById('hamburgerBtnId');
+        console.log('hamburgerBtnEl: ', hamburgerBtnEl);
+        COL.manageGUI.setPane(hamburgerBtnEl);
+        COL.manageGUI.showHideProjectMenu(false);
+        
+        let selectedLayer = COL.model.getSelectedLayer();
+        let selectedOverlayRect = selectedLayer.getSelectedOverlayRect();
+        if(COL.util.isObjectValid(selectedOverlayRect)){
+            selectedLayer.showSelectedOverlayRect();
+            // selectedOverlayRect.setState(OverlayRect.STATE.ADD_PHOTO);
         }
     }
     

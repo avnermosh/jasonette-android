@@ -2104,7 +2104,6 @@ class Layer {
                 let filename = keyVal[0];
                 if(filename == layerJsonFilename) {
                     console.log('filename', filename);
-                    console.log('foo1'); 
                 }
                 
                 this.synced_filenames_in_progress.push(filename);

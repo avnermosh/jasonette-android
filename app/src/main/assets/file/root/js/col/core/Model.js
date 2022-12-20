@@ -340,13 +340,11 @@ class Model {
             // 
             // Webview will then intercept the fetch the request and respond properly.
             // (if not adding the dummy origin, an error occurs: 'URL scheme "file" is not supported')
-            console.log('foo1');
             urlBase ='https://192.168.1.79/';
         }
         else{
             // In browser (e.g. chrome, firefox), and pointing to remote server (e.g. https://bldlog.com, https://192.168.1.74), or
             // in mobile app, and pointing to remote server.
-            console.log('foo2');
             urlBase = window.location.origin + '/';
         }
         

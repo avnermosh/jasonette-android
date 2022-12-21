@@ -892,6 +892,9 @@ class OverlayRect {
                 // render the selected overlayRect to update the thumbnail images after the split
                 selectedLayer.showSelectedOverlayRect();
 
+                // mark as not-synced after splitting an overlayRect. 
+                selectedLayer.setSyncWithWebServerStatus(false);
+
                 // sync to the webserver after splitting an overlayRect. 
                 let syncStatus = await selectedLayer.syncBlobsWithWebServer();
                 if(!syncStatus) {

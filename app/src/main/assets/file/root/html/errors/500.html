@@ -1,5 +1,7 @@
-{% extends "layout.html" %} {% block content1 %}
-<h1>Internal Server Error</h1>
-<h4>The server encountered an unexpected condition which prevented it from fulfilling the request.</h4>
-<h4><a href="{{ url_for('api.view_sites') }}">Construction Overlay</a></h4>
+{% extends "layout.html" %}
+
+{% block content1 %}
+  <h1>Internal Server Error</h1>
+  <h4>The server encountered an unexpected condition which prevented it from fulfilling the request.</h4>
+  <h4><a href="{{ url_for('api.view_sites') }}">Construction Overlay</a></h4>
 {% endblock %}

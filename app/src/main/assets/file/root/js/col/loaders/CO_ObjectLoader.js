@@ -139,6 +139,9 @@ COL.loaders.CO_ObjectLoader = {
             // load layer.getLayerJsonFilename()
             let layerUrl = COL.model.getUrlImagePathBase() + '/' + siteId + '/' + planId + '/' + layerJsonFilename;
             await _this.loadLayerJson_fromUrl(layerUrl, layer);
+
+            // update the syncWithWebServerStatus for the layer after loading the layer from the webserver
+            layer.setSyncWithWebServerStatus(true);
         } 
         catch(err){
             console.error('err', err); 

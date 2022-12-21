@@ -133,6 +133,7 @@ class Layer {
             isDirty_overlayRectDirty: false
         };
 
+        this.isSyncedWithWebServer = false;
 
         // container for the filename(s) that are in synced in progress
         // if specific file(s) throws an exception, we use this container in the catch block to
@@ -602,6 +603,28 @@ class Layer {
 
     getSelectedOverlayRect () {
         return this._selectedOverlayRect;
+    }
+
+    setSyncWithWebServerStatus(isSyncedWithWebserver) {
+        // console.log('BEG setSyncWithWebServerStatus');
+        
+        $('#syncWithWebServerStatusId').removeClass('synced-with-webserver-unknown');
+        if(isSyncedWithWebserver) {
+            $('#syncWithWebServerStatusId').removeClass('not-synced-with-webserver');
+            $('#syncWithWebServerStatusIconId').removeClass('bi-cloud-arrow-down');
+
+            $('#syncWithWebServerStatusId').addClass('synced-with-webserver');
+            $('#syncWithWebServerStatusIconId').addClass('bi-cloud-arrow-up');            
+        }
+        else{
+            $('#syncWithWebServerStatusId').removeClass('synced-with-webserver');
+            $('#syncWithWebServerStatusIconId').removeClass('bi-cloud-arrow-up');
+
+            $('#syncWithWebServerStatusId').addClass('not-synced-with-webserver');
+            $('#syncWithWebServerStatusIconId').addClass('bi-cloud-arrow-down');            
+        }
+        
+        this.isSyncedWithWebServer = isSyncedWithWebserver;
     }
 
     getSprite () {
@@ -1680,6 +1703,9 @@ class Layer {
         // reload the thumbnails after adding the image
         await this.showSelectedOverlayRect();
 
+        // mark as not-synced after adding an image. 
+        this.setSyncWithWebServerStatus(false);
+
         // sync to the webserver after adding an image. 
         let syncStatus = await this.syncBlobsWithWebServer();
         if(!syncStatus) {
@@ -1768,6 +1794,9 @@ class Layer {
         // remove the image filename from the list of _cachedImages
         this._cachedImages.remove(imageFilenameToRemove);
         
+        // mark as not-synced after deleting an image. 
+        this.setSyncWithWebServerStatus(false);
+
         // sync to the webserver after deleting an image. 
         let syncStatus = await this.syncBlobsWithWebServer();
         if(!syncStatus) {
@@ -2306,22 +2335,27 @@ class Layer {
             }
         }
 
-        
         // ////////////////////////////////////////////////////
-        // raise a toast
-        // tbd - need to add a check on success of syncing the metadata to the db, to global syncStatus
-        //       (currently only checking on images to filesystem-and-db, and metadat to filesystem? (not to db))
+        // update the syncWithWebServerStatus 
         // ////////////////////////////////////////////////////
 
-        let toastTitleStr = 'Sync from memory to webserver';
-        if(syncStatus) {
-            let msgStr = 'Succeeded to sync';
-            toastr.success(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
-        }
-        else {
-            let msgStr = 'Failed to sync: <br />' + failureSyncMsg;
-            toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
-        }
+        this.setSyncWithWebServerStatus(syncStatus);
+
+        // // ////////////////////////////////////////////////////
+        // // raise a toast
+        // // tbd - need to add a check on success of syncing the metadata to the db, to global syncStatus
+        // //       (currently only checking on images to filesystem-and-db, and metadat to filesystem? (not to db))
+        // // ////////////////////////////////////////////////////
+
+        // let toastTitleStr = 'Sync from memory to webserver';
+        // if(syncStatus) {
+        //     let msgStr = 'Succeeded to sync';
+        //     toastr.success(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
+        // }
+        // else {
+        //     let msgStr = 'Failed to sync: <br />' + failureSyncMsg;
+        //     toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
+        // }
 
         return syncStatus;
     }
@@ -2488,6 +2522,9 @@ class Layer {
             firstOverlayRectMeshObject.material.color.setHex( COL.util.Color.Yellow1 );
             firstOverlayRectMeshObject.material.needsUpdate = true;
         }
+
+        // mark as not-synced after merging overlayRects. 
+        this.setSyncWithWebServerStatus(false);
 
         // sync to the webserver after merging overlayRects. 
         let syncStatus = await this.syncBlobsWithWebServer();

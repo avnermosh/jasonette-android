@@ -139,7 +139,7 @@ class Model {
             // throw new Error('dummy throw');
             
             this.setSystemParams(systemParamsAsJson);
-            COL.doWorkOnline = true;
+            COL.colJS.setInternetConnectionStatus(true);
         }
         catch(err){
             // getSystemParams failed with exception.
@@ -148,11 +148,12 @@ class Model {
             // - if there is no connection to the server (e.g. server is down, or internet is down, etc..)
             // - if working from files within a mobile device with the "Offline" button (i.e. working from from files)
             console.log('Detected offline mode.');
-            COL.doWorkOnline = false;
+            COL.colJS.setInternetConnectionStatus(false);
         }
         console.log('COL.doWorkOnline after', COL.doWorkOnline);
 
         let getCurrentUserResultAsJson = {dummy_val: 'True'};
+        COL.model.setLoggedInFlag(false);
         if(COL.doWorkOnline) {
             // //////////////////////////////////////////////////////////////////////////////
             // check if the user is logged-on
@@ -327,10 +328,10 @@ class Model {
     }
 
     static GetUrlBase () {
-        console.log('BEG GetUrlBase444');
+        // console.log('BEG GetUrlBase444');
 
-        console.log('window.$agent_jasonette_android', window.$agent_jasonette_android);
-        console.log('window.location.origin', window.location.origin);
+        // console.log('window.$agent_jasonette_android', window.$agent_jasonette_android);
+        // console.log('window.location.origin', window.location.origin);
         let urlBase;
         if(window.location.origin == 'file://'){
             // In mobile app, and using the local html,js,css files.
@@ -348,7 +349,7 @@ class Model {
             urlBase = window.location.origin + '/';
         }
         
-        console.log('urlBase', urlBase);
+        // console.log('urlBase', urlBase);
 
         return urlBase;
     }
@@ -630,6 +631,22 @@ class Model {
     }
 
     setLoggedInFlag (isUserLoggedIn) {
+        // console.log('BEG setLoggedInFlag');
+
+        if(isUserLoggedIn) {
+            $('#loggedInStatusId').removeClass('logged-out');
+            $('#loggedInStatusIconId').removeClass('bi-arrow-left-square');
+
+            $('#loggedInStatusId').addClass('logged-in');
+            $('#loggedInStatusIconId').addClass('bi-arrow-right-square');
+        }
+        else{
+            $('#loggedInStatusId').removeClass('logged-in');
+            $('#loggedInStatusIconId').removeClass('bi-arrow-right-square');
+
+            $('#loggedInStatusId').addClass('logged-out');
+            $('#loggedInStatusIconId').addClass('bi-arrow-left-square');
+        }
         this.isUserLoggedIn = isUserLoggedIn;
     }
 

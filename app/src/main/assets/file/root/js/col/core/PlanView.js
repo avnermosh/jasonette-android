@@ -387,6 +387,10 @@ class PlanView {
                         let meshObject = selectedOverlayRect.getMeshObject();
                         selectedLayer.removeFromOverlayMeshGroup(meshObject);
                         await selectedLayer.setSelectedOverlayRect(undefined);
+
+                        // mark as not-synced after deleting an overlayRect. 
+                        selectedLayer.setSyncWithWebServerStatus(false);
+
                         // sync to the webserver after deleting an overlayRect. 
                         let syncStatus = await selectedLayer.syncBlobsWithWebServer();
                         if(!syncStatus) {
@@ -1310,11 +1314,8 @@ class PlanView {
                 let meshObj = child;
                 layer.setFloorPlanMeshObj(meshObj);
 
-                // tbd - I placed a question of await within traverse in: https://threejs.slack.com/archives/C0AR9959Q/p1615750972263800
-                // other related links
-                // https://advancedweb.hu/how-to-use-async-functions-with-array-foreach-in-javascript/
                 await layer.populateFloorPlanObj();
-
+                
                 meshObj = layer.getFloorPlanMeshObj();
                 // meshObj.children[0].geometry.boundingBox
 

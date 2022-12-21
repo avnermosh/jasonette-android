@@ -452,6 +452,27 @@ class ColJS {
         // // END prevent an iOS side-effect of scaling-the-page when double-touching
     }
 
+    setInternetConnectionStatus(isInternetConnected) {
+        console.log('BEG setInternetConnectionStatus');
+
+        $('#internetConnectionStatusId').removeClass('internet-connection-unknown');
+        if(isInternetConnected) {
+            $('#internetConnectionStatusId').removeClass('internet-disconnected');
+            $('#internetConnectionStatusIconId').removeClass('bi-wifi-off');
+
+            $('#internetConnectionStatusId').addClass('internet-connected');
+            $('#internetConnectionStatusIconId').addClass('bi-wifi');            
+        }
+        else{
+            $('#internetConnectionStatusId').removeClass('internet-connected');
+            $('#internetConnectionStatusIconId').removeClass('bi-wifi');
+
+            $('#internetConnectionStatusId').addClass('internet-disconnected');
+            $('#internetConnectionStatusIconId').addClass('bi-wifi-off');            
+        }
+        COL.doWorkOnline = isInternetConnected;
+    }
+
     async loadLayer(sitePlanName=undefined) {
         let layer = undefined;
         let planInfo = new PlanInfo({});

@@ -35,7 +35,7 @@
     <div id="container-main-anchor-id" class="container-fluid container_mainAnchor">
       <div id="inProgressSpinnerId" class="loader loader-default"></div>
         <div id="main-menu-toolbar-id" class="row mainMenuToolbar">
-            <div class="col-1">
+            <div class="col-3">
               <button id="hamburgerBtnId" class="btn backBtnClass hamburgerBtnClass button-div" type="button"> &#9776; </button>
               <button id="planViewBackBtnId" class="btn backBtnClass planViewBackBtnClass button-div" type="button">
                 <!-- https://www.w3schools.com/howto/howto_css_icon_buttons.asp -->
@@ -49,7 +49,18 @@
                 <i class="bi bi-arrow-left text-primary" aria-label="Back"></i>
               </button>
             </div>
-            <div class="col-11">
+            <div id='connectionStatusId' class="col-3">
+                <span id='internetConnectionStatusId' class="connection-status internet-connection-unknown">
+                    <i id='internetConnectionStatusIconId' class="bi bi-wifi-off"></i>
+                </span>
+                <span id='loggedInStatusId' class="connection-status logged-out">
+                    <i id='loggedInStatusIconId' class="bi bi-arrow-left-square"></i>
+                </span>
+                <span id='syncWithWebServerStatusId' class="connection-status synced-with-webserver-unknown">
+                    <i id='syncWithWebServerStatusIconId' class="bi bi-cloud-arrow-down"></i>
+                </span>
+            </div>
+            <div class="col-6">
               <h1 class="text-center">Plans2</h1>
             </div>
         </div>
@@ -61,16 +72,13 @@
             <div class="openZipFileBtnClass" type="button">
                 <i id="openZipFileIconId" class="bi bi-files"></i>
                 <input id="openZipFileInputId" type="file" />
-              </div>
-
-          </footer>
-          <div class="container">
+            </div>
+        </footer>
+        <div class="container">
           <ol id="plan-list"> </ol>
           <ul id="planThumbnailsMenuId" class="context-menu">
             <li data-action="third">Third thing</li>
-            
           </ul>
-
         </div>
       </div>
 
@@ -85,21 +93,21 @@
           <li data-action="mergeOverlayRectEnd">Merge OverlayRect - end</li>
         </ul>
 
-          <!-- keep the footer fixed at the bottom of the page even for long scrollable content -->
-          <!-- https://mdbootstrap.com/snippets/jquery/mdbootstrap/2886080 -->
-          <footer id="planViewPane-footer-id" class="fixed-bottom footer-class planViewPane-footer-class">
-              FOOTER
-              <button id="syncFromZipFileToWebServerBtnId" type="button" class="syncFromZipFileToWebServerBtn-class">
-                <a data-tooltip="Sync From Zip File To Web Server">
-                  <i class="bi bi-cloud-arrow-up"></i>
-                </a>
-              </button>
-              <button id="addOverlayRectId" type="button" class="addOverlayRect-class">
-                <a data-tooltip="add overlayRect">
-                  <i class="bi bi-camera-fill"></i>
-                </a>
-              </button>
-          </footer>
+        <!-- keep the footer fixed at the bottom of the page even for long scrollable content -->
+        <!-- https://mdbootstrap.com/snippets/jquery/mdbootstrap/2886080 -->
+        <footer id="planViewPane-footer-id" class="fixed-bottom footer-class planViewPane-footer-class">
+          FOOTER
+          <button id="syncFromZipFileToWebServerBtnId" type="button" class="syncFromZipFileToWebServerBtn-class">
+            <a data-tooltip="Sync From Zip File To Web Server">
+              <i class="bi bi-cloud-arrow-up"></i>
+            </a>
+          </button>
+          <button id="addOverlayRectId" type="button" class="addOverlayRect-class">
+            <a data-tooltip="add overlayRect">
+              <i class="bi bi-camera-fill"></i>
+            </a>
+          </button>
+        </footer>
 
       </div>
     </div>

@@ -436,6 +436,9 @@ async function handleMouseUp_orTouchEnd_planView() {
             }
             await orbitControls.validateOverlayRect();
 
+            // mark as not-synced after moving an overlayRect. 
+            selectedLayer.setSyncWithWebServerStatus(false);
+
             // sync to the webserver after moving an overlayRect. 
             let syncStatus = await selectedLayer.syncBlobsWithWebServer();
             if(!syncStatus) {

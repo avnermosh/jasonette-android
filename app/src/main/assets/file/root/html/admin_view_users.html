@@ -1,53 +1,60 @@
-{% extends "layout.html" %} {% block head %} {% endblock %} {% block content1 %}
+{% extends "layout.html" %}
+
+{% block head %}
+{% endblock %}
+
+{% block content1 %}
 
 <div id="admin-view-users-id" class="admin-view-users">
-  <div id="admin-view-users-page-header-id" class="page-header">
-    <h2>Administrative Page: List of Users</h2>
-  </div>
+    <div id="admin-view-users-page-header-id" class="page-header">
+        <h2>Administrative Page: List of Users</h2>
+    </div>
 
-  <div>
-    <table id="admin-view-users-table-id" class="table">
-      <thead id="admin-view-users-table-header-id" class="row">
-        <tr>
-          <th>User ID</th>
-          <th>Email</th>
-          <th>Group</th>
-          <th>Role</th>
-          <th>Registration Date</th>
-          <th>Email Confirmed?</th>
-          <th>Email Confirmed On</th>
-          <th>Last Login</th>
-          <!-- <th>Selected Plan Id</th> -->
-          <th>Selected Plan Name</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for user in users %} {% if ((user.group_id == current_user.group_id) and (current_user.role == "group_owner")) or (current_user.role == "admin") %}
-        <tr>
-          <td> {{ user.id }} </td>
-          <td> {{ user.email }} </td>
-          <td> {{ user.group_name }} </td>
-          <td> {{ user.role }} </td>
-          <td> {{ user.registered_on }} </td>
-          <td> {{ user.email_confirmed }} </td>
-          <td> {{ user.email_confirmed_on }} </td>
-          <td> {{ user.last_logged_in }} </td>
-          <!-- <td> {{ user.selected_plan_id }} </td>              -->
-          <td> {{ user.selected_plan_name }} </td>
-          <td>
-            <a href="{{ url_for('api.admin_delete_user', user_id = user.id) }}">Delete</a>
-            <a href="{{ url_for('api.admin_edit_user', user_id = user.id) }}">Edit</a>
-          </td>
-        </tr>
-        {% endif %} {% endfor %}
-      </tbody>
-    </table>
-    {% if (current_user.role == "group_owner") or (current_user.role == "admin") %}
-    <a class="btn btn-sm btn-success" href="{{ url_for('api.admin_add_user') }}">Add New User</a>
-    <a class="btn btn-sm btn-success" href="{{ url_for('api.view_sites') }}">Cancel</a>
-    {% endif %}
-  </div>
+    <div>
+        <table id="admin-view-users-table-id" class="table">
+            <thead id="admin-view-users-table-header-id" class="row">
+                <tr>
+                    <th>User ID</th>
+                    <th>Email</th>
+                    <th>Group</th>
+                    <th>Role</th>
+                    <th>Registration Date</th>
+                    <th>Email Confirmed?</th>
+                    <th>Email Confirmed On</th>
+                    <th>Last Login</th>
+                    <!-- <th>Selected Plan Id</th> -->
+                    <th>Selected Plan Name</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                {% if ((user.group_id == current_user.group_id) and (current_user.role == "group_owner")) or (current_user.role == "admin") %}
+                <tr>
+                    <td> {{ user.id }} </td>
+                    <td> {{ user.email }} </td>
+                    <td> {{ user.group_name }} </td>
+                    <td> {{ user.role }} </td>
+                    <td> {{ user.registered_on }} </td>
+                    <td> {{ user.email_confirmed }} </td>
+                    <td> {{ user.email_confirmed_on }} </td>
+                    <td> {{ user.last_logged_in }} </td>
+                    <!-- <td> {{ user.selected_plan_id }} </td>              -->
+                    <td> {{ user.selected_plan_name }} </td>             
+                    <td>
+                        <a href="{{ url_for('api.admin_delete_user', user_id = user.id) }}">Delete</a>
+                        <a href="{{ url_for('api.admin_edit_user', user_id = user.id) }}">Edit</a>
+                    </td>
+                </tr>
+                {% endif %}
+                {% endfor %}
+            </tbody>
+        </table>
+        {% if (current_user.role == "group_owner") or (current_user.role == "admin") %}
+        <a class="btn btn-sm btn-success" href="{{ url_for('api.admin_add_user') }}">Add New User</a>
+        <a class="btn btn-sm btn-success" href="{{ url_for('api.view_sites') }}">Cancel</a>
+        {% endif %}
+    </div>
 </div>
 
 {% endblock %}

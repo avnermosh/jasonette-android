@@ -1,0 +1,45 @@
+{
+  "diffEditor.ignoreTrimWhitespace": true,
+  "prettier.htmlWhitespaceSensitivity": "strict",
+  "eslint.format.enable": true,
+  "eslint.alwaysShowStatus": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": true
+  },
+  // eslint.validate tells the ESLint extension which languages it should check.
+  "eslint.validate": ["javascript"],
+  "editor.defaultFormatter": "dbaeumer.vscode-eslint",
+  "editor.formatOnSave": true,
+  "[html]": {
+    "editor.defaultFormatter": null,
+  },
+  "html.format.wrapLineLength": 0,
+  "html.format.enable": true,
+  "[javascript]": {
+    "editor.defaultFormatter": "dbaeumer.vscode-eslint"
+  },
+  "javascript.validate.enable": false,
+  "files.exclude": {
+    "**/.git": false,
+    "**/jasonette": true,
+    "**/static": true,
+    "**/guiMockup": true
+  },
+  "workbench.colorCustomizations": {
+    "[Default Dark+]": {
+        "tab.activeBackground": "#0004ff",
+        "tab.inactiveForeground": "#00b7ff",
+        "tab.lastPinnedBorder": "#fafafa",
+        "tab.unfocusedActiveForeground": "#fbff00",
+        "tab.unfocusedActiveBackground": "#ff0000",
+    }
+  },
+  "prettier.printWidth": 300,
+  "files.associations": {
+      "*.ejs": "html"
+  },
+  // "json.format.enable": false,
+  // "scm.diffDecorationsIgnoreTrimWhitespace": "true"
+  "java.configuration.updateBuildConfiguration": "automatic"
+}
+

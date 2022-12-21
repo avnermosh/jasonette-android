@@ -656,6 +656,28 @@ e.g. zipFile related buttons, editOverlay related buttons, planview-settings-mod
   display: none;
 }
 
+#connectionStatusId {
+    color: white;
+    z-index: 4;
+    display: flex;
+}
+
+.connection-status {
+    font-size: xx-large;
+    padding: 0.5rem;
+}
+
+.internet-connection-unknown, .synced-with-webserver-unknown {
+    color: white;
+}
+
+.internet-connected, .logged-in, .synced-with-webserver {
+    color: green;
+}
+
+.internet-disconnected, .logged-out, .not-synced-with-webserver {
+   color: red;
+}
 /* ---------------------------------------------------- */
 /* END imageViewPane */
 /* ---------------------------------------------------- */

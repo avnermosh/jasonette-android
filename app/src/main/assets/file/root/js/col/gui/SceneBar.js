@@ -24,86 +24,88 @@ class SceneBar {
 
         this._toolBar = new component.ToolBar();
 
-        let iconPath = '';
-        let iconDir = 'V1/img/icons/IcoMoon-Free-master/PNG/48px';
-        console.log('iconDir1', iconDir); 
-
-        // --------------------------------------------------------------
-
-        iconPath = iconDir + '/0278-play2.png';
-        this._playImagesInAllOverlayRectsButton = new component.ToggleButton({
-            id: 'playImagesInAllOverlayRectsButtonId',
-            tooltip: 'Play images in all overlayRects',
-            icon: iconPath,
-            on: false
-        });
-        let jqueryObj = $(this._playImagesInAllOverlayRectsButton.$);
-        jqueryObj.addClass('ui-button');
-
-        // --------------------------------------------------------------
-        
-        iconPath = iconDir + '/0303-loop2.png';
-        this._reloadPageButton = new component.Button({
-            id: 'reloadPageButtonId',
-            tooltip: 'Reload site',
-            icon: iconPath,
-            multiple: true
-        });
-        $(this._reloadPageButton.$).addClass('ui-button');
-        
-        if(COL.doWorkOnline) {
-            this._editOverlayRectButton = undefined;
-
-            // tbd - _editOverlayRect -> _editMode -> _state
+        if(COL.isOldGUIEnabled) {
+            let iconPath = '';
+            let iconDir = 'V1/img/icons/IcoMoon-Free-master/PNG/48px';
+            console.log('iconDir1', iconDir); 
+    
+            // --------------------------------------------------------------
+    
+            iconPath = iconDir + '/0278-play2.png';
+            this._playImagesInAllOverlayRectsButton = new component.ToggleButton({
+                id: 'playImagesInAllOverlayRectsButtonId',
+                tooltip: 'Play images in all overlayRects',
+                icon: iconPath,
+                on: false
+            });
+            let jqueryObj = $(this._playImagesInAllOverlayRectsButton.$);
+            jqueryObj.addClass('ui-button');
+    
+            // --------------------------------------------------------------
             
-            if(COL.doEnableWhiteboard) {
-                iconPath = iconDir + '/0345-make-group.png';
-                this._editOverlayRect_editFloorPlanWhiteboard = new component.Button({
-                    tooltip: 'Edit Whiteboard',
+            iconPath = iconDir + '/0303-loop2.png';
+            this._reloadPageButton = new component.Button({
+                id: 'reloadPageButtonId',
+                tooltip: 'Reload site',
+                icon: iconPath,
+                multiple: true
+            });
+            $(this._reloadPageButton.$).addClass('ui-button');
+            
+            if(COL.doWorkOnline) {
+                this._editOverlayRectButton = undefined;
+    
+                // tbd - _editOverlayRect -> _editMode -> _state
+                
+                if(COL.doEnableWhiteboard) {
+                    iconPath = iconDir + '/0345-make-group.png';
+                    this._editOverlayRect_editFloorPlanWhiteboard = new component.Button({
+                        tooltip: 'Edit Whiteboard',
+                        icon: iconPath
+                    });
+                    $(this._editOverlayRect_editFloorPlanWhiteboard.$).addClass('ui-button');
+                }
+    
+                iconPath = iconDir + '/0272-cross.png';
+                this._editOverlayRect_deleteButton = new component.Button({
+                    tooltip: 'Delete image / overlayRect',
                     icon: iconPath
                 });
-                $(this._editOverlayRect_editFloorPlanWhiteboard.$).addClass('ui-button');
+                $(this._editOverlayRect_deleteButton.$).addClass('ui-button');
+    
+                iconPath = iconDir + '/0015-images.png';
+                this._openImageFileButton = new component.FileButton({
+                    tooltip: 'Open image file',
+                    icon: iconPath,
+                    multiple: true
+                });
+                $(this._openImageFileButton.$).addClass('ui-button');
+    
+                iconPath = iconDir + '/0102-undo.png';
+                this._reconcileFrontEndButton = new component.Button({
+                    tooltip: 'Reconcile front-end inconcitencies',
+                    icon: iconPath,
+                    multiple: true
+                });
+                $(this._reconcileFrontEndButton.$).addClass('ui-button');
+    
+                // --------------------------------------------------------------
+                // BEG Set the PlanView Settings Modal
+                // --------------------------------------------------------------
+                
+                // define the PlanView Settings Modal button
+                this._planViewSettingModalBtnEl = '<a href="#" class="ui-button" data-toggle="modal" data-target="#basicModal" id="planview-settings-modal-btn"><img src="V1/img/icons/IcoMoon-Free-master/PNG/48px/0009-pen.png"/></a>';
+    
+                // --------------------------------------------------------------
+                // END Set the PlanView Settings Modal
+                // --------------------------------------------------------------
+                
+                
+                this._addStickyNoteButton = undefined;
             }
-
-            iconPath = iconDir + '/0272-cross.png';
-            this._editOverlayRect_deleteButton = new component.Button({
-                tooltip: 'Delete image / overlayRect',
-                icon: iconPath
-            });
-            $(this._editOverlayRect_deleteButton.$).addClass('ui-button');
-
-            iconPath = iconDir + '/0015-images.png';
-            this._openImageFileButton = new component.FileButton({
-                tooltip: 'Open image file',
-                icon: iconPath,
-                multiple: true
-            });
-            $(this._openImageFileButton.$).addClass('ui-button');
-
-            iconPath = iconDir + '/0102-undo.png';
-            this._reconcileFrontEndButton = new component.Button({
-                tooltip: 'Reconcile front-end inconcitencies',
-                icon: iconPath,
-                multiple: true
-            });
-            $(this._reconcileFrontEndButton.$).addClass('ui-button');
-
-            // --------------------------------------------------------------
-            // BEG Set the PlanView Settings Modal
-            // --------------------------------------------------------------
-            
-            // define the PlanView Settings Modal button
-            this._planViewSettingModalBtnEl = '<a href="#" class="ui-button" data-toggle="modal" data-target="#basicModal" id="planview-settings-modal-btn"><img src="V1/img/icons/IcoMoon-Free-master/PNG/48px/0009-pen.png"/></a>';
-
-            // --------------------------------------------------------------
-            // END Set the PlanView Settings Modal
-            // --------------------------------------------------------------
-            
-            
-            this._addStickyNoteButton = undefined;
-        }
-        else {
-            // work offline
+            else {
+                // work offline
+            }
         }
         
         // skipping row 0 (the header row)
@@ -550,88 +552,88 @@ class SceneBar {
     async initSceneBar (user_role, component) {
         console.log('BEG SceneBar::initSceneBar1');
         
-        let zipFileOptions_admin = new component.Group({id: 'zipFileOptions_adminId'});
-        let editOptions = new component.Group({id: 'editOptionsId'});
+        if(COL.isOldGUIEnabled) {
+            let zipFileOptions_admin = new component.Group({id: 'zipFileOptions_adminId'});
+            let editOptions = new component.Group({id: 'editOptionsId'});
 
-        let iconDir = 'V1/img/icons/IcoMoon-Free-master/PNG/48px';
-        console.log('iconDir2', iconDir); 
+            let iconDir = 'V1/img/icons/IcoMoon-Free-master/PNG/48px';
+            console.log('iconDir2', iconDir); 
         
-        let iconPath = iconDir + '/0049-folder-open.png';
+            let iconPath = iconDir + '/0049-folder-open.png';
 
-        if(COL.doWorkOnline) {
+            if(COL.doWorkOnline) {
             
-            iconPath = iconDir + '/0146-wrench.png';
-            this._editOverlayRectButton = new component.ToggleButton({
-                tooltip: 'Edit model overlay',
-                icon: iconPath,
-                on: false
-            });
-            let jqueryObj = $(this._editOverlayRectButton.$);
-            jqueryObj.addClass('ui-button');
-            this.disabledOnSceneEmpty(this._editOverlayRectButton);
+                iconPath = iconDir + '/0146-wrench.png';
+                this._editOverlayRectButton = new component.ToggleButton({
+                    tooltip: 'Edit model overlay',
+                    icon: iconPath,
+                    on: false
+                });
+                let jqueryObj = $(this._editOverlayRectButton.$);
+                jqueryObj.addClass('ui-button');
+                this.disabledOnSceneEmpty(this._editOverlayRectButton);
 
-            iconPath = iconDir + '/0035-file-text.png';
-            this._addStickyNoteButton = new component.Button({
-                tooltip: 'Add sticky note',
-                icon: iconPath
-            });
-            $(this._addStickyNoteButton.$).addClass('ui-button');
-            this.disabledOnSceneEmpty(this._addStickyNoteButton);
+                iconPath = iconDir + '/0035-file-text.png';
+                this._addStickyNoteButton = new component.Button({
+                    tooltip: 'Add sticky note',
+                    icon: iconPath
+                });
+                $(this._addStickyNoteButton.$).addClass('ui-button');
+                this.disabledOnSceneEmpty(this._addStickyNoteButton);
 
-            editOptions.add(this._editOverlayRectButton);
-            if(COL.doEnableWhiteboard) {
-                editOptions.add(this._editOverlayRect_editFloorPlanWhiteboard);
-            }
-            editOptions.add(this._editOverlayRect_deleteButton);
-            editOptions.add(this._openImageFileButton);
-            editOptions.add(this._reconcileFrontEndButton);
+                editOptions.add(this._editOverlayRectButton);
+                if(COL.doEnableWhiteboard) {
+                    editOptions.add(this._editOverlayRect_editFloorPlanWhiteboard);
+                }
+                editOptions.add(this._editOverlayRect_deleteButton);
+                editOptions.add(this._openImageFileButton);
+                editOptions.add(this._reconcileFrontEndButton);
             // editOptions.add(this._addStickyNoteButton);
-        }
-
-        // //////////////////////////////////////////////////////////////////////////////
-        // - set the buttons (hide/show) according to the user role
-        // //////////////////////////////////////////////////////////////////////////////
-
-        let loggedInFlag = COL.model.getLoggedInFlag();
-        // console.log('loggedInFlag', loggedInFlag); 
-        if(loggedInFlag) {
-            if(user_role === 'admin' ) {
-                // admin user
-                this._toolBar.add(
-                    zipFileOptions_admin,
-                    editOptions,
-                    this._playImagesInAllOverlayRectsButton,
-                    this._reloadPageButton
-                );
-                
             }
-            else {
+
+            // //////////////////////////////////////////////////////////////////////////////
+            // - set the buttons (hide/show) according to the user role
+            // //////////////////////////////////////////////////////////////////////////////
+
+            let loggedInFlag = COL.model.getLoggedInFlag();
+            // console.log('loggedInFlag', loggedInFlag); 
+            if(loggedInFlag) {
+                if(user_role === 'admin' ) {
+                // admin user
+                    this._toolBar.add(
+                        zipFileOptions_admin,
+                        editOptions,
+                        this._playImagesInAllOverlayRectsButton,
+                        this._reloadPageButton
+                    );
+                
+                }
+                else {
                 // non-admin user (e.g. group_owner, or regular user)
                 // hide buttons group: zipFileOptions_admin
-                this._toolBar.add(
-                    editOptions,
-                    this._playImagesInAllOverlayRectsButton,
-                    this._reloadPageButton
-                );
+                    this._toolBar.add(
+                        editOptions,
+                        this._playImagesInAllOverlayRectsButton,
+                        this._reloadPageButton
+                    );
+                }
+
             }
 
-        }
+            // //////////////////////////////////////////////////////////////////////////////
+            // SCENE BAR EVENT HANDLERS
+            // //////////////////////////////////////////////////////////////////////////////
 
-        // //////////////////////////////////////////////////////////////////////////////
-        // SCENE BAR EVENT HANDLERS
-        // //////////////////////////////////////////////////////////////////////////////
+            if(COL.doWorkOnline) {
 
-        if(COL.doWorkOnline) {
+                if(COL.doEnableWhiteboard) {
+                    this._editOverlayRect_editFloorPlanWhiteboard.onClick(async function () {
+                        console.log('BEG _editOverlayRect_editFloorPlanWhiteboard'); 
+                        let selectedLayer = COL.model.getSelectedLayer();
+                        let planView = selectedLayer.getPlanView();
+                    });
+                }
 
-            if(COL.doEnableWhiteboard) {
-                this._editOverlayRect_editFloorPlanWhiteboard.onClick(async function () {
-                    console.log('BEG _editOverlayRect_editFloorPlanWhiteboard'); 
-                    let selectedLayer = COL.model.getSelectedLayer();
-                    let planView = selectedLayer.getPlanView();
-                });
-            }
-
-            if(COL.isOldGUIEnabled) {
                 this._editOverlayRect_deleteButton.onClick(async function () {
                     let selectedLayer = COL.model.getSelectedLayer();
                     let planView = selectedLayer.getPlanView();
@@ -649,9 +651,7 @@ class SceneBar {
                         await selectedLayer.deleteImageFromLayer(selectedOverlayRect, imageFilenameToRemove);
                     }
                 });
-            }
 
-            if(COL.isOldGUIEnabled) {
                 this._openImageFileButton.onClick(async function (input) {
                     console.log('BEG _openImageFileButton.onClick');
     
@@ -665,37 +665,37 @@ class SceneBar {
                         window.$agent_jasonette_android.trigger('media.pickerAndCamera');
                     }
                 });
-            }
 
             
-            this._openImageFileButton.onChange(async function (input) {
+                this._openImageFileButton.onChange(async function (input) {
                 // console.log('BEG _openImageFileButton.onChange');
 
-                // let inputType = (typeof input);
+                    // let inputType = (typeof input);
 
-                let sceneBar = COL.model.getSceneBar();
-                // Convert from FileList to array
-                // https://stackoverflow.com/questions/25333488/why-isnt-the-filelist-object-an-array
-                let filesToOpenArray = Array.from(input.files);
+                    let sceneBar = COL.model.getSceneBar();
+                    // Convert from FileList to array
+                    // https://stackoverflow.com/questions/25333488/why-isnt-the-filelist-object-an-array
+                    let filesToOpenArray = Array.from(input.files);
 
-                sceneBar.onChange_openImageFileButton(filesToOpenArray);
-            });
+                    sceneBar.onChange_openImageFileButton(filesToOpenArray);
+                });
 
-            this._reconcileFrontEndButton.onClick(async function () {
-                console.log('BEG _reconcileFrontEndButton.onClick');
-                let selectedLayer = COL.model.getSelectedLayer();
-                await selectedLayer.reconcileFrontEndInconcitencies();
-            });
+                this._reconcileFrontEndButton.onClick(async function () {
+                    console.log('BEG _reconcileFrontEndButton.onClick');
+                    let selectedLayer = COL.model.getSelectedLayer();
+                    await selectedLayer.reconcileFrontEndInconcitencies();
+                });
 
-            if(COL.isOldGUIEnabled) {
                 this._addStickyNoteButton.onClick(function () {
                     let selectedLayer = COL.model.getSelectedLayer();
                     selectedLayer.addStickyNote();
                 });
-            }
             
-            // buttons related to editSpecificOverlayRect
-            this.disableEditOverlayRectRelatedButtons(true);
+                // buttons related to editSpecificOverlayRect
+                this.disableEditOverlayRectRelatedButtons(true);
+
+            }
+
             
             // create the planViewSetting modal (e.g. to filter dates, and overlayRect dot size)
             this.initPlanViewSettingModal();

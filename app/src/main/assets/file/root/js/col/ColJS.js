@@ -91,195 +91,196 @@ class ColJS {
     }
 
     async setupToolsPaneGui(floorplanButtonGroupEl) {
-        var _$border = $('<div id="col-tools-pane-border"></div>');
+        if(COL.isOldGUIEnabled) {
+            var _$border = $('<div id="col-tools-pane-border"></div>');
 
-        _$border.css({
-            width: '100%',
-            background: 'none',
-            verticalAlign: 'middle'
-        });
+            _$border.css({
+                width: '100%',
+                background: 'none',
+                verticalAlign: 'middle'
+            });
 
-        let iconDir = 'V1/img/icons/IcoMoon-Free-master/PNG/48px';
+            let iconDir = 'V1/img/icons/IcoMoon-Free-master/PNG/48px';
 
-        let iconPath;
+            let iconPath;
         
-        this.imageIndexInOverlayRectLabel = new COL.component.Label({
-            id: 'imageIndexInOverlayRectLabelId',
-            label: 'Label0'
-        });
-        let imageIndexInOverlayRectLabel = $(this.imageIndexInOverlayRectLabel.$);
-        imageIndexInOverlayRectLabel.addClass('ui-button');
+            this.imageIndexInOverlayRectLabel = new COL.component.Label({
+                id: 'imageIndexInOverlayRectLabelId',
+                label: 'Label0'
+            });
+            let imageIndexInOverlayRectLabel = $(this.imageIndexInOverlayRectLabel.$);
+            imageIndexInOverlayRectLabel.addClass('ui-button');
 
-        // --------------------------------------------------------------
+            // --------------------------------------------------------------
 
-        iconPath = iconDir + '/0313-arrow-left.png';
-        this.previousImageButton = new COL.component.Button({
-            id: 'previousImageBtn',
-            tooltip: 'Previous image',
-            icon: iconPath,
-        });
-        $(this.previousImageButton.$).addClass('ui-button');
+            iconPath = iconDir + '/0313-arrow-left.png';
+            this.previousImageButton = new COL.component.Button({
+                id: 'previousImageBtn',
+                tooltip: 'Previous image',
+                icon: iconPath,
+            });
+            $(this.previousImageButton.$).addClass('ui-button');
 
-        // --------------------------------------------------------------
+            // --------------------------------------------------------------
         
-        iconPath = iconDir + '/0019-play.png';
-        this.playImagesInSelectedOverlayRectButton = new COL.component.ToggleButton({
-            id: 'playImagesInSelectedOverlayRectBtnId',
-            tooltip: 'Play images in overlayRect',
-            icon: iconPath,
-            on: false
-        });
+            iconPath = iconDir + '/0019-play.png';
+            this.playImagesInSelectedOverlayRectButton = new COL.component.ToggleButton({
+                id: 'playImagesInSelectedOverlayRectBtnId',
+                tooltip: 'Play images in overlayRect',
+                icon: iconPath,
+                on: false
+            });
 
-        let jqueryObj = $(this.playImagesInSelectedOverlayRectButton.$);
-        jqueryObj.addClass('ui-button');
+            let jqueryObj = $(this.playImagesInSelectedOverlayRectButton.$);
+            jqueryObj.addClass('ui-button');
 
-        // --------------------------------------------------------------
+            // --------------------------------------------------------------
 
-        iconPath = iconDir + '/0309-arrow-right.png';
-        this.nextImageButton = new COL.component.Button({
-            id: 'nextImageBtn',
-            tooltip: 'Next image',
-            icon: iconPath,
-        });
-        $(this.nextImageButton.$).addClass('ui-button');
+            iconPath = iconDir + '/0309-arrow-right.png';
+            this.nextImageButton = new COL.component.Button({
+                id: 'nextImageBtn',
+                tooltip: 'Next image',
+                icon: iconPath,
+            });
+            $(this.nextImageButton.$).addClass('ui-button');
 
-        // --------------------------------------------------------------
+            // --------------------------------------------------------------
 
-        // playImagesInSelectedOverlayRect -> onOffMode
+            // playImagesInSelectedOverlayRect -> onOffMode
         
-        iconPath = iconDir + '/0183-switch.png';
-        this.onOffModeButton = new COL.component.ToggleButton({
-            id: 'onOffModeBtnId',
-            tooltip: 'Offline / Online mode',
-            icon: iconPath,
-            on: false
-        });
+            iconPath = iconDir + '/0183-switch.png';
+            this.onOffModeButton = new COL.component.ToggleButton({
+                id: 'onOffModeBtnId',
+                tooltip: 'Offline / Online mode',
+                icon: iconPath,
+                on: false
+            });
 
-        let onOffModeButton_jqueryObj = $(this.onOffModeButton.$);
-        onOffModeButton_jqueryObj.addClass('ui-button');
+            let onOffModeButton_jqueryObj = $(this.onOffModeButton.$);
+            onOffModeButton_jqueryObj.addClass('ui-button');
 
-        // --------------------------------------------------------------
+            // --------------------------------------------------------------
 
-        this.onOffModeButton.onClick(async function() {
-            console.log('BEG onOffModeButton.onClick');
+            this.onOffModeButton.onClick(async function() {
+                console.log('BEG onOffModeButton.onClick');
 
-            try {
-                let isOnMode = COL.colJS.onOffModeButton.isOn();
-                console.log('isOnMode', isOnMode);
+                try {
+                    let isOnMode = COL.colJS.onOffModeButton.isOn();
+                    console.log('isOnMode', isOnMode);
 
-                if(isOnMode) {
-                    console.log('Directing11111111111111111111111111 to https://192.168.1.75'); 
-                    window.location.href = 'https://192.168.1.80/index';
-                }
-                else {
+                    if(isOnMode) {
+                        console.log('Directing11111111111111111111111111 to https://192.168.1.75'); 
+                        window.location.href = 'https://192.168.1.80/index';
+                    }
+                    else {
                     // offline mode
                     // /home/avner/avner/softwarelib/jasonette/jasonette-android-branch-advance-webview
                     // ~/avner/softwarelib/jasonette/jasonette-android-branch-advance-webview/app/src/main/assets/file/hello.json
-                    console.log('Directing222222222222222222222222222222 to file://root/html/raw/index.html'); 
-                    window.location.href = 'file://root/html/raw/index.html';
-                }
+                        console.log('Directing222222222222222222222222222222 to file://root/html/raw/index.html'); 
+                        window.location.href = 'file://root/html/raw/index.html';
+                    }
                 
-            }
-            catch(err) {
-                console.error('err', err);
-                console.error('Error in onOffModeButton()');
-            }
+                }
+                catch(err) {
+                    console.error('err', err);
+                    console.error('Error in onOffModeButton()');
+                }
 
 
             
-            // let selectedLayer = COL.model.getSelectedLayer();
-            // try {
-            //     // disable the button (successive clicks, before the first click is processed
-            //     // cause, e.g. to attach wrong image to imagesInfo, which results in skipping images)
-            //     let playImagesState = COL.colJS.onOffModeButton.isOn() ? Layer.PLAY_IMAGES_STATE.PLAY_IMAGES_IN_SELECTED_OVERLAY_RECT : Layer.PLAY_IMAGES_STATE.NONE
-            //     selectedLayer.setPlayImagesState(playImagesState);
-            //     console.log('playImagesState0', playImagesState); 
-            //     await selectedLayer.onOffMode();
-            // }
-            // catch(err) {
-            //     console.error('err', err);
-            //     console.error('Failed to play the images in the overlayRect');
-            // }
+                // let selectedLayer = COL.model.getSelectedLayer();
+                // try {
+                //     // disable the button (successive clicks, before the first click is processed
+                //     // cause, e.g. to attach wrong image to imagesInfo, which results in skipping images)
+                //     let playImagesState = COL.colJS.onOffModeButton.isOn() ? Layer.PLAY_IMAGES_STATE.PLAY_IMAGES_IN_SELECTED_OVERLAY_RECT : Layer.PLAY_IMAGES_STATE.NONE
+                //     selectedLayer.setPlayImagesState(playImagesState);
+                //     console.log('playImagesState0', playImagesState); 
+                //     await selectedLayer.onOffMode();
+                // }
+                // catch(err) {
+                //     console.error('err', err);
+                //     console.error('Failed to play the images in the overlayRect');
+                // }
 
-            // // reset the play button 
-            // selectedLayer.setPlayImagesState(Layer.PLAY_IMAGES_STATE.NONE);
-            // // change the state of COL.colJS.onOffModeButton without
-            // // trigerring a call to onOffModeButton.onClick
-            // let event = undefined;
-            // COL.colJS.onOffModeButton.toggle(null, event);
+                // // reset the play button 
+                // selectedLayer.setPlayImagesState(Layer.PLAY_IMAGES_STATE.NONE);
+                // // change the state of COL.colJS.onOffModeButton without
+                // // trigerring a call to onOffModeButton.onClick
+                // let event = undefined;
+                // COL.colJS.onOffModeButton.toggle(null, event);
             
             // // update the buttons: previousImageButton, nextImageButton, play Buttons to their default state
             // // (e.g. enable if selectedOverlayRect is defined and has more than 1 image)
             // selectedLayer.updatePreviousPlayNextImageButtons();
-        });
+            });
 
-        this.previousImageButton.onClick(async function() {
+            this.previousImageButton.onClick(async function() {
             // console.log('BEG previousImageButton.onClick');
             
-            try {
+                try {
                 // disable the button (successive clicks, before the first click is processed
                 // cause, e.g. to attach wrong image to imagesInfo, which results in skipping images)
-                COL.colJS.previousImageButton.disabled(true);
-                let selectedLayer = COL.model.getSelectedLayer();
-                let doLoadNextImage = false;
-                await selectedLayer.loadNextOrPreviousImage(doLoadNextImage);
-            }
-            catch(err) {
-                console.error('err', err);
-                console.error('Failed to load the previous image');
-            }
+                    COL.colJS.previousImageButton.disabled(true);
+                    let selectedLayer = COL.model.getSelectedLayer();
+                    let doLoadNextImage = false;
+                    await selectedLayer.loadNextOrPreviousImage(doLoadNextImage);
+                }
+                catch(err) {
+                    console.error('err', err);
+                    console.error('Failed to load the previous image');
+                }
 
-            // enable the button
-            COL.colJS.previousImageButton.disabled(false);
-        });
+                // enable the button
+                COL.colJS.previousImageButton.disabled(false);
+            });
 
-        this.playImagesInSelectedOverlayRectButton.onClick(async function() {
+            this.playImagesInSelectedOverlayRectButton.onClick(async function() {
             // console.log('BEG playImagesInSelectedOverlayRectButton.onClick');
             
-            let selectedLayer = COL.model.getSelectedLayer();
-            try {
-                // disable the button (successive clicks, before the first click is processed
-                // cause, e.g. to attach wrong image to imagesInfo, which results in skipping images)
-                let playImagesState = COL.colJS.playImagesInSelectedOverlayRectButton.isOn() ? Layer.PLAY_IMAGES_STATE.PLAY_IMAGES_IN_SELECTED_OVERLAY_RECT : Layer.PLAY_IMAGES_STATE.NONE;
-                selectedLayer.setPlayImagesState(playImagesState);
-                console.log('playImagesState0', playImagesState); 
-                await selectedLayer.playImagesInSelectedOverlayRect();
-            }
-            catch(err) {
-                console.error('err', err);
-                console.error('Failed to play the images in the overlayRect');
-            }
-
-            // reset the play button 
-            selectedLayer.setPlayImagesState(Layer.PLAY_IMAGES_STATE.NONE);
-            // change the state of COL.colJS.playImagesInSelectedOverlayRectButton without
-            // trigerring a call to playImagesInSelectedOverlayRectButton.onClick
-            let event = undefined;
-            COL.colJS.playImagesInSelectedOverlayRectButton.toggle(null, event);
-            
-            // update the buttons: previousImageButton, nextImageButton, play Buttons to their default state
-            // (e.g. enable if selectedOverlayRect is defined and has more than 1 image)
-            selectedLayer.updatePreviousPlayNextImageButtons();
-        });
-        
-        this.nextImageButton.onClick(async function() {
-            try {
-                // disable the button (successive clicks, before the first click is processed
-                // cause, e.g. to attach wrong image to imagesInfo, which results in skipping images)
-                COL.colJS.nextImageButton.disabled(true);
                 let selectedLayer = COL.model.getSelectedLayer();
-                let doLoadNextImage = true;
-                await selectedLayer.loadNextOrPreviousImage(doLoadNextImage);
-            }
-            catch(err) {
-                console.error('err', err);
-                console.error('Failed to load the next image');
-            }
+                try {
+                // disable the button (successive clicks, before the first click is processed
+                // cause, e.g. to attach wrong image to imagesInfo, which results in skipping images)
+                    let playImagesState = COL.colJS.playImagesInSelectedOverlayRectButton.isOn() ? Layer.PLAY_IMAGES_STATE.PLAY_IMAGES_IN_SELECTED_OVERLAY_RECT : Layer.PLAY_IMAGES_STATE.NONE;
+                    selectedLayer.setPlayImagesState(playImagesState);
+                    console.log('playImagesState0', playImagesState); 
+                    await selectedLayer.playImagesInSelectedOverlayRect();
+                }
+                catch(err) {
+                    console.error('err', err);
+                    console.error('Failed to play the images in the overlayRect');
+                }
 
-            // enable the button
-            COL.colJS.nextImageButton.disabled(false);
-        });
+                // reset the play button 
+                selectedLayer.setPlayImagesState(Layer.PLAY_IMAGES_STATE.NONE);
+                // change the state of COL.colJS.playImagesInSelectedOverlayRectButton without
+                // trigerring a call to playImagesInSelectedOverlayRectButton.onClick
+                let event = undefined;
+                COL.colJS.playImagesInSelectedOverlayRectButton.toggle(null, event);
+            
+                // update the buttons: previousImageButton, nextImageButton, play Buttons to their default state
+                // (e.g. enable if selectedOverlayRect is defined and has more than 1 image)
+                selectedLayer.updatePreviousPlayNextImageButtons();
+            });
+        
+            this.nextImageButton.onClick(async function() {
+                try {
+                // disable the button (successive clicks, before the first click is processed
+                // cause, e.g. to attach wrong image to imagesInfo, which results in skipping images)
+                    COL.colJS.nextImageButton.disabled(true);
+                    let selectedLayer = COL.model.getSelectedLayer();
+                    let doLoadNextImage = true;
+                    await selectedLayer.loadNextOrPreviousImage(doLoadNextImage);
+                }
+                catch(err) {
+                    console.error('err', err);
+                    console.error('Failed to load the next image');
+                }
 
+                // enable the button
+                COL.colJS.nextImageButton.disabled(false);
+            });
+        }
     }
 
     setupPlanPaneGui() {

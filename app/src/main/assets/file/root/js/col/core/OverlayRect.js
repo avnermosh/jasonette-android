@@ -574,15 +574,15 @@ class OverlayRect {
                 // ///////////////////////////////////////////////////////////////
 
                 layer.updatePreviousPlayNextImageButtons();
-            }
 
-            if(COL.doWorkOnline) {
-                // ///////////////////////////////////////////////////////////////
-                // disable/enable editOverlayRect related buttons (openImageFileButton, editOverlayRect_deleteButton)
-                // depending on if the overlayRect is empty or not
-                // ///////////////////////////////////////////////////////////////
-
-                layer.updateEditOverlayRectRelatedButtons();
+                if(COL.doWorkOnline) {
+                    // ///////////////////////////////////////////////////////////////
+                    // disable/enable editOverlayRect related buttons (openImageFileButton, editOverlayRect_deleteButton)
+                    // depending on if the overlayRect is empty or not
+                    // ///////////////////////////////////////////////////////////////
+    
+                    layer.updateEditOverlayRectRelatedButtons();
+                }
             }
         }
         catch(err) {

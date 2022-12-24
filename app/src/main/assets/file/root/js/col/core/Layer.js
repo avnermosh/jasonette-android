@@ -1547,23 +1547,25 @@ class Layer {
     }
 
     updateEditOverlayRectRelatedButtons () {
-        // console.log('BEG updateEditOverlayRectRelatedButtons');
+        if(COL.isOldGUIEnabled) {
+            // console.log('BEG updateEditOverlayRectRelatedButtons');
         
-        // Update the overlayRectEdit buttons, e.g. disable if no image is selected
-        let sceneBar = COL.model.getSceneBar();
-        if(this.getEditOverlayRectFlag()) {
+            // Update the overlayRectEdit buttons, e.g. disable if no image is selected
+            let sceneBar = COL.model.getSceneBar();
+            if(this.getEditOverlayRectFlag()) {
             // disable/enable editOverlayRect related buttons (openImageFileButton, editOverlayRect_deleteButton)
-            if(COL.util.isObjectValid(this._selectedOverlayRect)) {
+                if(COL.util.isObjectValid(this._selectedOverlayRect)) {
                 // enable the editOverlay related buttons
-                sceneBar.disableEditOverlayRectRelatedButtons(false);
+                    sceneBar.disableEditOverlayRectRelatedButtons(false);
+                }
+                else {
+                // disable the editOverlay related buttons
+                    sceneBar.disableEditOverlayRectRelatedButtons(true);
+                }
             }
             else {
-                // disable the editOverlay related buttons
                 sceneBar.disableEditOverlayRectRelatedButtons(true);
             }
-        }
-        else {
-            sceneBar.disableEditOverlayRectRelatedButtons(true);
         }
     }
     

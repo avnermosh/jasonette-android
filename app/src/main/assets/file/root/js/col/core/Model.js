@@ -27,7 +27,8 @@ import './Core.js';
 import { Layer } from './Layer.js';
 import { SceneBar } from '../gui/SceneBar.js';
 import { BrowserDetect } from '../util/browser_detect.js';
-// import { ManageGUI } from "../manageGUI.js";
+import packageInfo from '../../../package.json' assert { type: "json" };
+
 
 /**
  * @file Defines the Model class
@@ -160,6 +161,9 @@ class Model {
           Server address:
           <input id="serverAddress2" type="text" value="bldlog.com"/>
         </label>
+        <p>
+            App Version: <span id="appVersionId"></span>
+        </p>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-default" data-bs-dismiss="modal">Cancel</button>
@@ -331,7 +335,11 @@ class Model {
         // fill in the field serverAddress from localforage indexedDb
         let serverAddressVal = await this.getDataFromIndexedDb('serverAddress');
         document.getElementById("serverAddress2").value = serverAddressVal;
-         
+
+        let appVersion = packageInfo.version;
+        console.log('appVersion', appVersion);
+        document.getElementById("appVersionId").innerText = appVersion;
+
     }
 
     async setDataToIndexedDb(key, data)

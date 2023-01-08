@@ -5,7 +5,7 @@
 'use strict';
 
 /*
- * Running this will allow you to edit notes in the texture pane:
+ * Running this will allow you to edit notes in the imageView pane:
  * - translate note
  * - add new note
  * - delete existing note

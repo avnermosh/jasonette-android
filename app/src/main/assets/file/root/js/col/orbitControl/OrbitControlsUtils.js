@@ -636,7 +636,7 @@ COL.OrbitControlsUtils.calcCanvasParams = function (guiWindowWidth,
     // console.log('BEG calcCanvasParams');
 
     if(isImageViewPane) {
-        // console.log('calcCanvasParams for texture pane');
+        // console.log('calcCanvasParams for imageView pane');
     }
 
     // canvasWidth, canvasHeight - the canvas size that preserves the aspectRatio of the image.

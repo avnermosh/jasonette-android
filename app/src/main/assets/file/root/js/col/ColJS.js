@@ -474,7 +474,7 @@ class ColJS {
         COL.doWorkOnline = isInternetConnected;
     }
 
-    async loadLayer(sitePlanName=undefined) {
+    async loadLayer(sitePlanName=undefined, zipFileName=undefined) {
         let layer = undefined;
         let planInfo = new PlanInfo({});
         try {
@@ -506,11 +506,21 @@ class ColJS {
                 return;
             }
             // Get the the option "value"
-            // let matchPattern = 'site_name.*' + siteName + '.*name.*' + planName;
-            let matchPattern = 'name.*' + planName;
-            // console.log('matchPattern:', matchPattern);
-            let sceneBar = COL.model.getSceneBar();
-            let optionIndex = sceneBar.FindPlanInSiteplanMenu(matchPattern);
+            // let matchPattern1 = 'site_name.*' + siteName + '.*name.*' + planName;
+            
+            // e.g. "name.*geographic_map.structure.layer0"
+            let matchPattern1 = 'name.*' + planName;
+
+            let matchPattern2;
+            if(COL.util.isObjectValid(zipFileName)) {
+                // e.g. "geographic_map.zip"
+                matchPattern2 = zipFileName;
+            }
+            else{
+                matchPattern2 = 'from_webserver';
+            }
+
+            let optionIndex = COL.util.FindPlanInSiteplanMenu(matchPattern1, matchPattern2);
 
             let option = $('#sitesId')[0][optionIndex];
             // console.log('option.value', option.value);                 
@@ -597,21 +607,6 @@ class ColJS {
             // rethrow
             throw new Error('Failed to loadObjectAndMaterialFiles fromWebServerObjFile2');
         }
-    }
-
-    // /////////////////////////////////////////////////////////////////////////////////
-    // The function "onSitesChanged" re-renders the planViewPane based on a newly selected plan. It:
-    // - checks if user is logged in (via get_current_user) - this will dictate how the
-    //   selected planInfo is extracted from the "sites menu"
-    // - extracts the selected planInfo
-    // - re-renders the planViewPane
-    // /////////////////////////////////////////////////////////////////////////////////
-
-    async onSitesChanged(sitePlanName=undefined) {
-        let layer = await COL.colJS.loadLayer(sitePlanName);
-
-        await COL.model.setSelectedLayer(layer);
-        PlanView.Render();
     }
 
     addGoogleDriveButtons() {

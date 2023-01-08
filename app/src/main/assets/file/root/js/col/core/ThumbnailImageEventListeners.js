@@ -166,9 +166,6 @@ async function handleMouseUp_orTouchEnd_thumbnailImage() {
             break;
 
         case OverlayRect.STATE.SELECT_IMAGE:
-            // thumbnail image was clicked. Update the selected image
-            await selectedOverlayRect.updateImageViewRelatedRenderring(selectedLayer);
-
             // show the selected image
             let  selectedImageFilename = selectedOverlayRect.getSelectedImageFilename();
             let thumbnailImgEl = document.getElementById(selectedImageFilename);

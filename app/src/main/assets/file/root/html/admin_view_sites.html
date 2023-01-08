@@ -30,8 +30,8 @@
                     <td> {{ site.site_name }} </td>
                     <td>
                         {% if (current_user.role == "admin") %}
-                        <button type="button" class="btn btn-danger" data-toggle="modal" data-target="#confirmDeleteSiteModal{{site.id}}">
-                            Delete Site
+                        <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#confirmDeleteSiteModal{{site.id}}">
+                            Delete Site1
                         </button>
                         {{ confirm_modal("confirmDeleteSiteModal", site.id, site.site_name, "Deleting Site Permanently", url_for('api.admin_delete_site', site_id = site.id)) }}
                         {% endif %}

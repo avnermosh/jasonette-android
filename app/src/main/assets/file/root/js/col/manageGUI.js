@@ -8,6 +8,7 @@
 'use strict';
 
 import { COL } from './COL.js';
+import { Model } from './core/Model.js';
 import { OrbitControlsPlanView } from './orbitControl/OrbitControlsPlanView.js';
 import { OverlayRect } from './core/OverlayRect.js';
 import { onClick_planThumbnail, onMouseDown_planThumbnailsPane } from './core/PlanThumbnailsView_eventListener.js';
@@ -60,7 +61,7 @@ class ManageGUI {
                     COL.manageGUI.loadModelFromFile();
                 }
                 else{
-	                $(openZipFileInputId).trigger('click');
+                    $(openZipFileInputId).trigger('click');
                 }
             }); 
         document
@@ -87,6 +88,9 @@ class ManageGUI {
                     $(addPhotoInputId).trigger('click');
                 }
             }); 
+        document
+            .getElementById('listOptionLogIn2Id')
+            .addEventListener('click', COL.manageGUI.login2);
 
         this.showHideProjectMenu(true);
     }
@@ -109,6 +113,12 @@ class ManageGUI {
         }
     }
 
+    async login2() {
+        console.log('BEG login2'); 
+
+        let serverAddress = await COL.model.getDataFromIndexedDb('serverAddress');
+        window.location.href='https://' + serverAddress + '/login';
+    }
 
     async syncFromZipFileToWebServer() {
         console.log('BEG syncFromZipFileToWebServer'); 
@@ -138,7 +148,53 @@ class ManageGUI {
             //         - syncFilesOfTheCurrentZipFileLayer2(metaDataFilesInfo, metaDataFilenames, syncRetVals)
             // /////////////////////////////////////////
 
+            let selectedLayer = COL.model.getSelectedLayer();
+            let selectedLayerNameFromZipfile = selectedLayer.name;
+            console.log('selectedLayerNameFromZipfile', selectedLayerNameFromZipfile);
+
+            let selectedLayerNameAfterSync = selectedLayerNameFromZipfile.replace('_zip','');
+            console.log('selectedLayerNameAfterSync', selectedLayerNameAfterSync);
+
             let retval1 = await COL.model.fileZip.syncZipSitesWithWebServer2();
+
+            // take1 - load view_sites
+            // // Reload the view_sites page to update '#sitesId option' with the correct siteId, planId after syncing the zipfile layers
+            // // disable cache, so that '#sitesId option' data is reread from the db
+            // let queryUrl = Model.GetUrlBase() + 'view_sites';
+            // let headersData = {
+            //     'X-CSRF-Token': COL.model.csrf_token,
+            //     'Cache-Control': 'no-cache, no-store, must-revalidate'
+            // };
+            // let fetchData = { 
+            //     method: 'GET', 
+            //     headers: headersData,
+            // };
+                    
+            // take2 - set new selected layer
+            // let response = await fetch(queryUrl, fetchData);
+            // await COL.errorHandlingUtil.handleErrors(response);
+    
+            // take3 - load window - see 'take3' below
+            
+            // take4 - use loadLayer
+            // but... the planInfo of the layer (e.g. siteId, planId) need to refer to the new 
+            // updated data, after deleting and recreating the plan in the db, siteId, planId change...
+            // e.g. use code like below
+            // let layer = await COL.colJS.loadLayer(sitePlanName, optionValueAsDict.zipFileName);
+            // 
+            // currently there are problems where selecting a plan does not respond.
+            // this may be related to the fact that having too many event listeners e.g. for move
+            // by the number of layers (actually there should only be one single eventlistener 
+            // e.g. for move)
+            //
+            // for now we are using take3, but ideally we should be able use take4 and 
+            // to refrain from reloading the window and just reload the layers.
+
+            // trying to set the selected layer to the equivalent layer in the webserver to the zip layer from
+            // where sync was triggerred
+            // 
+            // let selectedLayer2 = await COL.model.selectLayerByName(selectedLayerNameAfterSync);
+            // console.log('selectedLayer11', selectedLayer2);
 
             let retval = retval1.retval;
             let syncZipSitesWithWebServer_statusStr = retval1.syncZipSitesWithWebServer_statusStr;
@@ -161,9 +217,14 @@ class ManageGUI {
                 // as single plan, as seen in the webserver after the sync
                 // 
                 // reload the page to reload the plans, that were synced plans from the zip file to the webserver, from the webserver.
+                // take3 - load window
                 window.location.reload(true);
                 // await COL.manageGUI.loadPlansAsThumbnails();
-                
+
+                // TBD
+                // // mark the status
+                // isLayerFromZipFile;
+               
             }
             else {
                 let msgStr = 'Failed to sync from zip file:' + syncZipSitesWithWebServer_statusStr;
@@ -255,6 +316,8 @@ class ManageGUI {
         let selectedLayer = COL.model.getSelectedLayer();
         console.log('selectedLayer.name', selectedLayer.name);
         console.log('selectedLayer.isLayerFromZipFile', selectedLayer.isLayerFromZipFile);
+
+        // show or hide the button to syncFromZipFileToWebServer
         if(selectedLayer.isLayerFromZipFile) {
             // show
             document.querySelector('#syncFromZipFileToWebServerBtnId').style.display = 'inline-flex';
@@ -277,6 +340,9 @@ class ManageGUI {
             document.querySelector('#planPaneWrapperId').style.display = 'block';
             document.querySelector('#planViewPaneId').style.display = 'block';
             document.querySelector('#planViewBackBtnId').style.display = 'block';
+
+            // Update the SyncWithWebServerStatus according to the status of the layer.
+            COL.util.setSyncWithWebServerStatus(selectedLayer.getSyncWithWebServerStatus());
         }
     }
 
@@ -317,12 +383,15 @@ class ManageGUI {
         console.log('elementId: ', elementId);
 
         if (isPlanImg) {
-            // Show the planView
+            // Show the planView pane
             COL.manageGUI.showPlanView(elementId);
             COL.clickedElements.push(elementId);
         }
         else if (isImgTag) {
-            // Show the selectedImage
+            // Show the imageView pane
+            let selectedLayer = COL.model.getSelectedLayer();
+            let selectedOverlayRect = selectedLayer.getSelectedOverlayRect();
+            await selectedOverlayRect.updateImageViewPane(selectedLayer);
 
             // Handle by tag
             document.querySelector('#imageViewBackBtnId').style.display = 'block';
@@ -344,23 +413,24 @@ class ManageGUI {
                     document.querySelector('#hamburgerBtnId').style.display = 'block';
 
                     if (items[0].id === 'list-option-plans') {
-                        // the "plans" option is selected in the projectMenu - show the allPlans pane
-                        COL.manageGUI.showAllPlans();
+                        // Show the planThumbnails pane
+                        // the "plans" option is selected in the projectMenu
+                        COL.manageGUI.showPlanThumbnails();
                     }
                     else{
-                        // another option in the hamburger menu was chosen that is not 'Plans' (e.g. 'Photos'). Don't showAllPlans
+                        // another option in the hamburger menu was chosen that is not 'Plans' (e.g. 'Photos'). Don't showPlanThumbnails
                     }
 
                     COL.manageGUI.showHideProjectMenu(true);
                     break;
 
                 case 'planViewBackBtnId':
-                    // Show allPlans
-                    COL.manageGUI.showAllPlans();
+                    // Show the planThumbnails pane
+                    COL.manageGUI.showPlanThumbnails();
                     break;
 
                 case 'imagesBackBtnId':
-                    // Show planView
+                    // Show the planView pane
                     const lastPlanViewId = COL.clickedElements.pop();
                     let selectedLayer = COL.model.getSelectedLayer();
                     let selectedOverlayRect = selectedLayer.getSelectedOverlayRect();
@@ -373,7 +443,7 @@ class ManageGUI {
                     break;
 
                 case 'overlayRectImageThumbnailsPaneId':
-                    // Show overlayRect thumbnail images
+                    // Show the overlayRectThumbnailImages pane
                     document.querySelector('#imagesBackBtnId').style.display = 'block';
                     document.querySelector('#overlayRectPaneWrapperId').style.display = 'block';
                     document.querySelector('#overlayRectImageThumbnailsPaneId').style.display = 'block';
@@ -382,7 +452,7 @@ class ManageGUI {
                     break;
 
                 case 'imageViewBackBtnId':
-                    // Show overlayRect thumbnail images
+                    // Show the overlayRectThumbnailImages pane
                     document.querySelector('#imagesBackBtnId').style.display = 'block';
                     document.querySelector('#overlayRectPaneWrapperId').style.display = 'block';
                     document.querySelector('#overlayRectImageThumbnailsPaneId').style.display = 'block';
@@ -441,7 +511,7 @@ class ManageGUI {
                 let sitePlanName = optionValueAsDict.site_name + '__' + optionValueAsDict.name;
 
                 // create the layer and load the floorPlanImage
-                let layer = await COL.colJS.loadLayer(sitePlanName);
+                let layer = await COL.colJS.loadLayer(sitePlanName, optionValueAsDict.zipFileName);
                 let floorPlanImageFilename = layer.getFloorPlanImageFilename();
                 let blobUrl = await layer.getImageBlobUrl(floorPlanImageFilename);
 
@@ -458,12 +528,18 @@ class ManageGUI {
                     layerSubname = substrings[ substrings.length - 2 ];
                 }
 
+                // Create the plan-name-to-be-dispalyed-in-the-footer
                 let numChars = 25;
                 let siteSubName = this.truncateLongString(siteName, numChars);
-                figcaptionEl.innerHTML = '<p class="p-class">' + siteSubName + '<br>' + layerSubname + '</p>';                  
+                figcaptionEl.innerHTML = '<p class="p-class">' + siteSubName + '<br>' + layerSubname + '</p>';
+                if(layer.isLayerFromZipFile) {
+                    figcaptionEl.innerHTML = '<p class="p-class">' + siteSubName + '<br>' + layerSubname + ' (zip)</p>';
+                }
+                else{
+                    figcaptionEl.innerHTML = '<p class="p-class">' + siteSubName + '<br>' + layerSubname + '</p>';
+                }
                 
                 let planThumbnailEl =  document.createElement('img');
-                // console.log('layer.isLayerFromZipFile', layer.isLayerFromZipFile);
                 planThumbnailEl.setAttribute('id', layer.name);
                 
                 planThumbnailEl.setAttribute('src', blobUrl);
@@ -487,7 +563,7 @@ class ManageGUI {
     }
       
 
-    async showAllPlans() {
+    async showPlanThumbnails() {
         // ////////////////////////////////////////////////////////
         // show all plans
         // ////////////////////////////////////////////////////////
@@ -516,6 +592,9 @@ class ManageGUI {
             const child = children[i];
             child.style.display = 'block';
         }
+
+        COL.model.updateIsSyncedWithWebServer();
+
     }
 
     fillViewPort(element, doFillViewPort) {
@@ -546,15 +625,18 @@ class ManageGUI {
             let loggedInFlag = COL.model.getLoggedInFlag();
             if(loggedInFlag) {
                 document.querySelector('#list-option-logInId').style.display = 'none';
+                document.querySelector('#listOptionLogIn2Id').style.display = 'none';
                 document.querySelector('#list-option-logOutId').style.display = 'block';
             }
             else{
                 document.querySelector('#list-option-logInId').style.display = 'block';
+                document.querySelector('#listOptionLogIn2Id').style.display = 'block';
                 document.querySelector('#list-option-logOutId').style.display = 'none';
             }
         }
         else{
             document.querySelector('#list-option-logInId').style.display = 'block';
+            document.querySelector('#listOptionLogIn2Id').style.display = 'block';
             document.querySelector('#list-option-logOutId').style.display = 'none';
         }
 

@@ -24,7 +24,8 @@
                            "site_id":"{{plan["site_id"]}}",
                            "id":"{{plan["id"]}}",
                            "url":"{{plan["url"]}}",
-                           "plan_filename":"{{plan["plan_filename"]}}"}'>
+                           "plan_filename":"{{plan["plan_filename"]}}",
+                           "from_webserver":"true" }'>
                 {# {{plan['site_id']}}:{{plan['id']}}:{{site["name"]}}:{{plan['name']}} #}
                 {{plan['name']}}
             </option>
@@ -32,145 +33,139 @@
         </optgroup>
         {% endfor %}
     </select>
-    <div id="container-main-anchor-id" class="container-fluid container_mainAnchor">
-      <div id="inProgressSpinnerId" class="loader loader-default"></div>
-        <div id="main-menu-toolbar-id" class="row mainMenuToolbar">
-            <div class="col-3">
-              <button id="hamburgerBtnId" class="btn backBtnClass hamburgerBtnClass button-div" type="button"> &#9776; </button>
-              <button id="planViewBackBtnId" class="btn backBtnClass planViewBackBtnClass button-div" type="button">
+    <div id="inProgressSpinnerId" class="loader loader-default"></div>
+    <div id="mainHeaderId" class="row mainHeaderClass">
+        <div class="col-3">
+            <button id="hamburgerBtnId" class="btn backBtnClass hamburgerBtnClass button-div" type="button"> &#9776; </button>
+            <button id="planViewBackBtnId" class="btn backBtnClass planViewBackBtnClass button-div" type="button">
                 <!-- https://www.w3schools.com/howto/howto_css_icon_buttons.asp -->
                 <i class="bi bi-arrow-left text-primary" aria-label="Back"></i>
-              </button>
-              <button id="imageViewBackBtnId" class="btn backBtnClass imageViewBackBtnClass button-div" type="button">
+            </button>
+            <button id="imageViewBackBtnId" class="btn backBtnClass imageViewBackBtnClass button-div" type="button">
                 <i class="bi bi-arrow-left text-primary" aria-label="Back"></i>
-              </button>
-      
-              <button id="imagesBackBtnId" class="btn backBtnClass imagesBackBtnClass button-div" type="button">
+            </button>
+            
+            <button id="imagesBackBtnId" class="btn backBtnClass imagesBackBtnClass button-div" type="button">
                 <i class="bi bi-arrow-left text-primary" aria-label="Back"></i>
-              </button>
-            </div>
-            <div id='connectionStatusId' class="col-3">
-                <span id='internetConnectionStatusId' class="connection-status internet-connection-unknown">
-                    <i id='internetConnectionStatusIconId' class="bi bi-wifi-off"></i>
-                </span>
-                <span id='loggedInStatusId' class="connection-status logged-out">
-                    <i id='loggedInStatusIconId' class="bi bi-arrow-left-square"></i>
-                </span>
-                <span id='syncWithWebServerStatusId' class="connection-status synced-with-webserver-unknown">
-                    <i id='syncWithWebServerStatusIconId' class="bi bi-cloud-arrow-down"></i>
-                </span>
-            </div>
-            <div class="col-6">
-              <h1 class="text-center">Plans2</h1>
-            </div>
+            </button>
         </div>
+        <div id='connectionStatusId' class="col-3">
+            <span id='internetConnectionStatusId' class="connection-status internet-connection-unknown" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Connected to the cloud.">
+                <i id='internetConnectionStatusIconId' class="bi bi-wifi-off"></i>
+            </span>
+            <span id='loggedInStatusId' class="connection-status logged-out" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Logged-in.">
+                <i id='loggedInStatusIconId' class="bi bi-arrow-left-square"></i>
+            </span>
+            <span id='syncWithWebServerStatusId' class="connection-status synced-with-webserver-unknown" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Synced to the cloud.">
+                <i id='syncWithWebServerStatusIconId' class="bi bi-cloud-arrow-down"></i>
+            </span>
+        </div>
+    </div>
 
     <div id="planPaneWrapperId" class="pane-div">
-      <div id="planThumbnailsPaneId" class="planThumbnailsPaneClass pane-div">
-        <footer id="planThumbnailsPaneFooterId" class="fixed-bottom footer-class planThumbnailsPaneFooter-class">
-            FOOTER
-            <div class="openZipFileBtnClass" type="button">
-                <i id="openZipFileIconId" class="bi bi-files"></i>
-                <input id="openZipFileInputId" type="file" />
+        <div id="planThumbnailsPaneId" class="planThumbnailsPaneClass pane-div">
+            <footer id="planThumbnailsPaneFooterId" class="fixed-bottom footer-class planThumbnailsPaneFooter-class">
+                <div class="openZipFileBtnClass" type="button">
+                    <i id="openZipFileIconId" class="bi bi-files"></i>
+                    <input id="openZipFileInputId" type="file" />
+                </div>
+            </footer>
+            <div class="container">
+                <ol id="plan-list"> </ol>
+                <ul id="planThumbnailsMenuId" class="context-menu">
+                    <li data-action="third">Third thing</li>
+                </ul>
             </div>
-        </footer>
-        <div class="container">
-          <ol id="plan-list"> </ol>
-          <ul id="planThumbnailsMenuId" class="context-menu">
-            <li data-action="third">Third thing</li>
-          </ul>
         </div>
-      </div>
 
-      <div id="planViewPaneId" class="planViewPaneClass pane-div">
+        <div id="planViewPaneId" class="planViewPaneClass pane-div">
 
-        <canvas id="planView3dCanvasId" class="canvasPlanViewClass"></canvas>
-        
-        <ul id="planViewMenuId" class="context-menu">
-          <li data-action="moveOverlayRect">Move OverlayRect</li>
-          <li data-action="deleteOverlayRect">Delete OverlayRect</li>
-          <li data-action="mergeOverlayRectStart">Merge OverlayRect - start</li>
-          <li data-action="mergeOverlayRectEnd">Merge OverlayRect - end</li>
-        </ul>
+            <canvas id="planView3dCanvasId" class="canvasPlanViewClass"></canvas>
+            
+            <ul id="planViewMenuId" class="context-menu">
+                <li data-action="moveOverlayRect">Move OverlayRect</li>
+                <li data-action="deleteOverlayRect">Delete OverlayRect</li>
+                <li data-action="mergeOverlayRectStart">Merge OverlayRect - start</li>
+                <li data-action="mergeOverlayRectEnd">Merge OverlayRect - end</li>
+            </ul>
 
-        <!-- keep the footer fixed at the bottom of the page even for long scrollable content -->
-        <!-- https://mdbootstrap.com/snippets/jquery/mdbootstrap/2886080 -->
-        <footer id="planViewPane-footer-id" class="fixed-bottom footer-class planViewPane-footer-class">
-          FOOTER
-          <button id="syncFromZipFileToWebServerBtnId" type="button" class="syncFromZipFileToWebServerBtn-class">
-            <a data-tooltip="Sync From Zip File To Web Server">
-              <i class="bi bi-cloud-arrow-up"></i>
-            </a>
-          </button>
-          <button id="addOverlayRectId" type="button" class="addOverlayRect-class">
-            <a data-tooltip="add overlayRect">
-              <i class="bi bi-camera-fill"></i>
-            </a>
-          </button>
-        </footer>
+            <!-- keep the footer fixed at the bottom of the page even for long scrollable content -->
+            <!-- https://mdbootstrap.com/snippets/jquery/mdbootstrap/2886080 -->
+            <footer id="planViewPane-footer-id" class="fixed-bottom footer-class planViewPane-footer-class">
+                <button id="syncFromZipFileToWebServerBtnId" type="button" class="syncFromZipFileToWebServerBtn-class">
+                    <a data-tooltip="Sync From Zip File To Web Server">
+                        <i class="bi bi-cloud-arrow-up"></i>
+                    </a>
+                </button>
+                <button id="addOverlayRectId" type="button" class="addOverlayRect-class">
+                    <a data-tooltip="add overlayRect">
+                        <i class="bi bi-camera-fill"></i>
+                    </a>
+                </button>
+            </footer>
 
-      </div>
+        </div>
     </div>
 
     <div id="overlayRectPaneWrapperId" class="overlayRectPaneWrapperClass pane-div">
-      <div id="overlayRectImageThumbnailsPaneId" class="overlayRectImageThumbnailsPaneClass pane-div">
-        <ol id="overlayrect-thumbnail-images-id" class="overlayrect-thumbnail-images"></ol>
+        <div id="overlayRectImageThumbnailsPaneId" class="overlayRectImageThumbnailsPaneClass pane-div">
+            <ol id="overlayrect-thumbnail-images-id" class="overlayrect-thumbnail-images"></ol>
 
-        <footer id="overlayRectImageThumbnailsPaneId-footer-id" class="fixed-bottom footer-class overlayRectImageThumbnailsPane-footer-class">
-          FOOTER
-          <div class="addPhotoBtnClass" type="button">
-            <i id="addPhotoIconId" class="bi bi-plus-lg"></i>
-            <input id="addPhotoInputId" type="file" />
-          </div>
-        </footer>
-      </div>
-
-      <ul id="overlayRectImageThumbnailsMenuId" class="context-menu">
-        <li id="deletePhotoId" data-action="deletePhoto">Delete Photo</li>
-        <li id="splitImageFromOverlayRectId" data-action="splitImageFromOverlayRect">Split Image from OverlayRect</li>
-      </ul>
-
-      <div id="imageViewPaneId" class="pane-div"> 
-        <canvas id="selectedImage3dCanvasId" class="canvasPlanViewClass"></canvas>
-        <div id="imageTextInfoId" class="imageTextInfoClass">
-
+            <footer id="overlayRectImageThumbnailsPaneId-footer-id" class="fixed-bottom footer-class overlayRectImageThumbnailsPane-footer-class">
+                <div class="addPhotoBtnClass" type="button">
+                    <i id="addPhotoIconId" class="bi bi-plus-lg"></i>
+                    <input id="addPhotoInputId" type="file" />
+                </div>
+            </footer>
         </div>
-        <footer id="imageViewPaneFooterId" class="fixed-bottom footer-class imageViewPaneFooter-class">
-          <p><span id="dateCreatedId" class="dateCreatedClass">xxxx</span></p>
-        </footer>
-      </div>
+
+        <ul id="overlayRectImageThumbnailsMenuId" class="context-menu">
+            <li id="deletePhotoId" data-action="deletePhoto">Delete Photo</li>
+            <li id="splitImageFromOverlayRectId" data-action="splitImageFromOverlayRect">Split Image from OverlayRect</li>
+        </ul>
+
+        <div id="imageViewPaneId" class="pane-div"> 
+            <canvas id="selectedImage3dCanvasId" class="canvasPlanViewClass"></canvas>
+            <div id="imageTextInfoId" class="imageTextInfoClass"> </div>
+            <footer id="imageViewPaneFooterId" class="fixed-bottom footer-class imageViewPaneFooter-class">
+                <p><span id="dateCreatedId" class="dateCreatedClass">xxxx</span></p>
+            </footer>
+        </div>
 
     </div>
 
     <div id="project-menu-id" class="container-fluid container_projectMenu">
-      <div class="row">
-        <div id="projectMenu_title" class="projectMenu_title col-12 bg-dark text-white vertical-align">Construction Overlay</div>
-      </div>
-      <div class="row">
-        <div id="projectMenu_actions" class="col-12 list-group list-group-root" role="tablist">
-          <a id="list-option-plans" class="list-group-item list-group-item-action active" data-bs-toggle="list">Plans</a>
-          <a id="list-option-photos" class="list-group-item list-group-item-action" data-bs-toggle="list">Photos</a>
-            <a id="list-option-people" class="list-group-item list-group-item-action" data-bs-toggle="list">People</a>
-          <a id="list-option-settings" class="list-group-item list-group-item-action" data-bs-toggle="list">Settings</a>
-            {% if (current_user.role == "group_owner") or (current_user.role == "admin") %}
-              <div class="list-group">
-                <a id="list-option-admin_view_groups" class="list-group-item list-group-item-action" href="/admin_view_groups">Manage Groups</a>
-                <a id="list-option-admin_view_users" class="list-group-item list-group-item-action" href="/admin_view_users">Manage Users</a>
-                <a id="list-option-admin_view_sites" class="list-group-item list-group-item-action" href="/admin_view_sites">Manage Sites</a>
-              </div>
-            {% endif %}
-          <a id="list-option-logInId" class="list-group-item list-group-item-action" href="/login">Log In</a>
-          <!-- <a id="logInAsGuestId" href="{{ url_for('api.loginAsGuest') }}">Log In As Guest</a> -->
-          <a id="list-option-logOutId" class="list-group-item list-group-item-action" href="/logout">Log Out</a>
-          <div>
-            <span id="userProfileId" class="nav navbar-nav">
-              <a href="{{ url_for('api.user_profile') }}">{{ current_user.email }}</a>
-            </span>
-          </div>
+        <div class="row">
+            <div id="projectMenu_title" class="projectMenu_title col-12 bg-dark text-white vertical-align">Construction Overlay</div>
         </div>
-      </div>
+        <div class="row">
+            <div id="projectMenu_actions" class="col-12 list-group list-group-root" role="tablist">
+                <a id="list-option-plans" class="list-group-item list-group-item-action active" data-bs-toggle="list">Plans</a>
+                <a id="list-option-photos" class="list-group-item list-group-item-action" data-bs-toggle="list">Photos</a>
+                <a id="list-option-people" class="list-group-item list-group-item-action" data-bs-toggle="list">People</a>
+                <a id="list-option-settings" class="list-group-item list-group-item-action" data-bs-toggle="list">Settings</a>
+                {% if (current_user.role == "group_owner") or (current_user.role == "admin") %}
+                <div class="list-group">
+                    <a id="list-option-admin_view_groups" class="list-group-item list-group-item-action" href="/admin_view_groups">Manage Groups</a>
+                    <a id="list-option-admin_view_users" class="list-group-item list-group-item-action" href="/admin_view_users">Manage Users</a>
+                    <a id="list-option-admin_view_sites" class="list-group-item list-group-item-action" href="/admin_view_sites">Manage Sites</a>
+                </div>
+                {% endif %}
+                <a id="list-option-logInId" class="list-group-item list-group-item-action" href="/login">Log In</a>
+                <button id="listOptionLogIn2Id" class="btn backBtnClass imageViewBackBtnClass button-div list-group-item list-group-item-action" type="button">
+                    Log In2
+                </button>
+
+                <!-- <a id="logInAsGuestId" href="{{ url_for('api.loginAsGuest') }}">Log In As Guest</a> -->
+                <a id="list-option-logOutId" class="list-group-item list-group-item-action" href="/logout">Log Out</a>
+                <div>
+                    <span id="userProfileId" class="nav navbar-nav">
+                        <a href="{{ url_for('api.user_profile') }}">{{ current_user.email }}</a>
+                    </span>
+                </div>
+            </div>
+        </div>
     </div>
-  </div>
 </main>
 <!-- main-container-id -->
 

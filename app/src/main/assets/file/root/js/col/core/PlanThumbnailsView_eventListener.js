@@ -26,7 +26,8 @@ async function onClick_planThumbnail(event) {
     
     // plan thumbnail was clicked. Update the selected plan
     let layerName = this.id;
-    await COL.colJS.onSitesChanged(layerName);
+    let layer = COL.model.getLayerByName(layerName);
+    await COL.model.setSelectedLayer(layer);
     await COL.manageGUI.setPane(this);
 }    
 
@@ -95,7 +96,9 @@ async function handleMouseDown_orOneFingerTouchStart_planThumbnail(event) {
     // let layerName = this.id;
     // 44_decourcy_drive_pilot_bay_gabriola_island__44_decourcy_drive_pilot_bay_gabriola_island
     let layerName = event.target.id;
-    await COL.model.selectLayerByName(layerName);
+    if( COL.util.isObjectValid(layerName) ) {
+        await COL.model.selectLayerByName(layerName);
+    }
 }
 
 function onMouseMove_planThumbnailsPane(event) {

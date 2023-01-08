@@ -54,6 +54,7 @@ class Model {
         this._rendererPlanView2 = undefined;
         this._rendererImageViewPane = undefined;
         this.planThumbnailsPaneScrollPosition = undefined;
+        this.isSyncedWithWebServer = undefined;
 
         // container for the db operations that are executed in single request
         this.image_db_operations_array = [];
@@ -129,6 +130,75 @@ class Model {
         rendererImageViewPaneJqueryObject.addClass('showFullSize');
     }
     
+    createAdvancedSettingModal () {
+        // --------------------------------------------------------------
+        // http://jsfiddle.net/Transformer/5KK5W/
+        // for date setting
+        
+        // https://mdbootstrap.com/docs/standard/forms/checkbox/
+        // for checkbox setting in table cell
+
+        // define the PlanView Settings Modal, which includes:
+        // - slider for the radius of the overlayRect
+        // - milestoneDates table
+        // - tbd - option to see cross-hair between the 2 fingers
+
+        let dataSliderInitialValue = 2;
+        let rowNum = this._milestoneDatesRowNum;
+        
+        // value="Remove1" sets the label inside the button (as opposed to setting it besides the button if used after the element)
+        let planViewSettingModalEl = `
+<div class="modal fade" id="basicModal" tabindex="-1" role="dialog" aria-labelledby="basicModal" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true">&times;</button>
+        <h3 class="modal-title" id="myModalLabel">PlanView Settings Modal</h3>
+      </div>
+      <div id="modalBodyId" class="modal-body">
+        <label>
+          Server address:
+          <input id="serverAddress2" type="text" value="bldlog.com"/>
+        </label>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" id="advancedSettingSaveBtnId" class="btn btn-primary">Save changes</button>
+      </div>
+    </div>
+  </div>
+</div>
+`;
+        
+        $('#main-container-id').append(planViewSettingModalEl);
+    }
+
+    initAdvancedViewSettingModal () {
+        console.log('BEG initAdvancedViewSettingModal');
+
+        this.createAdvancedSettingModal();
+        
+        // define the PlanView Settings Modal button
+        this._advancedSettingModalBtnEl = '<a href="#" class="ui-button" data-bs-toggle="modal" data-bs-target="#basicModal" id="advanced-settings-modal-btn">☰</a>';
+
+        $('#project-menu-id').append(this._advancedSettingModalBtnEl);
+
+        $('#advanced-settings-modal-btn').click(function() {
+            console.log('BEG onclick advanced-settings-modal-btn');
+        });
+
+        document.getElementById('advancedSettingSaveBtnId').onclick = function() {
+            console.log('BEG advancedSettingSaveBtnId');
+        };     
+
+        document.getElementById('serverAddress2').onchange = function(){
+            console.log('BEG onchange serverAddress2');
+            let serverAddress = document.getElementById('serverAddress2').value;
+            console.log('serverAddress2', serverAddress);
+            COL.model.setDataToIndexedDb('serverAddress', serverAddress);
+        };
+    }
+
     async initModel() {
         // console.log('BEG initModel');
 
@@ -176,6 +246,11 @@ class Model {
 
         if(COL.isOldGUIEnabled) {
             await this.sceneBar.initSceneBar(user_role, COL.component);
+        }
+        else{
+            // await this.sceneBar.initSceneBar(user_role, COL.component);
+            // create the advancedSetting modal (e.g. set the server address)
+            this.initAdvancedViewSettingModal();
         }
 
         // //////////////////////////////////////////////////////////////////////////////
@@ -247,6 +322,62 @@ class Model {
         }
 
         this.detectWebGL();
+
+        // enable all the tooltips
+        // https://getbootstrap.com/docs/5.2/components/tooltips/
+        const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+        const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
+
+        // fill in the field serverAddress from localforage indexedDb
+        let serverAddressVal = await this.getDataFromIndexedDb('serverAddress');
+        document.getElementById("serverAddress2").value = serverAddressVal;
+         
+    }
+
+    async setDataToIndexedDb(key, data)
+    {
+        await localforage.setItem(key, data);
+        console.log('User has been saved');
+    }
+
+    async getDataFromIndexedDb(key)
+    {
+        let val = await localforage.getItem(key);
+        if(key == 'serverAddress' && COL.util.isObjectInvalid(val) ) {
+            val = 'bldlog.com';
+        }
+        console.log('val', val);
+
+        return val;
+    }
+
+    getSyncWithWebServerStatus() {
+        return this.isSyncedWithWebServer;
+    }
+        
+    setSyncWithWebServerStatus(otherIsSyncedWithWebserver) {
+        this.isSyncedWithWebServer = otherIsSyncedWithWebserver;
+        COL.util.setSyncWithWebServerStatus(this.isSyncedWithWebServer);
+    }
+
+    updateIsSyncedWithWebServer() {
+        console.log('BEG updateIsSyncedWithWebServer');
+
+        let foundNonSyncedLayer = false;
+        console.log('this._layers.size()', this._layers.size());
+        
+        let iter = this._layers.iterator();
+        while (iter.hasNext()) {
+            let layerObj = iter.next();
+            if(!layerObj.getSyncWithWebServerStatus()) {
+                this.setSyncWithWebServerStatus(false);
+                foundNonSyncedLayer = true;
+                break;
+            }
+        }
+        if(!foundNonSyncedLayer) {
+            this.setSyncWithWebServerStatus(true);
+        }
     }
 
     detectUserAgent () {
@@ -513,7 +644,9 @@ class Model {
 
     async selectLayerByName (layerName) {
         let layer = this._layers.getByKey(layerName);
-        await this.setSelectedLayer(layer);
+        if(COL.util.isObjectValid(layer)) {
+            await this.setSelectedLayer(layer);
+        }
     }
 
     removeLayerByName (name) {
@@ -551,7 +684,7 @@ class Model {
         // //////////////////////////////////////////////////////////////////////////////
 
         this._selectedLayer = layer;
-        
+
         if(COL.util.isObjectInvalid(layer)) {
             // unselect the layer
             // mark the plan in the siteplan menu to the "No sites selected"
@@ -559,7 +692,7 @@ class Model {
 
         }
         else {
-            await this._selectedLayer.updateLayerImageRelatedRenderring();
+            await this._selectedLayer.updateImageThumbnailsRelatedRenderring();
 
             // //////////////////////////////////////////////////////////////////////////////
             // Adjust the camera, canvas, renderer, and viewport1 to the planViewPane

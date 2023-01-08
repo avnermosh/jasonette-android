@@ -58,7 +58,7 @@ class ImageView {
         this.imageWidth = undefined;
         this.imageHeight = undefined;
 
-        this.doDisplayImageDetails = false;
+        this.doDisplayImageDetails = true;
     }
 
     initSelectedView () {

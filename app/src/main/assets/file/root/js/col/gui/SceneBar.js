@@ -94,7 +94,7 @@ class SceneBar {
                 // --------------------------------------------------------------
                 
                 // define the PlanView Settings Modal button
-                this._planViewSettingModalBtnEl = '<a href="#" class="ui-button" data-toggle="modal" data-target="#basicModal" id="planview-settings-modal-btn"><img src="V1/img/icons/IcoMoon-Free-master/PNG/48px/0009-pen.png"/></a>';
+                this._planViewSettingModalBtnEl = '<a href="#" class="ui-button" data-bs-toggle="modal" data-bs-target="#basicModal" id="planview-settings-modal-btn"><img src="V1/img/icons/IcoMoon-Free-master/PNG/48px/0009-pen.png"/></a>';
     
                 // --------------------------------------------------------------
                 // END Set the PlanView Settings Modal
@@ -134,7 +134,7 @@ class SceneBar {
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
-        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+        <button type="button" class="close" data-bs-dismiss="modal" aria-hidden="true">&times;</button>
         <h3 class="modal-title" id="myModalLabel">PlanView Settings Modal</h3>
       </div>
       <div id="modalBodyId" class="modal-body">
@@ -142,7 +142,7 @@ class SceneBar {
         <input id="overlayrect-size-slider-id" data-slider-id='overlayRectSizeDataSliderId' type="text" data-slider-ticks="[1, 2, 3]" data-slider-ticks-labels='["0.5", "1", "2"]' data-slider-ticks-positions="[0, 50, 100]" data-slider-value="${dataSliderInitialValue}"/>
       </div>
       <div id="datesId">
-        <table id="date_table" class="table" data-toggle="table" data-height="300" data-url="https://api.github.com/users/wenzhixin/repos?type=owner&sort=full_name&direction=asc&per_page=100&page=1" data-pagination="true" data-search="true" data-show-refresh="true" data-show-toggle="true" data-show-columns="true" data-toolbar="#toolbar">
+        <table id="date_table" class="table" data-bs-toggle="table" data-height="300" data-url="https://api.github.com/users/wenzhixin/repos?type=owner&sort=full_name&direction=asc&per_page=100&page=1" data-pagination="true" data-search="true" data-show-refresh="true" data-show-toggle="true" data-show-columns="true" data-toolbar="#toolbar">
           <thead>
             <tr>
               <th data-field="date">Date</th>
@@ -163,7 +163,7 @@ class SceneBar {
       </div>
       <div class="modal-footer">
         <input type="checkbox" id="enableMilestoneDatesId" class="checkbox-inline" value="" checked>Edit Dates</input>
-        <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-default" data-bs-dismiss="modal">Cancel</button>
         <button type="button" id="planViewSettingSaveBtnId" class="btn btn-primary">Save changes</button>
       </div>
     </div>
@@ -228,8 +228,8 @@ class SceneBar {
             let sceneBar = COL.model.getSceneBar();
             sceneBar.validateMilestoneDatesAndUpdateScene();
         });
-
         
+
         document.getElementById('planViewSettingSaveBtnId').onclick = function() {
             // console.log('BEG planViewSettingSaveBtnId'); 
             let sceneBar = COL.model.getSceneBar();
@@ -700,60 +700,59 @@ class SceneBar {
             // create the planViewSetting modal (e.g. to filter dates, and overlayRect dot size)
             this.initPlanViewSettingModal();
             
-        }
+            this._reloadPageButton.onClick(function () {
+                console.log('BEG _reloadPageButton.onClick');
+    
+                // https://www.freecodecamp.org/news/location-reload-method-how-to-reload-a-page-in-javascript/
+                // True reloads the page from the server (e.g. does not store the data cached by the browser):
+                // 
+                // https://stackoverflow.com/questions/2099201/javascript-hard-refresh-of-current-page
+                // When this method receives a true value as argument, it will cause the page to always be reloaded from the server.
+                // If it is false or not specified, the browser may reload the page from its cache.
+    
+                window.location.reload(true);
+            });
 
-        this._reloadPageButton.onClick(function () {
-            console.log('BEG _reloadPageButton.onClick');
-
-            // https://www.freecodecamp.org/news/location-reload-method-how-to-reload-a-page-in-javascript/
-            // True reloads the page from the server (e.g. does not store the data cached by the browser):
-            // 
-            // https://stackoverflow.com/questions/2099201/javascript-hard-refresh-of-current-page
-            // When this method receives a true value as argument, it will cause the page to always be reloaded from the server.
-            // If it is false or not specified, the browser may reload the page from its cache.
-
-            window.location.reload(true);
-        });
-        
-        this._playImagesInAllOverlayRectsButton.onClick(async function () {
-            // console.log('BEG _playImagesInAllOverlayRectsButton.onClick');
-
-            let sceneBar = COL.model.getSceneBar();
-            let selectedLayer = COL.model.getSelectedLayer();
-            try {
-                // disable the button (successive clicks, before the first click is processed
-                // cause, e.g. to miss split images? (172 images in total but after rapid splitting shows only 162 images??))
-                let playImagesState = sceneBar._playImagesInAllOverlayRectsButton.isOn() ? Layer.PLAY_IMAGES_STATE.PLAY_IMAGES_IN_ALL_OVERLAY_RECTS : Layer.PLAY_IMAGES_STATE.NONE;
-                // console.log('playImagesState1', playImagesState); 
+            this._playImagesInAllOverlayRectsButton.onClick(async function () {
+                // console.log('BEG _playImagesInAllOverlayRectsButton.onClick');
+    
+                let sceneBar = COL.model.getSceneBar();
+                let selectedLayer = COL.model.getSelectedLayer();
+                try {
+                    // disable the button (successive clicks, before the first click is processed
+                    // cause, e.g. to miss split images? (172 images in total but after rapid splitting shows only 162 images??))
+                    let playImagesState = sceneBar._playImagesInAllOverlayRectsButton.isOn() ? Layer.PLAY_IMAGES_STATE.PLAY_IMAGES_IN_ALL_OVERLAY_RECTS : Layer.PLAY_IMAGES_STATE.NONE;
+                    // console.log('playImagesState1', playImagesState); 
+                    
+                    selectedLayer.setPlayImagesState(playImagesState);
+                    await selectedLayer.playImagesInAllOverlayRects();
+                }
+                catch(err) {
+                    console.error('err:', err);
+                    
+                    let toastTitleStr = 'Play images in all overlayRects';
+                    let msgStr = 'Failed to play images in all overlayRects. ' + err;
+                    toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
+                }
+    
+                // reset the play button 
+                selectedLayer.setPlayImagesState(Layer.PLAY_IMAGES_STATE.NONE);
+                // change the state of scenebar::_playImagesInAllOverlayRectsButton without
+                // trigerring a call to _playImagesInAllOverlayRectsButton.onClick
+                let event = undefined;
+                sceneBar._playImagesInAllOverlayRectsButton.toggle(null, event);
                 
-                selectedLayer.setPlayImagesState(playImagesState);
-                await selectedLayer.playImagesInAllOverlayRects();
-            }
-            catch(err) {
-                console.error('err:', err);
-                
-                let toastTitleStr = 'Play images in all overlayRects';
-                let msgStr = 'Failed to play images in all overlayRects. ' + err;
-                toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
-            }
-
-            // reset the play button 
-            selectedLayer.setPlayImagesState(Layer.PLAY_IMAGES_STATE.NONE);
-            // change the state of scenebar::_playImagesInAllOverlayRectsButton without
-            // trigerring a call to _playImagesInAllOverlayRectsButton.onClick
-            let event = undefined;
-            sceneBar._playImagesInAllOverlayRectsButton.toggle(null, event);
+                // update the buttons: previousImageButton, nextImageButton, play Buttons to their default state
+                // (e.g. enable if selectedOverlayRect is defined and has more than 1 image)
+                selectedLayer.updatePreviousPlayNextImageButtons();
+            });
             
-            // update the buttons: previousImageButton, nextImageButton, play Buttons to their default state
-            // (e.g. enable if selectedOverlayRect is defined and has more than 1 image)
-            selectedLayer.updatePreviousPlayNextImageButtons();
-        });
-        
-        let toolBar = this._toolBar.$.attr('id', 'col-scenebarId');
-        
-        let toolbarGroupJqueryElement = $('#toolbarGroupId');
-        $('#main-container-id').append(toolbarGroupJqueryElement);
-        toolBar.appendTo('#toolbarGroupId');
+            let toolBar = this._toolBar.$.attr('id', 'col-scenebarId');
+            
+            let toolbarGroupJqueryElement = $('#toolbarGroupId');
+            $('#main-container-id').append(toolbarGroupJqueryElement);
+            toolBar.appendTo('#toolbarGroupId');
+        }
 
         return;
     }
@@ -887,37 +886,6 @@ class SceneBar {
         return this._editOverlayRectButton;
     }
 
-    FindPlanInSiteplanMenu (matchPattern) {
-
-        // Initially point to "no-site"
-        let optionIndex = 0;
-        if(COL.util.isObjectValid(matchPattern)) {
-            // // print the optgroup options values
-            // console.log('$("#sitesId option")', $("#sitesId option"));
-            // let numPlans = $("#sitesId option").length;
-            // for(let i = 0; i < numPlans; i++){
-            //     let option = $('#sitesId')[0][i];
-            //     console.log('option.value', option.value); 
-            // }
-            // print the option index (within the option-group) and value
-            // console.log('sitesId selected option index', $("#sitesId option:selected").index());
-            // console.log('sitesId selected option value', $("#sitesId option:selected").val());
-            
-            // try to match the substring of the site-plan-id (matchPattern) in '#sitesId option'
-            let matchPatternRE = new RegExp(matchPattern);
-            let optionsMatched = $('#sitesId option').filter(function() {
-                let val = $(this).val();
-                // console.log('val:', val);
-                return $(this).val().match(matchPatternRE);
-            });
-
-            if(optionsMatched.length >= 1) {
-                optionIndex = optionsMatched[0].index;
-            }
-        }
-        return optionIndex;
-    }
-    
     // tbd - remove the function - only used for COL.isOldGUIEnabled
     disableEditOverlayRectRelatedButtons (doDisable) {
         // console.log('BEG disableEditOverlayRectRelatedButtons');

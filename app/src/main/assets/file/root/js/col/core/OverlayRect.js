@@ -533,31 +533,16 @@ class OverlayRect {
         }
     }
 
-    // Display the selected image in the texture pane
-    // and display other image related artefacts such as:
-    // - label of image out of total number of images e.g. 2/10,
-    // - image info label e.g. Date Taken
-    async updateImageViewRelatedRenderring (layer) {
-        // console.log('BEG updateImageViewRelatedRenderring');
+    // Update the overlayRect in the planView pane
+    async updateOverlayRectInPlanView (layer) {
+        // console.log('BEG updateOverlayRectInPlanView');
 
         try {
-            // ///////////////////////////////////////////////////////////////
-            // update the planViewPane
-            // ///////////////////////////////////////////////////////////////
-
             // if overlayRect has changed (image was added/removed, overlayRect was translated) show the overlayRectRing
             // otherwise hide the overlayRectRing
             
             this.toggleRingVisibility();
             PlanView.Render();        
-
-            // ///////////////////////////////////////////////////////////////
-            // update the texture pane
-            // ///////////////////////////////////////////////////////////////
-
-            // console.log('this._meshObject.name', this._meshObject.name); 
-            
-            await this.updateImageViewPane(layer);
 
             // ///////////////////////////////////////////////////////////////
             // update layer buttons/labels related to the selected image, e.g.
@@ -588,8 +573,8 @@ class OverlayRect {
         catch(err) {
             console.error('err', err);
 
-            let toastTitleStr = 'updateImageViewRelatedRenderring';
-            let msgStr = 'Failed to updateImageViewRelatedRenderring.' + err;
+            let toastTitleStr = 'updateOverlayRectInPlanView';
+            let msgStr = 'Failed to updateOverlayRectInPlanView.' + err;
             toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
             throw new Error(msgStr);
         }
@@ -665,14 +650,14 @@ class OverlayRect {
         
         if(this._imagesNames.size() > 0) {
             // overlayRect, after deletion of image, still has images.
-            // Update the selected image to the previous image and update the texture pane
+            // Update the selected image to the previous image
             // https://stackoverflow.com/questions/4467539/javascript-modulo-gives-a-negative-result-for-negative-numbers
             let selectedImageFilenameIndex = (this.getSelectedImageFilenameIndex() - 1).mod1(this._imagesNames.size());
             this.setSelectedImage(selectedImageFilenameIndex);
         }
         else{
             // overlayRect, after deletion of image, has no images.
-            // Update the selected image to undefined and clear rendering the image in the texture pane
+            // Update the selected image to undefined
             this.setSelectedImage(undefined);
         }
         this.updateTotalNumImagesLabel();
@@ -696,7 +681,7 @@ class OverlayRect {
                 selectedImageFilenameIndex = (this.getSelectedImageFilenameIndex() - 1).mod1(this._imagesNames.size());
             }
             this.setSelectedImage(selectedImageFilenameIndex);
-            await this.updateImageViewRelatedRenderring(layer);
+            await this.updateOverlayRectInPlanView(layer);
         }
         catch(err) {
             console.error('err', err);
@@ -930,7 +915,7 @@ class OverlayRect {
         this.updateTotalNumImagesLabel();
 
         // update the nextImage button (make it non-grey)
-        await this.updateImageViewRelatedRenderring(layer);
+        await this.updateOverlayRectInPlanView(layer);
         
         // update the state of isDirty_imageAddedOrRemoved
         // (if the added image is a synced image that was just removed, then nothing needs to be synced)

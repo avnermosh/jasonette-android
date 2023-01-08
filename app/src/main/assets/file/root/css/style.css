@@ -629,7 +629,6 @@ e.g. zipFile related buttons, editOverlay related buttons, planview-settings-mod
     width: 100%;
     height: 100%;
     touch-action: none;
-
     display: grid;
     /* Setting grid-template-columns using vh units (instead of vw) causes the grid cells to be square
     This is done so that the editMode button becomes square */

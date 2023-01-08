@@ -98,7 +98,7 @@ async function onMouseUpOrTouchEnd_imageView(event) {
     switch (orbitControls.getState()) {
         case OrbitControlsImageView.STATE.NONE:
         {
-            selectedLayer.toggleDateDisplay();
+            selectedLayer.toggleImageDisplay();
             break;
         }
         case OrbitControlsImageView.STATE.DOLLY:

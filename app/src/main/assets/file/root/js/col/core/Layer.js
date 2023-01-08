@@ -133,7 +133,7 @@ class Layer {
             isDirty_overlayRectDirty: false
         };
 
-        this.isSyncedWithWebServer = false;
+        this.isSyncedWithWebServer2 = false;
 
         // container for the filename(s) that are in synced in progress
         // if specific file(s) throws an exception, we use this container in the catch block to
@@ -605,26 +605,18 @@ class Layer {
         return this._selectedOverlayRect;
     }
 
-    setSyncWithWebServerStatus(isSyncedWithWebserver) {
+    getSyncWithWebServerStatus() {
+        // console.log('this.isSyncedWithWebServer2', this.isSyncedWithWebServer2);
+        let isSyncedWithWebServer21 = this.isSyncedWithWebServer2;
+        // console.log('isSyncedWithWebServer21', isSyncedWithWebServer21);
+        return this.isSyncedWithWebServer2;
+    }
+
+    setSyncWithWebServerStatus(otherisSyncedWithWebServer2) {
         // console.log('BEG setSyncWithWebServerStatus');
-        
-        $('#syncWithWebServerStatusId').removeClass('synced-with-webserver-unknown');
-        if(isSyncedWithWebserver) {
-            $('#syncWithWebServerStatusId').removeClass('not-synced-with-webserver');
-            $('#syncWithWebServerStatusIconId').removeClass('bi-cloud-arrow-down');
-
-            $('#syncWithWebServerStatusId').addClass('synced-with-webserver');
-            $('#syncWithWebServerStatusIconId').addClass('bi-cloud-arrow-up');            
-        }
-        else{
-            $('#syncWithWebServerStatusId').removeClass('synced-with-webserver');
-            $('#syncWithWebServerStatusIconId').removeClass('bi-cloud-arrow-up');
-
-            $('#syncWithWebServerStatusId').addClass('not-synced-with-webserver');
-            $('#syncWithWebServerStatusIconId').addClass('bi-cloud-arrow-down');            
-        }
-        
-        this.isSyncedWithWebServer = isSyncedWithWebserver;
+        this.isSyncedWithWebServer2 = otherisSyncedWithWebServer2;
+        COL.util.setSyncWithWebServerStatus(this.isSyncedWithWebServer2);
+        console.log('this.isSyncedWithWebServer2', this.isSyncedWithWebServer2);
     }
 
     getSprite () {
@@ -688,7 +680,7 @@ class Layer {
         // - clear the texture
         // - set image info string to NA
         // - set imageNumOutOfTotalImages to NA
-        await this.updateLayerImageRelatedRenderring();
+        await this.updateImageThumbnailsRelatedRenderring();
 
         // show the tiled images
         let overlayRectImageThumbnailsPaneEl = document.getElementById('overlayRectImageThumbnailsPaneId');
@@ -1346,7 +1338,9 @@ class Layer {
             let blobUrl = await this.loadImageToBlobUrl_andLoadImageInfo(selectedImageFilename);
 
             await this.loadSelectedImageTextureFromUrl(blobUrl);
-            this.toggleDateDisplay();
+            let imageView = this.getImageView();
+            imageView.doDisplayImageDetails = true;
+            this.toggleImageDisplay();
 
             // checkPossibleMemoryLeakAndReportImageCounter();
         }
@@ -1362,7 +1356,9 @@ class Layer {
         return true;
     }
 
-    toggleDateDisplay() {
+    toggleImageDisplay() {
+        // console.log('BEG toggleImageDisplay');
+
         // let selectedLayer = COL.model.getSelectedLayer();
         let imageView = this.getImageView();
         let imageInfo = ImageInfo.getSelectedImageInfo(this);
@@ -1377,12 +1373,12 @@ class Layer {
         if(imageView.doDisplayImageDetails) {
             // show
             document.querySelector('#imageViewPaneFooterId').style.display = 'block';
-            document.querySelector('#imageViewBackBtnId').style.display = 'block';
+            document.querySelector('#mainHeaderId').style.display = 'flex';
         }
         else{
             // hide
             document.querySelector('#imageViewPaneFooterId').style.display = 'none';
-            document.querySelector('#imageViewBackBtnId').style.display = 'none';
+            document.querySelector('#mainHeaderId').style.display = 'none';
         }
         // toggle
         imageView.doDisplayImageDetails = !imageView.doDisplayImageDetails;
@@ -1409,8 +1405,8 @@ class Layer {
         return textInfoStr;
     }
     
-    async updateLayerImageRelatedRenderring() {
-        // console.log('BEG updateLayerImageRelatedRenderring');
+    async updateImageThumbnailsRelatedRenderring() {
+        // console.log('BEG updateImageThumbnailsRelatedRenderring');
         
         // console.trace();
         
@@ -1425,8 +1421,6 @@ class Layer {
                 // console.log(msgStr1);
                 
                 await this._selectedOverlayRect.loadImagesAsThumbnails(this);
-
-                await this._selectedOverlayRect.updateImageViewRelatedRenderring(this);
 
                 let numImagesInOverlayRect = this._selectedOverlayRect.getNumImagesInOverlayRect();
                 let splitImageFromOverlayRectListItemEl = document.getElementById('splitImageFromOverlayRectId');
@@ -1469,7 +1463,7 @@ class Layer {
             // ImageInfo.PrintImagesInfo(this._imagesInfo);
             
             // raise a toast to indicate the failure
-            let toastTitleStr = 'updateLayerImageRelatedRenderring';
+            let toastTitleStr = 'updateImageThumbnailsRelatedRenderring';
             toastr.error(err, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
         }
     }

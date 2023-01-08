@@ -155,6 +155,72 @@ COL.util.filePathToFilename = function (file_path) {
 // END File related utils
 //////////////////////////////////////
     
+//////////////////////////////////////
+// BEG Status related utils
+//////////////////////////////////////
+
+COL.util.setSyncWithWebServerStatus = function (isSyncedWithWebserver) {
+    // console.log('BEG setSyncWithWebServerStatus');
+    
+    $('#syncWithWebServerStatusId').removeClass('synced-with-webserver-unknown');
+    if(isSyncedWithWebserver) {
+        $('#syncWithWebServerStatusId').removeClass('not-synced-with-webserver');
+        $('#syncWithWebServerStatusIconId').removeClass('bi-cloud-arrow-down');
+
+        $('#syncWithWebServerStatusId').addClass('synced-with-webserver');
+        $('#syncWithWebServerStatusIconId').addClass('bi-cloud-arrow-up');            
+    }
+    else{
+        $('#syncWithWebServerStatusId').removeClass('synced-with-webserver');
+        $('#syncWithWebServerStatusIconId').removeClass('bi-cloud-arrow-up');
+
+        $('#syncWithWebServerStatusId').addClass('not-synced-with-webserver');
+        $('#syncWithWebServerStatusIconId').addClass('bi-cloud-arrow-down');            
+    }
+}
+
+//////////////////////////////////////
+// END Status related utils
+//////////////////////////////////////
+
+COL.util.FindPlanInSiteplanMenu = function (matchPattern1, matchPattern2=undefined) {
+
+    // Initially point to "no-site"
+    let optionIndex = 0;
+    if(COL.util.isObjectValid(matchPattern1)) {
+        // // print the optgroup options values
+        // console.log('$("#sitesId option")', $("#sitesId option"));
+        // let numPlans = $("#sitesId option").length;
+        // for(let i = 0; i < numPlans; i++){
+        //     let option = $('#sitesId')[0][i];
+        //     console.log('option.value', option.value); 
+        // }
+        // print the option index (within the option-group) and value
+        // console.log('sitesId selected option index', $("#sitesId option:selected").index());
+        // console.log('sitesId selected option value', $("#sitesId option:selected").val());
+        
+        // try to match the substring of the site-plan-id (matchPattern1) in '#sitesId option'
+        let matchPattern1RE = new RegExp(matchPattern1);
+        let matchPattern2RE = new RegExp(matchPattern2);
+        let optionsMatched = $('#sitesId option').filter(function() {
+            let val = $(this).val();
+            console.log('val:', val);
+            let retval1 = val.match(matchPattern1RE);
+
+            let retval2 = val.match(matchPattern2RE);
+
+            let retval3 = (retval1 && retval2);
+
+            return retval3;
+        });
+
+        if(optionsMatched.length >= 1) {
+            optionIndex = optionsMatched[0].index;
+        }
+    }
+    return optionIndex;
+}
+
 COL.util.isTouchDevice = function () {
     // console.log('BEG COL.util.isTouchDevice'); 
     let isTouchDevice1 = true;

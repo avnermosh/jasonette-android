@@ -189,7 +189,6 @@ class FileZip_withJson {
 
         try
         {
-            let retval = true;
             COL.model.image_db_operations_array = [];
             
             /////////////////////////////////////////////
@@ -202,8 +201,7 @@ class FileZip_withJson {
                 // sanity check
                 console.error('plan_inFileZip', plan_inFileZip); 
                 console.error('layer is invalid for plan_inFileZip');
-                retval = false;
-                return retval;
+                return false;
             }
             
             let imagesInfo = layer.getImagesInfo();
@@ -316,7 +314,7 @@ class FileZip_withJson {
             }
             console.log('msgStr', msgStr);
 
-            return retval;
+            return true;
         }
         catch (err)
         {
@@ -474,6 +472,7 @@ class FileZip_withJson {
             // Upload the plan related files to the webserver (persist in the database, and upload to the file system)
             retval2 = await this.syncZipSitePlanFilesWithWebServer2(plan_inFileZip);
         }
+
         return retval2;
     };
 
@@ -509,7 +508,28 @@ class FileZip_withJson {
         while (iter.hasNext()) {
             let plan_inFileZip = iter.next();
 
+            // remove '_zip' from the planName. It was added, temporarily when added from the zipfile, to distinguish from the plan that is in the webserver.
+            plan_inFileZip.name = plan_inFileZip.name.replace('_zip','');
+
             let retval2 = await this.syncZipSitePlanWithWebServer2(plan_inFileZip);
+            if(retval2)
+            {
+                /////////////////////////////////////////////
+                // remove the layer from the model, now that it is succesfully synced to the webserver
+                /////////////////////////////////////////////
+
+                let layerName = plan_inFileZip.siteName + '__' + plan_inFileZip.name  + '_zip';
+                COL.model.removeLayerByName(layerName);
+
+                // remove the entry from '#sitesId option' 
+                let matchPattern1 = 'name.*' + plan_inFileZip.name  + '_zip';
+                let optionIndex = COL.util.FindPlanInSiteplanMenu(matchPattern1);
+                if(optionIndex > 0)
+                {
+                    $('#sitesId')[0].remove(optionIndex);
+                }
+            }
+
             retval = (retval || retval2);
         }
         return retval;
@@ -950,6 +970,7 @@ class FileZip_withJson {
     };
     
     appendSitesInfoToSiteplanMenu = function () {
+        // console.log('BEG appendSitesInfoToSiteplanMenu');
 
         let zipFileInfo = COL.model.getSelectedZipFileInfo();
         let zipFileName = zipFileInfo.zipFileName;
@@ -966,15 +987,18 @@ class FileZip_withJson {
             while (iterPlans.hasNext()) {
                 let planInfo_inFileZip = iterPlans.next();
 
+                // e.g. geographic_map.structure.layer1 -> geographic_map.structure.layer1_zip
+                // append _zip to the planName to distinguish it from the plan that is in the webserver
+                planInfo_inFileZip.name += '_zip';
+
                 // Set the option text in the sitePlan menu
                 let optionText = planInfo_inFileZip.name;
                 planInfo_inFileZip.zipFileName = zipFileName;
 
                 // Set the option value (as json-string) in the sitePlan menu
                 let planInfoJsonStr = planInfo_inFileZip.toJsonString();
-                // console.log('planInfoJsonStr', planInfoJsonStr); 
                 let optionVal = planInfoJsonStr;
-                
+
                 let optionEl = $('<option />');
                 optionEl.html(optionText);
                 optionEl.val(optionVal);
@@ -1129,8 +1153,7 @@ class FileZip_withJson {
         let matchPattern = '\\"site_id\\"\\:\\"' + layer0.planInfo.siteId + '\\",' +
             '\\"id\\"\\:\\"' + layer0.planInfo.id + '\\"';
 
-        let sceneBar = COL.model.getSceneBar();
-        let optionIndex = sceneBar.FindPlanInSiteplanMenu(matchPattern);
+        let optionIndex = COL.util.FindPlanInSiteplanMenu(matchPattern);
         // mark the plan in the siteplan menu
         $('#sitesId')[0].selectedIndex = optionIndex;
         
@@ -1682,10 +1705,9 @@ class FileZip_withJson {
             await this.extractSitesInfo();
 
             // e.g. '"zipFileName":"demo_plan.zip"'
-            let sceneBar = COL.model.getSceneBar();
             const zipFileInfo = COL.model.getSelectedZipFileInfo();
             let matchPattern = '\\"zipFileName\\"\\:\\"' + zipFileInfo.zipFileName;
-            let optionIndex = sceneBar.FindPlanInSiteplanMenu(matchPattern);
+            let optionIndex = COL.util.FindPlanInSiteplanMenu(matchPattern);
             
             if(optionIndex == 0)
             {
@@ -1698,8 +1720,12 @@ class FileZip_withJson {
             await this.populateLayers();
             
             let selectedLayer = COL.model.getSelectedLayer();
+            let layer = await COL.colJS.loadLayer(selectedLayer.name, zipFileInfo.zipFileName);
+            await COL.model.setSelectedLayer(layer);
+            PlanView.Render();
 
-            await COL.colJS.onSitesChanged(selectedLayer.name);
+            // after loading from zip file mark the model as not-in-sync with the webserver
+            COL.model.updateIsSyncedWithWebServer();
 
             let msgStr = "Succeeded to load";
             toastr.success(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);

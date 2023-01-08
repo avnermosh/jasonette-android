@@ -140,7 +140,7 @@ COL.loaders.CO_ObjectLoader = {
             let layerUrl = COL.model.getUrlImagePathBase() + '/' + siteId + '/' + planId + '/' + layerJsonFilename;
             await _this.loadLayerJson_fromUrl(layerUrl, layer);
 
-            // update the syncWithWebServerStatus for the layer after loading the layer from the webserver
+            // update the syncWithWebServerStatus for the layer to true, after loading the layer from the webserver
             layer.setSyncWithWebServerStatus(true);
         } 
         catch(err){
@@ -233,6 +233,9 @@ COL.loaders.CO_ObjectLoader = {
                 // I want it to wait, (because some params, (e.g. 'imagesInfo') theoretically can be populated inside) and used after this function
                 // so I'm injecting an artificial variable 'true'
                 resolve(true);
+
+                // update the syncWithWebServerStatus for the layer to false, after loading the layer from the zip file.
+                layer.setSyncWithWebServerStatus(false);
             }
             catch(err) {
                 console.error('err', err); 

@@ -16,7 +16,7 @@ const COL = {
     paneDivs: undefined,
     buttonDivs: undefined,
     clickedElements: [],
-    isOldGUIEnabled: false,
+    isOldGUIEnabled: false
 };
 
 COL.util = {};

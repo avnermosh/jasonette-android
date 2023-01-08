@@ -66,10 +66,8 @@
         "body": {
             "background": {
                 "type": "html",
-                "url": "file://overlay_button_on_local_image_via_webcontainer.html",
-                // "url": "https://192.168.1.80",
-                // "url": "https://192.168.1.75",
-                // "url": "http://192.168.1.75:3000",
+                // "url": "file://overlay_button_on_local_image_via_webcontainer.html",
+                "url": "file://root/html/view_sites_app.html",
                 "action": {
                     "type": "$default"
                 }            

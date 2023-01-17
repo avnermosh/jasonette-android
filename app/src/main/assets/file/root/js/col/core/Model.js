@@ -29,7 +29,6 @@ import { SceneBar } from '../gui/SceneBar.js';
 import { BrowserDetect } from '../util/browser_detect.js';
 import packageInfo from '../../../package.json' assert { type: "json" };
 
-
 /**
  * @file Defines the Model class
  */
@@ -340,6 +339,19 @@ class Model {
         console.log('appVersion', appVersion);
         document.getElementById("appVersionId").innerText = appVersion;
 
+        const url = new URL(window.location);
+        let hostname = undefined;
+
+        if(window.location.protocol == 'file:')
+        {
+            hostname = 'local device';
+        }
+        else
+        {
+            hostname = url.hostname;
+        }
+
+        document.getElementById('settingStrId').innerText = 'Host: ' + hostname + '\n' + 'App Version: ' + appVersion;
     }
 
     async setDataToIndexedDb(key, data)

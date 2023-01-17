@@ -151,14 +151,11 @@
                     <a id="list-option-admin_view_sites" class="list-group-item list-group-item-action" href="/admin_view_sites">Manage Sites</a>
                 </div>
                 {% endif %}
-                <a id="list-option-logInId" class="list-group-item list-group-item-action" href="/login">Log In</a>
-                <button id="listOptionLogIn2Id" class="list-group-item list-group-item-action" type="button">
-                    Log In2
-                </button>
-
+                <button id="listOptionLogInId" class="list-group-item list-group-item-action" type="button">Log In</button>
                 <!-- <a id="logInAsGuestId" href="{{ url_for('api.loginAsGuest') }}">Log In As Guest</a> -->
                 <a id="list-option-logOutId" class="list-group-item list-group-item-action" href="/logout">Log Out</a>
                 <div>
+                    <span id="settingStrId" class="list-group-item list-group-item-action">placeholder</span>
                     <span id="userProfileId" class="nav navbar-nav">
                         <a href="{{ url_for('api.user_profile') }}">{{ current_user.email }}</a>
                     </span>

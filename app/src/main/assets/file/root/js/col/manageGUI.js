@@ -89,8 +89,8 @@ class ManageGUI {
                 }
             }); 
         document
-            .getElementById('listOptionLogIn2Id')
-            .addEventListener('click', COL.manageGUI.login2);
+            .getElementById('listOptionLogInId')
+            .addEventListener('click', COL.manageGUI.login);
 
         this.showHideProjectMenu(true);
     }
@@ -113,8 +113,8 @@ class ManageGUI {
         }
     }
 
-    async login2() {
-        console.log('BEG login2'); 
+    async login() {
+        console.log('BEG login'); 
 
         let serverAddress = await COL.model.getDataFromIndexedDb('serverAddress');
         window.location.href='https://' + serverAddress + '/login';
@@ -624,19 +624,16 @@ class ManageGUI {
         if(COL.util.isObjectValid(COL.model)) {
             let loggedInFlag = COL.model.getLoggedInFlag();
             if(loggedInFlag) {
-                document.querySelector('#list-option-logInId').style.display = 'none';
-                document.querySelector('#listOptionLogIn2Id').style.display = 'none';
+                document.querySelector('#listOptionLogInId').style.display = 'none';
                 document.querySelector('#list-option-logOutId').style.display = 'block';
             }
             else{
-                document.querySelector('#list-option-logInId').style.display = 'block';
-                document.querySelector('#listOptionLogIn2Id').style.display = 'block';
+                document.querySelector('#listOptionLogInId').style.display = 'block';
                 document.querySelector('#list-option-logOutId').style.display = 'none';
             }
         }
         else{
-            document.querySelector('#list-option-logInId').style.display = 'block';
-            document.querySelector('#listOptionLogIn2Id').style.display = 'block';
+            document.querySelector('#listOptionLogInId').style.display = 'block';
             document.querySelector('#list-option-logOutId').style.display = 'none';
         }
 

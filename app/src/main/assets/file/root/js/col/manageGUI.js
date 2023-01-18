@@ -23,7 +23,10 @@ class ManageGUI {
         document.getElementById('planPaneWrapperId').onclick =
           this.showHideProjectMenu(false);
 
-        document.getElementById('overlayRectPaneWrapperId').onclick =
+        document.getElementById('imageViewPaneId').onclick =
+           this.showHideProjectMenu(false);
+
+           document.getElementById('overlayRectImageThumbnailsPaneId').onclick =
            this.showHideProjectMenu(false);
 
         document
@@ -395,7 +398,6 @@ class ManageGUI {
 
             // Handle by tag
             document.querySelector('#imageViewBackBtnId').style.display = 'block';
-            document.querySelector('#overlayRectPaneWrapperId').style.display = 'block';
             document.querySelector('#imageViewPaneId').style.display = 'block';
 
             // push an undefined value, just so it can be popped out later
@@ -445,7 +447,7 @@ class ManageGUI {
                 case 'overlayRectImageThumbnailsPaneId':
                     // Show the overlayRectThumbnailImages pane
                     document.querySelector('#imagesBackBtnId').style.display = 'block';
-                    document.querySelector('#overlayRectPaneWrapperId').style.display = 'block';
+                    document.querySelector('#overlayRectImageThumbnailsPaneWrapperId').style.display = 'block';
                     document.querySelector('#overlayRectImageThumbnailsPaneId').style.display = 'block';
                     document.querySelector('#addPhotoIconId').style.display = 'block';
                     document.getElementById(elementId).style.display = 'block';
@@ -454,7 +456,7 @@ class ManageGUI {
                 case 'imageViewBackBtnId':
                     // Show the overlayRectThumbnailImages pane
                     document.querySelector('#imagesBackBtnId').style.display = 'block';
-                    document.querySelector('#overlayRectPaneWrapperId').style.display = 'block';
+                    document.querySelector('#overlayRectImageThumbnailsPaneWrapperId').style.display = 'block';
                     document.querySelector('#overlayRectImageThumbnailsPaneId').style.display = 'block';
                     document.querySelector('#addPhotoIconId').style.display = 'block';
                     COL.clickedElements.pop();

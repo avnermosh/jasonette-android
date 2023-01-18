@@ -613,19 +613,20 @@ e.g. zipFile related buttons, editOverlay related buttons, planview-settings-mod
 /* ---------------------------------------------------- */
 
 /* ---------------------------------------------------- */
-/* BEG overlayRectPane */
+/* BEG overlayRectImageThumbnailsPane  */
 /* ---------------------------------------------------- */
 
-.overlayRectPaneWrapperClass {
-    position: absolute;
+.overlayRectImageThumbnailsPaneWrapperClass {
+    position: relative;
     top: 0%;
     width: 100%;
     height: 100%;
     touch-action: none;
     z-index: 1;
 }
-  
+
 .overlayRectImageThumbnailsPaneClass {
+    top: 0%;
     width: 100%;
     height: 100%;
     touch-action: none;
@@ -634,16 +635,54 @@ e.g. zipFile related buttons, editOverlay related buttons, planview-settings-mod
     This is done so that the editMode button becomes square */
     grid-template-rows: repeat(auto-fill, minmax(5vh, 1fr));
     grid-template-columns: repeat(auto-fill, minmax(5vh, 1fr));
+    z-index: 1;
 }
 
+.image-list {
+    padding: 0;
+    margin: 0;
+  }
+  
+  .image-list li {
+    background-color: aqua;
+    height: 100%;
+  }
+  
+  .image-list p:first-child {
+    font-weight: bold;
+    font-size: 1.15rem;
+  }
+  
+  .image-list p:last-child {
+    margin-top: 0.5rem;
+  }
+  
+  /* equivalent to div class .wrap in in https://output.jsbin.com/utupuw/5  */
+   
+  .overlayrect-thumbnail-images{
+      display: block;
+      /* enables to scroll */
+      overflow: auto;
+      /* overflow: hidden; */
+      padding: 2%;
+  }
+  
 /* ---------------------------------------------------- */
-/* END overlayRectPane  */
+/* END overlayRectImageThumbnailsPane  */
 /* ---------------------------------------------------- */
-
 
 /* ---------------------------------------------------- */
 /* BEG imageViewPane */
 /* ---------------------------------------------------- */
+
+.imageViewPaneClass {
+    position: absolute;
+    top: 0%;
+    width: 100%;
+    height: 100%;
+    touch-action: none;
+    z-index: 1;
+}
 
 /* height/width: 100% is needed or elese the selectedImage is not seen ? */
 #imageViewPaneId {

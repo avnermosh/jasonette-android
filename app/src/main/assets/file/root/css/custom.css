@@ -47,6 +47,8 @@ body {
   background-color: rgb(167 167 167);
   z-index: 10;
   display:flex;
+  position:sticky;
+  top: 0;
 }
 
 .hamburgerColClass {
@@ -306,35 +308,6 @@ a {
   border-color: var(--darkgreen);
 }
 
-/* IMAGE LIST
-  –––––––––––––––––––––––––––––––––––––––––––––––––– */
-.image-list {
-  padding: 0;
-  margin: 0;
-}
-
-.image-list li {
-  background-color: aqua;
-  height: 100%;
-}
-
-.image-list p:first-child {
-  font-weight: bold;
-  font-size: 1.15rem;
-}
-
-.image-list p:last-child {
-  margin-top: 0.5rem;
-}
-
-/* equivalent to div class .wrap in in https://output.jsbin.com/utupuw/5  */
- 
-.overlayrect-thumbnail-images{
-    display: block;
-    /* shows the scrolbar */
-    overflow: auto;
-    padding: 2%;
-}
 
 /* GRID VIEW
   –––––––––––––––––––––––––––––––––––––––––––––––––– */

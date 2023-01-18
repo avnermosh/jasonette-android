@@ -260,18 +260,15 @@ class ImageView {
     getImageViewPaneSize() {
         // console.log('BEG ImageView getImageViewPaneSize');
         let imageViewPaneEl = $('#imageViewPaneId');
-        let overlayRectPaneWrapperEl = document.getElementById('overlayRectPaneWrapperId');
         let imageViewPaneEl2 = document.getElementById('imageViewPaneId');
 
-        let overlayRectPaneWrapperId_displayStyle = overlayRectPaneWrapperEl.style.display;
         let imageViewPaneId_displayStyle = imageViewPaneEl2.style.display;
 
         // imageViewPaneSize - the size of the gui window
         let imageViewPaneSize = undefined;
     
-        if(overlayRectPaneWrapperId_displayStyle !== 'block' || imageViewPaneId_displayStyle !== 'block') {
+        if(imageViewPaneId_displayStyle !== 'block') {
             // need to set the display style momentarily to block, to get imageViewPaneSize
-            overlayRectPaneWrapperEl.style.display = 'block';
             imageViewPaneEl2.style.display = 'block';
             imageViewPaneSize = {
                 width: imageViewPaneEl.innerWidth(),
@@ -279,7 +276,6 @@ class ImageView {
             };
 
             // restore the original value
-            overlayRectPaneWrapperEl.style.display = overlayRectPaneWrapperId_displayStyle;
             imageViewPaneEl2.style.display = imageViewPaneId_displayStyle;
         }
         else{

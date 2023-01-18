@@ -610,7 +610,7 @@ class ColJS {
     }
 
     addGoogleDriveButtons() {
-        let overlayRectPaneWrapperEl = $('#overlayRectPaneWrapperId');
+        let overlayRectPaneWrapperEl = $('#imageViewPaneId');
 
         let html1 = '<button id="google-drive-sign-in-or-out-button" style="margin-left: 25px">Sign In/Authorize</button>';
         overlayRectPaneWrapperEl.append(html1);

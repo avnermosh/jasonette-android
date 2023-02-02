@@ -301,7 +301,7 @@ class OverlayRect {
                 let msgStr = 'Edit mode is not supported: ' + this._state;
                 throw new Error(msgStr);
         }
-        console.log('overlayRect._state', this._state);
+        // console.log('overlayRect._state', this._state);
     }
 
     getState(){

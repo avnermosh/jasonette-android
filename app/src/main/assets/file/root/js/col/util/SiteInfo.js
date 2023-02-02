@@ -5,13 +5,16 @@
 'use strict';
 
 class SiteInfo {
-    constructor({siteId = null,
-                 siteName = null,
-                 plans = new COL.util.AssociativeArray()}) {
-        this.siteId = siteId;
-        this.siteName = siteName;
-        this.plans = plans;
-    };
+    constructor({generalInfo = null,
+        siteId = null,
+        siteName = null,
+        plans = new COL.util.AssociativeArray()}) 
+        {
+            this.generalInfo = generalInfo;
+            this.siteId = siteId;
+            this.siteName = siteName;
+            this.plans = plans;
+        };
 
     getPlans = function () {
         return this.plans;
@@ -26,6 +29,7 @@ class SiteInfo {
         
         let siteInfoStr =
             'siteInfo:\n' +
+            'generalInfo: ' + JSON.stringify(this.generalInfo) + '\n' +
             'siteId: ' + this.siteId + '\n' +
             'siteName: ' + this.siteName + '\n' +
             'plans: ' + this.plans.toString();

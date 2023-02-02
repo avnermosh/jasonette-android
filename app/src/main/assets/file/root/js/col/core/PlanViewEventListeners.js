@@ -572,7 +572,7 @@ function handleMouseMove_orOneFingerTouchMove_planView(event) {
 
 
 async function handleMouseMove_orOneFingerTouchMove0_planViewInEditMode() {
-    console.log('BEG handleMouseMove_orOneFingerTouchMove0_planViewInEditMode');
+    // console.log('BEG handleMouseMove_orOneFingerTouchMove0_planViewInEditMode');
     let selectedLayer = COL.model.getSelectedLayer();
     if (!selectedLayer) {
     // Layer is not yet defined

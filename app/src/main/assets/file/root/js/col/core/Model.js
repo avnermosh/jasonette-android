@@ -27,7 +27,6 @@ import './Core.js';
 import { Layer } from './Layer.js';
 import { SceneBar } from '../gui/SceneBar.js';
 import { BrowserDetect } from '../util/browser_detect.js';
-import packageInfo from '../../../package.json' assert { type: "json" };
 
 /**
  * @file Defines the Model class
@@ -42,8 +41,8 @@ import packageInfo from '../../../package.json' assert { type: "json" };
 class Model {
 
     constructor(){
-        this.modelVersion = undefined;
-        this.minZipVersion = undefined;
+        this.minSoftwareVersion = '1.0.0';
+        this.dbVersion = '1.0.0';
         this.fileZip = undefined;
         this._layers = new COL.util.AssociativeArray();
         this._selectedLayer = null;
@@ -64,23 +63,6 @@ class Model {
         this.isPlanThumbnailMenuVisible = false;
 
         this.csrf_token = COL.util.getCSRFToken();
-
-        $('#planThumbnailsMenuId li').click(async function(event) {
-            console.log('BEG #planThumbnailsMenuId li click');
-
-            {
-                // Prevent multiple click events firing JQuery
-                // https://stackoverflow.com/questions/12708691/prevent-multiple-click-events-firing-jquery
-                event.stopImmediatePropagation();
-                event.preventDefault();
-            }
-            
-            switch($(this).attr('data-action')) {
-                case 'third': 
-                    console.log('third');
-                    break;
-            }
-        });
     }
 
     getimageViewPaneSize2() {
@@ -158,10 +140,10 @@ class Model {
       <div id="modalBodyId" class="modal-body">
         <label>
           Server address:
-          <input id="serverAddress2" type="text" value="bldlog.com"/>
+          <input id="serverAddressId" type="text" value="bldlog.com"/>
         </label>
         <p>
-            App Version: <span id="appVersionId"></span>
+            Software Version: <span id="softwareVersionId"></span>
         </p>
       </div>
       <div class="modal-footer">
@@ -194,10 +176,10 @@ class Model {
             console.log('BEG advancedSettingSaveBtnId');
         };     
 
-        document.getElementById('serverAddress2').onchange = function(){
-            console.log('BEG onchange serverAddress2');
-            let serverAddress = document.getElementById('serverAddress2').value;
-            console.log('serverAddress2', serverAddress);
+        document.getElementById('serverAddressId').onchange = function(){
+            console.log('BEG onchange serverAddressId');
+            let serverAddress = document.getElementById('serverAddressId').value;
+            console.log('serverAddressId', serverAddress);
             COL.model.setDataToIndexedDb('serverAddress', serverAddress);
         };
     }
@@ -207,15 +189,20 @@ class Model {
 
         console.log('COL.doWorkOnline before', COL.doWorkOnline);
         try {
-            let systemParamsAsJson = await this.getSystemParams();
+            let dbSystemParamsAsJson = await this.getDbSystemParams();
             // force setting COL.doWorkOnline to false
             // throw new Error('dummy throw');
-            
-            this.setSystemParams(systemParamsAsJson);
+
+            let databaseVersion = dbSystemParamsAsJson['database_version'];
+            if(!COL.loaders.utils.validateVersion(databaseVersion, this.dbVersion, 'Equal')) {
+                let msgStr = 'Database version validation failed.';
+                throw new Error(msgStr);
+            }
+    
             COL.colJS.setInternetConnectionStatus(true);
         }
         catch(err){
-            // getSystemParams failed with exception.
+            // getDbSystemParams failed with exception.
             // This indicates that the system is in offline mode (i.e. no web server)
             // this can happen:
             // - if there is no connection to the server (e.g. server is down, or internet is down, etc..)
@@ -333,35 +320,29 @@ class Model {
 
         // fill in the field serverAddress from localforage indexedDb
         let serverAddressVal = await this.getDataFromIndexedDb('serverAddress');
-        document.getElementById("serverAddress2").value = serverAddressVal;
-
-        let appVersion = packageInfo.version;
-        console.log('appVersion', appVersion);
-        document.getElementById("appVersionId").innerText = appVersion;
+        document.getElementById('serverAddressId').value = serverAddressVal;
+        document.getElementById('softwareVersionId').innerText = COL.softwareVersion;
 
         const url = new URL(window.location);
         let hostname = undefined;
 
-        if(window.location.protocol == 'file:')
-        {
+        if(window.location.protocol == 'file:') {
             hostname = 'local device';
         }
-        else
-        {
+        else {
             hostname = url.hostname;
         }
 
-        document.getElementById('settingStrId').innerText = 'Host: ' + hostname + '\n' + 'App Version: ' + appVersion;
+        document.getElementById('settingStrId').innerText = 'Host: ' + hostname + '\n' + 'Software Version: ' + COL.softwareVersion;
+
     }
 
-    async setDataToIndexedDb(key, data)
-    {
+    async setDataToIndexedDb(key, data) {
         await localforage.setItem(key, data);
         console.log('User has been saved');
     }
 
-    async getDataFromIndexedDb(key)
-    {
+    async getDataFromIndexedDb(key) {
         let val = await localforage.getItem(key);
         if(key == 'serverAddress' && COL.util.isObjectInvalid(val) ) {
             val = 'bldlog.com';
@@ -530,22 +511,14 @@ class Model {
         this._selectedZipFileInfo = zipFileInfo;
     }
 
-    getModelVersion () {
-        return this.modelVersion;
+    getMinSoftwareVersion () {
+        return this.minSoftwareVersion;
     }
 
-    setModelVersion (modelVersion) {
-        this.modelVersion = modelVersion;
+    getDbVersion () {
+        return this.dbVersion;
     }
 
-    getMinZipVersion () {
-        return this.minZipVersion;
-    }
-
-    setMinZipVersion (minZipVersion) {
-        this.minZipVersion = minZipVersion;
-    }
-    
     getPlanThumbnailsPaneScrollPosition () {
         return this.planThumbnailsPaneScrollPosition;
     }
@@ -628,19 +601,34 @@ class Model {
     async loadLayerFromWebServer(planInfo) {
         let layer = COL.model.createLayer(planInfo);
 
-        // "https://192.168.1.75/avner/img/168/188/general_metadata.json"
-        let general_metadata_filename = 'general_metadata.json';
+        // "https://192.168.1.75/avner/img/168/188/geographic_map.structure.layer0.json"
+        let planFilename = planInfo.planFilename;
+        console.log('planFilename', planFilename);
+
         let queryUrl = Model.GetUrlBase() + COL.model.getUrlImagePathBase() +
             '/' + planInfo.siteId + '/' +
-            planInfo.id + '/' + general_metadata_filename;
+            planInfo.id + '/' + planFilename;
         
         let response = await fetch(queryUrl);
         await COL.errorHandlingUtil.handleErrors(response);
         let dataAsJson = await response.json();
-        // console.log('dataAsJson', dataAsJson);
-        layer.setGeneralMetadata(dataAsJson);
-        
-        let layerGeneralMetadata = layer.getGeneralMetadata();
+        console.log('dataAsJson', dataAsJson);
+        // get the generalInfo section from the entire json data
+        let generalInfoAsJson = dataAsJson['generalInfo'];
+        let layerSoftwareVersion = COL.util.getNestedObject(generalInfoAsJson, ['softwareVersion']);
+
+        if(!COL.loaders.utils.validateVersion(layerSoftwareVersion, COL.model.getMinSoftwareVersion(), 'GreaterOrEqual')) {
+            let msgStr = 'Version validation failed while loading layer from web server. planFilename: ' + planFilename;
+            throw new Error(msgStr);
+        }
+
+        if(COL.loaders.utils.isSemVerSmaller(layerSoftwareVersion, COL.getSoftwareVersion())) {
+            // migrate the layer to the new vesion
+            layer.migrateVersion(layerSoftwareVersion, COL.getSoftwareVersion());
+        }
+
+        layer.setGeneralInfo(generalInfoAsJson);
+
         await COL.loaders.CO_ObjectLoader.loadLayerJson_fromWebServer(layer, planInfo.siteId, planInfo.id);
     
         COL.model.addLayerToList(layer);
@@ -803,64 +791,18 @@ class Model {
         this.isUserLoggedIn = isUserLoggedIn;
     }
 
-    async getSystemParams () {
-        // console.log('BEG getSystemParams');
+    async getDbSystemParams () {
+        // console.log('BEG getDbSystemParams');
         
         let queryUrl = Model.GetUrlBase() + 'api/v1_2/get_system_params';
         // https://localhost/api/v1_2/get_system_params
         // console.log('queryUrl', queryUrl); 
         let response = await fetch(queryUrl);
         await COL.errorHandlingUtil.handleErrors(response);
-        let systemParamsAsJson = await response.json();
-        // console.log('systemParamsAsJson', systemParamsAsJson); 
-        return systemParamsAsJson;
+        let dbSystemParamsAsJson = await response.json();
+        // console.log('dbSystemParamsAsJson', dbSystemParamsAsJson); 
+        return dbSystemParamsAsJson;
     }
-
-    setSystemParams (systemParamsAsJson) {
-        // console.log('systemParamsAsJson', systemParamsAsJson);
-
-        this.setModelVersion( parseFloat(systemParamsAsJson['modelVersion']) );
-        this.setMinZipVersion( parseFloat(systemParamsAsJson['minZipVersion']) );
-    }
-
-    // /////////////////////////////////
-    // BEG Add context-menu to ThumbnailPlan
-    // /////////////////////////////////
-
-    delayedMenuThumbnailPlan(event) {
-        console.log('BEG delayedMenuThumbnailPlan');
-        
-        if(this.isPlanThumbnailMenuVisible) {
-            // a previous menu exist. Clear it first before setting a new menu.
-            this.clearMenuThumbnailPlan();
-        }
-
-        let timeIntervalInMilliSec = 500;
-        this.timeoutID = window.setTimeout(this.showMenuThumbnailPlan.bind(this, event), timeIntervalInMilliSec);
-    }
-    
-    showMenuThumbnailPlan(event) {
-        console.log('BEG showMenuThumbnailPlan');
-        
-        $('#planThumbnailsMenuId').finish().toggle(100).css({
-            top: event.pageY + 'px',
-            left: event.pageX + 'px'
-        });
-        this.isPlanThumbnailMenuVisible = true;
-        // this.setState(OverlayRect.STATE.CONTEXT_MENU);
-    }
-
-    clearMenuThumbnailPlan() {
-        console.log('BEG clearMenuThumbnailPlan');
-
-        window.clearTimeout(this.timeoutID);
-        this.isPlanThumbnailMenuVisible = false;
-        $('#planThumbnailsMenuId').hide(100);
-    }
-
-    // /////////////////////////////////
-    // END Add context-menu to ThumbnailPlan
-    // /////////////////////////////////
 
 }
 

@@ -2,6 +2,8 @@
 // Copyright 2018-2022 Construction Overlay Inc.
 // =========================================================
 
+import packageInfo from '../../package.json' assert { type: "json" };
+
 'use strict';
 
 const COL = {
@@ -16,7 +18,10 @@ const COL = {
     paneDivs: undefined,
     buttonDivs: undefined,
     clickedElements: [],
-    isOldGUIEnabled: false
+    isOldGUIEnabled: false,
+    // tbd - softwareVersion should be read from package.json
+    softwareVersion: '1.1.0'
+
 };
 
 COL.util = {};
@@ -31,6 +36,14 @@ COL.Error = function(errorCode, message) {
 (function($) {
     if (typeof $ === 'undefined') {
         console.error('jQuery library needed.');
+    }
+
+    this.getSoftwareVersion = function () {
+        return COL.softwareVersion;
+    }
+
+    this.setSoftwareVersion = function (softwareVersion) {
+        COL.softwareVersion = softwareVersion;
     }
 
     this.setError = function(error) {

@@ -480,7 +480,7 @@ class ColJS {
         try {
 
             // Clear all the toasts
-            toastr.clear();
+            // toastr.clear();
             
             // with the newGUI "planName === layerName"
             // e.g. 44_decourcy_drive_pilot_bay_gabriola_island__44_decourcy_drive_pilot_bay_gabriola_island.structure.layer0

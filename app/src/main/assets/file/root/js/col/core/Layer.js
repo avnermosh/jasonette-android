@@ -148,12 +148,13 @@ class Layer {
         this._milestoneDatesInfo = new COL.util.AssociativeArray();
         this._isMilestoneDatesFilterEnabled = false;
         
-        // this._generalMetadata.generalInfo - generalInfo for the layer, such as
-        // - this._generalMetadata.generalInfo.modelVersion - the version for the layer
+        // this._generalInfo - generalInfo for the layer, such as
+        // - this._generalInfo.softwareVersion - the version for the layer
         //   1.0 - load overlay from overlay.obj, overlay.mtl (obsolete)
         //   1.1 - load overlay from layer.getLayerJsonFilename()
         //   1.2 - rename topDown -> planView (structure change in the plan .json file)
-        this._generalMetadata;
+        //   1.1.0 - remove generalMetadata, 
+        this._generalInfo;
     }
 
     async toPlanView (objectLoader, planView_asDict) {
@@ -174,6 +175,20 @@ class Layer {
     async initializeFloorPlanWhiteboard () {
     }
     
+    migrateVersion(currentVersion, targetVersion){
+        // TBD
+        // migrate the layer to the new vesion
+        // (depending on the version (e.g. from 1.0.0.to 1.1.0))
+
+        // this.setGeneralInfo(generalInfoAsJson);
+
+        // at a minimum:
+        // - update the generalInfo in the .json file to have the new version
+        //
+        // optionally:
+        // - migrate the data in the .json file to the new vesion if needed
+    }
+
     async populateFloorPlanObj () {
         // console.log('BEG CO_ObjectLoader populateFloorPlanObj');
 
@@ -823,12 +838,12 @@ class Layer {
         this._playImagesState = playImagesState;
     }
 
-    getGeneralMetadata () {
-        return this._generalMetadata;
+    getGeneralInfo () {
+        return this._generalInfo;
     }
 
-    setGeneralMetadata (generalMetadata) {
-        this._generalMetadata = generalMetadata;
+    setGeneralInfo (generalInfo) {
+        this._generalInfo = generalInfo;
     }
 
     getLayerJsonFilename () {
@@ -1238,7 +1253,7 @@ class Layer {
 
             // remove the previous toast if it exists
             // https://stackoverflow.com/questions/41040911/find-and-clear-a-toast-toastr
-            toastr.clear();
+            // toastr.clear();
 
             let toastTitleStr = 'Image counter';
             let msgStr = 'imageCountTotal: ' + imageCountTotal;
@@ -1864,31 +1879,6 @@ class Layer {
                 blobInfo = metaDataFileInfo.blobInfo;
                 blobInfo.isDirty = true;
             }
-            else if(filename === 'general_metadata.json') {
-                // ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                // Update the file "general_metadata.json" in the backend
-                // ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-                let generalMetadata_asJson_str = JSON.stringify(this._generalMetadata);
-                // console.log('generalMetadata_asJson_str', generalMetadata_asJson_str);
-                let filename = 'general_metadata.json';
-                COL.loaders.utils.addMetaDataFileInfoToMetaDataFilesInfo(metaDataFilesInfo, generalMetadata_asJson_str, filename);
-
-                // Set flag isDirty to true to force sync of general_metadata.json to the webserver
-                let metaDataFileInfo = metaDataFilesInfo.getByKey(filename);
-                let blobInfo = metaDataFileInfo.blobInfo;
-                blobInfo.isDirty = true;
-                let blobUrl = blobInfo.blobUrl;
-                let response = await fetch(blobUrl);
-                await COL.errorHandlingUtil.handleErrors(response);
-                let blob = await response.blob();
-                let filePathNew = filePath + '/' + filename;
-                formData.append('files', blob, filePathNew);
-
-                // https://127.0.0.1/avner/img/223/262/IMG_20180311_104622.jpg
-                //     ->
-                //     168/189/IMG_20181212_142908.jpg
-            }
 
             // Sync metaDataFilesInfo entries with isDirty===true to the webserver
             if(blobInfo.isDirty === true) {
@@ -1915,18 +1905,6 @@ class Layer {
             }
         }
 
-        // if(this._generalMetadata.generalInfo.modelVersion < 1.2) {
-        //     // Single time migration
-        //     // after getting some milage with layerJsonFilename
-        //     // delete .obj, .mtl files, e.g.
-        //     // - overlay.obj,
-        //     // - overlay.mtl,
-        //     // - 168/188/44_decourcy_drive_pilot_bay_gabriola_island.structure.layer0.obj,
-        //     // - 168/188/44_decourcy_drive_pilot_bay_gabriola_island.structure.layer0.mtl
-        //     //
-        //     // tbd - migrateLayerTo_v1_2 is not implemented yet
-        //     // await this.migrateLayerTo_v1_2();
-        // }
         
         // ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         // - step2 - add to the file system - make a single request with multiple blobs in the single formData
@@ -2897,6 +2875,8 @@ class Layer {
 
         let layer_asJson = {};
         let planView_asJson = this.getPlanView().toJSON_forFile();
+
+        layer_asJson['generalInfo'] = this.getGeneralInfo();
         layer_asJson['planView'] = planView_asJson;
         layer_asJson['_imagesInfo'] = this.getImagesInfo().toJSON();
 

@@ -26,7 +26,7 @@ class ManageGUI {
         document.getElementById('imageViewPaneId').onclick =
            this.showHideProjectMenu(false);
 
-           document.getElementById('overlayRectImageThumbnailsPaneId').onclick =
+        document.getElementById('overlayRectImageThumbnailsPaneId').onclick =
            this.showHideProjectMenu(false);
 
         document
@@ -119,7 +119,7 @@ class ManageGUI {
     async login() {
         console.log('BEG login'); 
 
-        let serverAddress = await COL.model.getDataFromIndexedDb('serverAddress');
+        let serverAddress = await COL.model.getDataFromIndexedDb('serverAddressId');
         window.location.href='https://' + serverAddress + '/login';
     }
 
@@ -248,32 +248,44 @@ class ManageGUI {
         // the user clicked on the button openZipFileInputId
         console.log('BEG loadModelFromFile');
 
-        if( COL.util.isObjectValid(window.$agent_jasonette_android) ) {
-            // window.$agent_jasonette_android is defined, i.e. the client is the jasonette mobile app
-            // call loadModelFromFile() which will
-            // trigger a request to load the .zip file from the file system on the mobile device.
-            console.log('Before trigger media.loadZipFileHeaders'); 
-            window.$agent_jasonette_android.trigger('media.loadZipFileHeaders');
-
-            // (the callback from trigger media.loadZipFileHeaders internally calls
-            //  onChange_openZipFileButton, which calls setPane, to show the plan of the zipfile)
+        try{
+            if( COL.util.isObjectValid(window.$agent_jasonette_android) ) {
+                // window.$agent_jasonette_android is defined, i.e. the client is the jasonette mobile app
+                // call loadModelFromFile() which will
+                // trigger a request to load the .zip file from the file system on the mobile device.
+                console.log('Before trigger media.loadZipFileHeaders'); 
+                window.$agent_jasonette_android.trigger('media.loadZipFileHeaders');
+    
+                // (the callback from trigger media.loadZipFileHeaders internally calls
+                //  onChange_openZipFileButton, which calls setPane, to show the plan of the zipfile)
+            }
+            else{
+                var input = event.srcElement;
+                // var files = input.files;
+                // the input has an array of files in the `files` property, each one has a name that you can use. We're just using the name here.
+                var fileName = input.files[0].name;
+                let sceneBar = COL.model.getSceneBar();
+                // Convert from FileList to array
+                // https://stackoverflow.com/questions/25333488/why-isnt-the-filelist-object-an-array
+                let filesToOpenArray = Array.from(input.files);
+                
+                // await sceneBar.onChange_openZipFileButton1(filesToOpenArray);
+                await sceneBar.onChange_openZipFileButton1(input);
+    
+                // (onChange_openZipFileButton1 internally calls onChange_openZipFileButton, 
+                //  which calls setPane, to show the plan of the zipfile)
+            }
+    
         }
-        else{
-            var input = event.srcElement;
-            // var files = input.files;
-            // the input has an array of files in the `files` property, each one has a name that you can use. We're just using the name here.
-            var fileName = input.files[0].name;
-            let sceneBar = COL.model.getSceneBar();
-            // Convert from FileList to array
-            // https://stackoverflow.com/questions/25333488/why-isnt-the-filelist-object-an-array
-            let filesToOpenArray = Array.from(input.files);
-            
-            // await sceneBar.onChange_openZipFileButton1(filesToOpenArray);
-            await sceneBar.onChange_openZipFileButton1(input);
+        catch(err) {
+            console.error('Error from loadModelFromFile:', err);
 
-            // (onChange_openZipFileButton1 internally calls onChange_openZipFileButton, 
-            //  which calls setPane, to show the plan of the zipfile)
+            let toastTitleStr = 'Load model from zip file';
+            // let msgStr = 'Failed to load model from zip file. ' + err;
+            let msgStr = err;
+            toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
         }
+
     }
 
     async addOverlayRect(obj) {

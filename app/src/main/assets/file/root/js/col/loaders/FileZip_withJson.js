@@ -108,43 +108,16 @@ class FileZip_withJson {
         // e.g. 123_main_street.structure.layer0.json
         this.layerJsonFilenames = [];
 
-        this.modelVersionInZipFile = undefined;
+        this.softwareVersionInZipFile = undefined;
     };
 
     saveFromWebServerToZipFile_viaRegularZip2 = function (groupId) {
         return FileZipUtils.saveFromWebServerToZipFile_viaRegularZip(groupId);
     };
 
-    setModelVersionInZipFile = function(modelVersionInZipFile) {
-        this.modelVersionInZipFile = modelVersionInZipFile;
+    setSoftwareVersionInZipFile = function(softwareVersionInZipFile) {
+        this.softwareVersionInZipFile = softwareVersionInZipFile;
     };
-
-    isSiteValidForUpload = async function (siteName) {
-        // console.log('BEG isSiteValidForUpload'); 
-        
-        /////////////////////////////////////////////
-        // Check if the site is valid to be uploaded to the website
-        /////////////////////////////////////////////
-        
-        let getSiteByNameResultAsJson = await COL.model.getSiteByName(siteName);
-
-        let retval = {
-            status: false,
-            siteInfo_inBackend: {}
-        };
-        
-        if(getSiteByNameResultAsJson.name) {
-            let siteInfo = this.createSiteInfoFromJson(getSiteByNameResultAsJson, this.modelVersionInZipFile)
-            retval['status'] = true;
-            retval['siteInfo_inBackend'] = siteInfo;
-        }
-        else
-        {
-            console.log('File is invalid for upload'); 
-        }
-        
-        return retval;
-    }
 
     syncZipSitePlanEntryWithWebServer2 = async function (plan_inFileZip) {
         console.log('BEG syncZipSitePlanEntryWithWebServer2');
@@ -535,6 +508,22 @@ class FileZip_withJson {
         return retval;
     };
 
+    migrateSite = function (softwareVersion1, softwareVersion2) {
+        
+        // TBD
+        // migrate the site to the new vesion
+        // (depending on the version (e.g. from 1.0.0.to 1.1.0))
+
+        // softwareVersion1 - the version in the file *.json
+        // softwareVersion2 - the current software version 
+
+        // at a minimum:
+        // - update the generalInfo in the .json file to have the new version
+        //
+        // optionally:
+        // - migrate the data in the .json file to the new vesion if needed
+    }
+
     syncZipSitesWithWebServer2 = async function () {
         console.log('BEG syncZipSitesWithWebServer2');
         
@@ -547,16 +536,44 @@ class FileZip_withJson {
             let siteInfo_inFileZip = iter.next();
 
             /////////////////////////////////////////////
-            // Check if the site is valid to be uploaded to the website
+            // the site is already valid to be uploaded to the website
+            // because the .zip file have loaded. Now check if we should upgrade to newer version.
             /////////////////////////////////////////////
 
             let siteName = siteInfo_inFileZip.siteName;
-            let isSiteValidForUpload_results = await this.isSiteValidForUpload(siteInfo_inFileZip.siteName)
+            let getSiteByNameResultAsJson = await COL.model.getSiteByName(siteName);
 
-            if(isSiteValidForUpload_results.status)
+            let siteVersion = COL.util.getNestedObject(siteInfo_inFileZip, ['generalInfo', 'softwareVersion']);
+            if(COL.util.isObjectInvalid(siteVersion)) {
+                let msgStr = 'Site version is invalid. siteVersion: ' + siteVersion;
+                throw new Error(msgStr);
+            }
+
+            if(COL.loaders.utils.isSemVerSmaller(siteVersion, COL.getSoftwareVersion()))
+            {
+                // migrate the site to the new vesion before syncing it to the webserver
+                this.migrateSite(siteVersion, COL.getSoftwareVersion());
+            }
+
+            let retval4 = {
+                status: false,
+                siteInfo_inBackend: {}
+            };
+
+            if(getSiteByNameResultAsJson.name) {
+                let siteInfo = await this.createSiteInfoFromJson(siteInfo_inFileZip, getSiteByNameResultAsJson)
+                retval4['status'] = true;
+                retval4['siteInfo_inBackend'] = siteInfo;
+            }
+            else
+            {
+                console.log('File is invalid for upload'); 
+            }
+        
+            if(retval4.status)
             {
                 let retval_syncZipSiteWithWebServer2 = await this.syncZipSiteWithWebServer2(siteInfo_inFileZip,
-                                                                                            isSiteValidForUpload_results.siteInfo_inBackend);
+                                                                                            retval4.siteInfo_inBackend);
                 
                 if(!retval_syncZipSiteWithWebServer2)
                 {
@@ -591,7 +608,7 @@ class FileZip_withJson {
     // - plan specific images (in structure planImagesInfo)
     // - plan specific json files, e.g. (in structure planMetaDataFilesInfo)
     // each site stores 
-    // - site json files - e.g. sitesInfo, general_metadata
+    // - site json files - e.g. sitesInfo
     //   (in structure otherDataSharedBetweenAllSitePlans)
     //
     // Get the planImagesInfo, planMetaDataFilesInfo, origSiteId, origPlanId from sitesFilesInfo
@@ -663,7 +680,7 @@ class FileZip_withJson {
             else
             {
                 // This is a shared-across-sites file (i.e. non plan specific file),
-                // e.g. general_metadata.json, sitesInfo.json
+                // e.g. sitesInfo.json
                 if(FileZipUtils.isSharedDataBetweenAllSitePlans(filenameFullPath))
                 {
                     if(!zipFileInfo.getSitesFilesInfo()["otherDataSharedBetweenAllSitePlans"])
@@ -725,7 +742,7 @@ class FileZip_withJson {
         let msgStr = "Loading " + numFiles + " files";
         let numFilesBetweenReporting = 10;
         
-        for (var key in filenames) {
+        for (var i in filenames) {
 
             if( (countIndex % numFilesBetweenReporting) == 0 )
             {
@@ -738,7 +755,7 @@ class FileZip_withJson {
             }
             countIndex += 1;
             
-            let filenameFullPath = filenames[key];
+            let filenameFullPath = filenames[i];
 
             let pathElements = COL.util.getPathElements(filenameFullPath);
             let dirname = pathElements['dirname'];
@@ -834,55 +851,21 @@ class FileZip_withJson {
         }
     };
 
-    validateVersion = async function () {
-        // console.log('BEG validateVersion');
-        
-        // /////////////////////////////////////////////////////////////
-        // validate the version in the zipFile 
-        // /////////////////////////////////////////////////////////////
 
-        // Get general metadata
-        let generalMetadataFilename = "general_metadata.json";
-        let zipFileInfo = COL.model.getSelectedZipFileInfo();
-        let imagesInfoOtherData = zipFileInfo.getSitesFilesInfo()["otherDataSharedBetweenAllSitePlans"];
-        let imageInfoOtherData = imagesInfoOtherData.getByKey(generalMetadataFilename);
-        let blobInfo = imageInfoOtherData.blobInfo;
-
-        if(COL.util.isObjectInvalid(blobInfo) || COL.util.isObjectInvalid(blobInfo.blobUrl)) {
-            // should not reach here
-            imagesInfoOtherData.printKeysAndValues();
-            console.log('generalMetadataFilename', generalMetadataFilename); 
-            console.error('Missing file: ' + generalMetadataFilename );
-            return false;
-        }
-        let generalInfo = await FileZipUtils.loadFile_viaFetch(generalMetadataFilename, blobInfo, "json");
-        let modelVersionInZipFile = parseFloat(COL.util.getNestedObject(generalInfo, ['generalInfo', 'modelVersion']));
-        this.setModelVersionInZipFile(modelVersionInZipFile);
-        
-        // Validate version
-        let modelVersion = COL.model.getModelVersion();
-        let minZipVersion = COL.model.getMinZipVersion();
-        if(!this.modelVersionInZipFile || (this.modelVersionInZipFile < minZipVersion)) {
-            // the .zip file version is invalid (for reading the .zip file)
-            console.error('modelVersionInZipFile is invalid. System model version: ' + modelVersion +
-                          " , modelVersionInZipFile: " + modelVersionInZipFile +
-                          " , minZipVersion supported: " + minZipVersion);
-            // should not reach here
-            var msgStr = 'Version validation failed';
-            throw new Error(msgStr);
-        }
-        
-    };
-
-    createSiteInfoFromJson = function (siteInfo_asJson, modelVersionInZipFile) {
+    createSiteInfoFromJson = async function (siteInfo_inFileZip, siteInfo_asJson) {
+        console.log('BEG createSiteInfoFromJson');
 
         let zipFileInfo = COL.model.getSelectedZipFileInfo();
         let siteInfo;
-        switch(modelVersionInZipFile) {
-            case 1.1: 
-            case 1.2: 
+
+        let softwareVersionInZipFile = COL.util.getNestedObject(siteInfo_inFileZip, ['generalInfo', 'softwareVersion']);
+        this.setSoftwareVersionInZipFile(softwareVersionInZipFile);
+
+        switch(this.softwareVersionInZipFile) {
+            case "1.1.0": 
             {
-                siteInfo = new SiteInfo({siteId: siteInfo_asJson.id,
+                siteInfo = new SiteInfo({generalInfo: siteInfo_inFileZip.generalInfo,
+                                         siteId: siteInfo_asJson.id,
                                          siteName: siteInfo_asJson.name,
                                          plans: new COL.util.AssociativeArray()});
                 
@@ -907,7 +890,7 @@ class FileZip_withJson {
                 break;
             }
             default: {
-                console.error('modelVersionInZipFile: ' + modelVersionInZipFile + ', is not supported');
+                console.error('softwareVersionInZipFile: ' + this.softwareVersionInZipFile + ', is not supported');
                 break;
             }
         }
@@ -915,7 +898,38 @@ class FileZip_withJson {
         return siteInfo;
     };
     
-    extractSitesInfo = async function () {
+    validateVersionInSiteInto = async function () {
+        // get the sitesInfo file
+        let zipFileInfo = COL.model.getSelectedZipFileInfo();
+        let filename = 'sitesInfo.json';
+        let fileInfo = zipFileInfo.files[filename];
+        let filenameFullPath = filename;
+        // let contentType = FileZip_withJson.getContentTypeFromFilename(filenameFullPath);
+        await FileZip_withJson.extractAsBlobUrl( fileInfo, 'application/json' );
+                    
+        let blobInfo = new BlobInfo({filenameFullPath: filenameFullPath,
+                                     blobUrl: fileInfo.url,
+                                     isDirty: true});
+        let sitesInfoAsDict = await FileZipUtils.loadFile_viaFetch(filenameFullPath, blobInfo, 'json');
+        console.log('sitesInfoAsDict', sitesInfoAsDict); 
+        // Validate the version but there is no need to migrate the version, at this point, if the siteVersion is not the latest.
+        // Only when persisting to the webserver (in syncZipSitesWithWebServer2) we make sure to migrate the version, 
+        // if needed, to the latest version.
+        for (let siteId in sitesInfoAsDict) {
+            let siteInfoAsDict = sitesInfoAsDict[siteId];
+            let siteName = siteInfoAsDict.name;
+            let siteVersion = COL.util.getNestedObject(siteInfoAsDict, ['generalInfo', 'softwareVersion']);
+            if(!COL.loaders.utils.validateVersion(siteVersion, COL.model.getMinSoftwareVersion(), 'GreaterOrEqual'))
+            {
+                let msgStr = 'Version validation failed while loading layer from zip file. siteName: ' + siteName +
+                    ', site version: ' + siteVersion;
+                throw new Error(msgStr);
+            }
+        }
+    };
+
+    extractSitesInfo2 = async function () {
+        console.log('BEG extractSitesInfo2');
         // /////////////////////////////////////////////////////////////
         // Extract sitesInfo - based on sitesInfo we create the various layers
         // /////////////////////////////////////////////////////////////
@@ -955,9 +969,9 @@ class FileZip_withJson {
 
         for (let siteId_inFileZip in sitesInfo_inFileZipAsDict) {
             let siteInfo_inFileZipAsDict = sitesInfo_inFileZipAsDict[siteId_inFileZip];
-
+            
             // zipFileName field is added to siteInfo_asJson.plans in createSiteInfoFromJson
-            let siteInfo = this.createSiteInfoFromJson(siteInfo_inFileZipAsDict, this.modelVersionInZipFile)
+            let siteInfo = await this.createSiteInfoFromJson(siteInfo_inFileZipAsDict, siteInfo_inFileZipAsDict)
             zipFileInfo.getSitesInfo().set(siteId_inFileZip, siteInfo);
 
             for (const [key, planInfo_inFileZip] of Object.entries(siteInfo_inFileZipAsDict.plans)) {
@@ -1696,13 +1710,13 @@ class FileZip_withJson {
 
             FileZipUtils.filenamesFailedToLoad = [];
 
+            await this.validateVersionInSiteInto();
+
             console.time("time loadFilesFromZipFileInfoIntoBlobs_via_ZipLoader");
             await this.loadFilesFromZipFileInfoIntoBlobs_via_ZipLoader();
             console.timeEnd("time loadFilesFromZipFileInfoIntoBlobs_via_ZipLoader");
 
-            await this.validateVersion();
-
-            await this.extractSitesInfo();
+            await this.extractSitesInfo2();
 
             // e.g. '"zipFileName":"demo_plan.zip"'
             const zipFileInfo = COL.model.getSelectedZipFileInfo();
@@ -1729,6 +1743,7 @@ class FileZip_withJson {
 
             let msgStr = "Succeeded to load";
             toastr.success(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
+            spinnerJqueryObj.removeClass("is-active");
         }
         catch(err) {
             console.error('err', err);
@@ -1745,11 +1760,10 @@ class FileZip_withJson {
             {
                 msgStr += err;
             }
-            toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
+            spinnerJqueryObj.removeClass("is-active");
+            // rethrow
+            throw new Error(msgStr);
         }
-
-        spinnerJqueryObj.removeClass("is-active");
-        
     };
 
     static addNewPlan = async function (planInfo) {

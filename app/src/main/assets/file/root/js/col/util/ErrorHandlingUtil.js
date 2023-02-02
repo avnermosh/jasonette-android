@@ -48,23 +48,34 @@ COL.errorHandlingUtil.bootstrap_alert_danger = function (message) {
     $('<div id="bootstrap_alert_danger" class="alert alert-danger alert-dismissible my-alerts fade show" role="alert">' + message + '<button type="button" class="close" data-bs-dismiss="alert"><span>×</span></button></div>').appendTo($('#alert_placeholder'));
 };
 
-// let timeOutInMillisec = 2000;
-// let extendedTimeOutInMillisec = 2000;
 
 // https://stackoverflow.com/questions/35990151/toastr-js-keep-toasts-visible-indefinitely
 // make the toast sticky (show indefinitly)
-let timeOutInMillisec = 2000;
+
+// // set timeout on the toast
+// let timeOutInMillisec = 2000;
+// // set timeout on the toast after the user hovers over it
+// let extendedTimeOutInMillisec = 0;
+
+// prevent timeout on the toast
+let timeOutInMillisec = 0;
+// prevent timeout on the toast after the user hovers over it
 let extendedTimeOutInMillisec = 0;
+
 let closeButton = true;
 let closeDurationInMillisec = 1000;
+
 COL.errorHandlingUtil.toastrSettings = { 
-    
     // How long the toast will display without user interaction (0 prevents timeout)
     timeOut: timeOutInMillisec,
     
     // How long the toast will display after a user hovers over it (0 prevents timeout ?)
     extendedTimeOut: extendedTimeOutInMillisec,
 
+    // add close (x) button
     closeButton: closeButton,
-    closeDuration: closeDurationInMillisec};
+    
+    // timeout before closing the toast after the user clicks on the close (x) button ?
+    closeDuration: closeDurationInMillisec
+};
 

@@ -12,19 +12,17 @@ class FileZipUtils {
 
     ////////////////////////////////////////////////////////////////////////////
     // Returns true if the filenameFullPath is for data that is shared across multiple sites
-    //   e.g. sitesInfo.json, general_metadata.json
+    //   e.g. sitesInfo.json
     // or false otherwise
     ////////////////////////////////////////////////////////////////////////////
 
     static isSharedDataBetweenAllSitePlans = function (filenameFullPath) {
         let matchResults1 = filenameFullPath.match( /sitesInfo/i );
-        let matchResults2 = filenameFullPath.match( /general_metadata/i );
-        // let matchResults2 = false;
 
         // a site-plan file (e.g. siteId/planId/foo.txt)
         let matchResults3 = filenameFullPath.match( /(\d+)\/(\d+).*/i );
         
-        if((matchResults1 || matchResults2) && !matchResults3)
+        if(matchResults1 && !matchResults3)
         {
             return true;
         }
@@ -271,18 +269,32 @@ class FileZipUtils {
         await COL.errorHandlingUtil.handleErrors(response);
 
         let dataAsJson = await response.json();
-        console.log('dataAsJson', dataAsJson); 
-
         let zipFilename = dataAsJson.group_name + '.zip';
-        console.log('zipFilename', zipFilename); 
         
         //////////////////////////////////////////////////
         // Request to create the zip file on the webserver
         //////////////////////////////////////////////////
 
         queryUrl = Model.GetUrlBase() + 'api/v1_2/admin/admin_download_group_sites/' + groupId;
-        response = await fetch(queryUrl);
+
+        let generalInfo = {softwareVersion: COL.getSoftwareVersion()};
+        let generalInfoAsStr = JSON.stringify(generalInfo);
+        
+        let headersData = {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': COL.util.getCSRFToken(),
+            'Cache-Control': 'no-cache, no-store, must-revalidate'
+        };
+
+        let fetchData = { 
+            method: 'POST', 
+            body: generalInfoAsStr,
+            headers: headersData
+        };
+
+        response = await fetch(queryUrl, fetchData);
         await COL.errorHandlingUtil.handleErrors(response);
+        dataAsJson = await response.json();
 
         // //////////////////////////////////////////////////
         // // Follow-up on the creation of the zipfile on the webserver side

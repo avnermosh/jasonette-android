@@ -204,7 +204,7 @@ COL.util.FindPlanInSiteplanMenu = function (matchPattern1, matchPattern2=undefin
         let matchPattern2RE = new RegExp(matchPattern2);
         let optionsMatched = $('#sitesId option').filter(function() {
             let val = $(this).val();
-            console.log('val:', val);
+            // console.log('val:', val);
             let retval1 = val.match(matchPattern1RE);
 
             let retval2 = val.match(matchPattern2RE);

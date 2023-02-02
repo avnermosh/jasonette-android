@@ -92,9 +92,6 @@ async function onMouseDown_planThumbnailsPane(event) {
 async function handleMouseDown_orOneFingerTouchStart_planThumbnail(event) {
     console.log('BEG handleMouseDown_orOneFingerTouchStart_planThumbnail');
 
-    COL.model.delayedMenuThumbnailPlan(event);
-    // let layerName = this.id;
-    // 44_decourcy_drive_pilot_bay_gabriola_island__44_decourcy_drive_pilot_bay_gabriola_island
     let layerName = event.target.id;
     if( COL.util.isObjectValid(layerName) ) {
         await COL.model.selectLayerByName(layerName);

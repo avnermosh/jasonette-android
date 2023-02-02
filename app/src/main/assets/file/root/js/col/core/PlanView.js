@@ -1237,7 +1237,7 @@ class PlanView {
     // create a filtered/manipulated json, to be exported to file
     // e.g. without some members, and with some members manipulated (e.g. some nested entries removed)
     toJSON_forFile() {
-    // console.log('BEG toJSON_forFile');
+        // console.log('BEG toJSON_forFile');
 
         this._scene.traverse(async function (child) {
             if (child.name === 'objInstance1') {

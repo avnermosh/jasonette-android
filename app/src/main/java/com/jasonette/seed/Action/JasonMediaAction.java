@@ -266,7 +266,7 @@ public class JasonMediaAction {
         }
     }
 
-    public void loadDemoDatasetFromZipfile(final JSONObject action, JSONObject data, final JSONObject event, final Context context) {
+    public boolean loadDemoDatasetFromZipfile(final JSONObject action, JSONObject data, final JSONObject event, final Context context) {
 
         try {
              if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -318,16 +318,19 @@ public class JasonMediaAction {
                 JasonHelper.next("success", action, ret, event, context);
             } catch (Exception e) {
                 Log.d("Warning", e.getStackTrace()[0].getMethodName() + " : " + e.toString());
+                return false;
             }
-
-
-
 
         } catch (SecurityException e) {
             JasonHelper.permission_exception("$media.picker", context);
+            return false;
         } catch (Exception e) {
             Log.d("Warning", e.getStackTrace()[0].getMethodName() + " : " + e.toString());
+            return false;
         }
+
+        return true;
+
     }
 
     public void pickerAndCamera(final JSONObject action, JSONObject data, final JSONObject event, final Context context) {

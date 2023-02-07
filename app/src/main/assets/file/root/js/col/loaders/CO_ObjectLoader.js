@@ -15,7 +15,7 @@ import {DoubleSide as THREE_DoubleSide,
     LoadingManager as THREE_LoadingManager
 } from '../../static/three.js/three.js-r135/build/three.module.js';
 
-import { COL } from  '../COL.js';
+import { COL } from '../COL.js';
 import { Model } from '../core/Model.js';
 import { Layer } from '../core/Layer.js';
 import { BlobInfo } from '../core/BlobInfo.js';
@@ -215,35 +215,27 @@ COL.loaders.CO_ObjectLoader = {
         return blobInfo.blobUrl;
     };
     
-    this.loadLayerJsonFile_fromZipFile = function (layerJsonFilename, layer) {
+    this.loadLayerJsonFile_fromZipFile = async function (layerJsonFilename, layer) {
         // console.log('BEG loadLayerJsonFile_fromZipFile'); 
 
-        return new Promise(async function(resolve, reject) {
-            try {
-                if(COL.util.isObjectInvalid(layerJsonFilename)) {
-                    console.error('layerJsonFilename is invalid');
-                    reject(false);
-                }
-                
-                let blobUrl = _this.getBlobUrl2(layer, layerJsonFilename);
-                await _this.loadLayerJson_fromUrl(blobUrl, layer);
-                // https://stackoverflow.com/questions/37977589/promise-resolve-with-no-argument-passed-in
-                // Promise.resolve() without variable immediately fulfills with the undefined value that is implicitly passed in.
-                // The callback is still executed asynchronously.
-                // I want it to wait, (because some params, (e.g. 'imagesInfo') theoretically can be populated inside) and used after this function
-                // so I'm injecting an artificial variable 'true'
-                resolve(true);
-
-                // update the syncWithWebServerStatus for the layer to false, after loading the layer from the zip file.
-                layer.setSyncWithWebServerStatus(false);
-            }
-            catch(err) {
-                console.error('err', err); 
-                let msgStr = 'Error from loadLayerJsonFile fromZipFile. layerJsonFilename: ' + layerJsonFilename;
-                return reject(false);
+        try {
+            if(COL.util.isObjectInvalid(layerJsonFilename)) {
+                throw new Error('layerJsonFilename is invalid');
             }
             
-        }); // return new Promise
+            let blobUrl = _this.getBlobUrl2(layer, layerJsonFilename);
+            await _this.loadLayerJson_fromUrl(blobUrl, layer);
+            // update the syncWithWebServerStatus for the layer to false, after loading the layer from the zip file.
+            layer.setSyncWithWebServerStatus(false);
+            return true;
+        }
+        catch(err) {
+            console.error('err', err); 
+            let msgStr = 'Error from loadLayerJsonFile fromZipFile. layerJsonFilename: ' + layerJsonFilename;
+            // rethrow
+            throw new Error(msgStr);
+        }
+        
     };
 
 }).call(COL.loaders.CO_ObjectLoader);

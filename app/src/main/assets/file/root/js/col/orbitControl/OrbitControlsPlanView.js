@@ -291,6 +291,10 @@ class OrbitControlsPlanView extends THREE_EventDispatcher {
     update() {
         // console.log('BEG OrbitControlsPlanView::update()');
 
+        if (COL.util.isObjectInvalid(this.camera) || COL.util.isObjectInvalid(this.camera.position)) {
+            let a =3;
+        }
+    
         var position = this.camera.position;
         this.offset.copy(position).sub(this.target);
 

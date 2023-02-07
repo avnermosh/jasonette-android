@@ -13,9 +13,6 @@
     <meta content="{{ csrf_token() }}" name="csrf-token" />
 
     <select id="sitesId" style="display: none">
-        <option value='{ "site_name":"No site selected" }'>
-            No site selected
-        </option>
         {% for key, site in sites.items() %}
         <optgroup label={{ site["name"] }}>
             {% for plan in site["plans"] %}

@@ -343,13 +343,13 @@ class Model {
     }
 
     async getDataFromIndexedDb(key) {
-        let val = await localforage.getItem(key);
-        if(key == 'serverAddress' && COL.util.isObjectInvalid(val) ) {
-            val = 'bldlog.com';
+        let val1 = await localforage.getItem(key);
+        if(key == 'serverAddress' && COL.util.isObjectInvalid(val1) ) {
+            val1 = 'bldlog.com';
         }
-        console.log('val', val);
+        console.log('val1', val1);
 
-        return val;
+        return val1;
     }
 
     getSyncWithWebServerStatus() {

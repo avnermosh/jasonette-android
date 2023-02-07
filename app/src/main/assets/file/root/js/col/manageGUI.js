@@ -58,10 +58,10 @@ class ManageGUI {
             .addEventListener('change', COL.manageGUI.loadModelFromFile);
         document
             .getElementById('openZipFileIconId')
-            .addEventListener('click', function(){
+            .addEventListener('click', async function(){
                 console.log('Clicked on openZipFileInputId');
                 if( COL.util.isObjectValid(window.$agent_jasonette_android) ) {
-                    COL.manageGUI.loadModelFromFile();
+                    await COL.manageGUI.loadModelFromFile();
                 }
                 else{
                     $(openZipFileInputId).trigger('click');
@@ -248,6 +248,7 @@ class ManageGUI {
         // the user clicked on the button openZipFileInputId
         console.log('BEG loadModelFromFile');
 
+        let toastTitleStr = 'Load model from zip file';
         try{
             if( COL.util.isObjectValid(window.$agent_jasonette_android) ) {
                 // window.$agent_jasonette_android is defined, i.e. the client is the jasonette mobile app
@@ -274,14 +275,13 @@ class ManageGUI {
     
                 // (onChange_openZipFileButton1 internally calls onChange_openZipFileButton, 
                 //  which calls setPane, to show the plan of the zipfile)
+                let msgStr = 'Succeeded to load';
+                toastr.success(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
             }
     
         }
         catch(err) {
             console.error('Error from loadModelFromFile:', err);
-
-            let toastTitleStr = 'Load model from zip file';
-            // let msgStr = 'Failed to load model from zip file. ' + err;
             let msgStr = err;
             toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
         }
@@ -515,8 +515,7 @@ class ManageGUI {
         // console.log('numPlans: ', numPlans);
 
         if(numPlans > 0) {
-            // skipping i=0 which is for "no-plan-selected"
-            for(let i = 1; i < numPlans; i++){
+            for(let i = 0; i < numPlans; i++){
                 let option = $('#sitesId')[0][i];
                 // console.log('option.value', option.value); 
                 // console.log('option.text', option.text); 
@@ -578,6 +577,8 @@ class ManageGUI {
       
 
     async showPlanThumbnails() {
+        // console.log('BEG showPlanThumbnails');
+
         // ////////////////////////////////////////////////////////
         // show all plans
         // ////////////////////////////////////////////////////////

@@ -4,21 +4,21 @@
 
 'use strict';
 
-import { COL } from  "../COL.js";
-import { Model } from "../core/Model.js";
-import { Layer } from "../core/Layer.js";
-import { BlobInfo } from "../core/BlobInfo.js";
-import "../core/Core.js";
-import { ImageInfo } from "../core/ImageInfo.js";
-import { ZipLoader } from "../../static/ZipLoader.module.js";
-import { PlanView } from "../core/PlanView.js";
-import "../util/Util.js";
-import "../util/Util.AssociativeArray.js";
-import "../util/ErrorHandlingUtil.js";
-import { FileZipUtils } from "./FileZipUtils.js";
-import { ZipFileInfo } from "../core/ZipFileInfo.js";
-import { SiteInfo } from "../util/SiteInfo.js";
-import { PlanInfo } from "../util/PlanInfo.js";
+import { COL } from  '../COL.js';
+import { Model } from '../core/Model.js';
+import { Layer } from '../core/Layer.js';
+import { BlobInfo } from '../core/BlobInfo.js';
+import '../core/Core.js';
+import { ImageInfo } from '../core/ImageInfo.js';
+import { ZipLoader } from '../../static/ZipLoader.module.js';
+import { PlanView } from '../core/PlanView.js';
+import '../util/Util.js';
+import '../util/Util.AssociativeArray.js';
+import '../util/ErrorHandlingUtil.js';
+import { FileZipUtils } from './FileZipUtils.js';
+import { ZipFileInfo } from '../core/ZipFileInfo.js';
+import { SiteInfo } from '../util/SiteInfo.js';
+import { PlanInfo } from '../util/PlanInfo.js';
 
 // ///////////////////////////////////////////////////////////////////////////////////////
 // BEG try4 - using promise-with-jasonette 
@@ -26,7 +26,7 @@ import { PlanInfo } from "../util/PlanInfo.js";
 // ///////////////////////////////////////////////////////////////////////////////////////
 
 // object for storing references to our promise-objects
-var promises = {}
+var promises = {};
 
 // generates a unique id, not obligator a UUID
 function generateUUID() {
@@ -35,16 +35,16 @@ function generateUUID() {
         var r = (d + Math.random()*16)%16 | 0;
         d = Math.floor(d/16);
         // return (c=='x' ? r : (r&amp;amp;amp;amp;amp;amp;0x3|0x8)).toString(16);
-        return (c=='x') ? r : "foo2";
+        return (c=='x') ? r : 'foo2';
         // return "foo1";
     });
     // return uuid;
-};
+}
 
 function generateUUID_uuidv4() {
-  return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
-    (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
-  );
+    return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
+        (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
+    );
 }
 
 // this funciton is called by native methods
@@ -57,7 +57,8 @@ function resolvePromise(promiseId, data, error) {
     if (error){
         promises[promiseId].reject(data);
 
-    } else{
+    }
+    else{
         promises[promiseId].resolve(data);
     }
     // remove referenfe to stored promise
@@ -75,14 +76,14 @@ function extractZipFile_native_ios(filePath2) {
         try {
             // call native function
             
-            let params = {"promiseId": promiseId,
-                          "filePath": filePath2};
+            let params = {'promiseId': promiseId,
+                'filePath': filePath2};
 
             // readFileHandler
             // ->
             // extractZipFileHandler
             
-            window.$agent_jasonette_ios.trigger("extractZipFileHandler", params);
+            window.$agent_jasonette_ios.trigger('extractZipFileHandler', params);
             // window.$agent_jasonette_ios
         }
         catch(exception) {
@@ -109,27 +110,27 @@ class FileZip_withJson {
         this.layerJsonFilenames = [];
 
         this.softwareVersionInZipFile = undefined;
-    };
+    }
 
-    saveFromWebServerToZipFile_viaRegularZip2 = function (groupId) {
+    saveFromWebServerToZipFile_viaRegularZip2 (groupId) {
         return FileZipUtils.saveFromWebServerToZipFile_viaRegularZip(groupId);
-    };
+    }
 
-    setSoftwareVersionInZipFile = function(softwareVersionInZipFile) {
+    setSoftwareVersionInZipFile (softwareVersionInZipFile) {
         this.softwareVersionInZipFile = softwareVersionInZipFile;
-    };
+    }
 
-    syncZipSitePlanEntryWithWebServer2 = async function (plan_inFileZip) {
+    async syncZipSitePlanEntryWithWebServer2 (plan_inFileZip) {
         console.log('BEG syncZipSitePlanEntryWithWebServer2');
 
-        /////////////////////////////////////////////
+        // ///////////////////////////////////////////
         // Do xxx
-        /////////////////////////////////////////////
+        // ///////////////////////////////////////////
 
         let retval = true;
         let planInfo = plan_inFileZip;
 
-        let getPlanBySiteAndPlanNamesResultAsJson = await FileZipUtils.getPlanBySiteAndPlanNames(planInfo)
+        let getPlanBySiteAndPlanNamesResultAsJson = await FileZipUtils.getPlanBySiteAndPlanNames(planInfo);
 
         if(getPlanBySiteAndPlanNamesResultAsJson.plan_name) {
             // A plan with the  planInfo.siteName and planInfo.name already exists
@@ -155,18 +156,17 @@ class FileZip_withJson {
         }
 
         return retval;
-    };
+    }
 
-    syncZipSitePlanFilesWithWebServer2 = async function (plan_inFileZip) {
+    async syncZipSitePlanFilesWithWebServer2 (plan_inFileZip) {
         // console.log('BEG syncZipSitePlanFilesWithWebServer2');
 
-        try
-        {
+        try {
             COL.model.image_db_operations_array = [];
             
-            /////////////////////////////////////////////
+            // ///////////////////////////////////////////
             // getLayerFromLayersList
-            /////////////////////////////////////////////
+            // ///////////////////////////////////////////
             
             let syncRetVals = [];
             let layer = COL.model.getLayerFromLayersList(plan_inFileZip);
@@ -182,16 +182,16 @@ class FileZip_withJson {
             let path = planInfo.siteId + '/' + planInfo.id;
             let imageFilenames = imagesInfo.getValues();
 
-            /////////////////////////////////////////////
+            // ///////////////////////////////////////////
             // clear all blobsUrls of the current zipfile layer
             // before uploading the files to the webserver
             // this helps preventing "out of memory" errors
-            /////////////////////////////////////////////
+            // ///////////////////////////////////////////
 
             console.log('clear all blobsUrls');
             for (let filename in imageFilenames) {
-    	        let imageInfo = imagesInfo.getByKey(filename);
-    	        let blobInfo = imageInfo.blobInfo;
+                let imageInfo = imagesInfo.getByKey(filename);
+                let blobInfo = imageInfo.blobInfo;
 
                 if(COL.util.isObjectInvalid(blobInfo)) {
                     // sanity check
@@ -215,11 +215,11 @@ class FileZip_withJson {
             }
             
 
-            ////////////////////////////////////////////////////////////////////////////////////
+            // //////////////////////////////////////////////////////////////////////////////////
             // sync files of the current zipfile layer
             // optionally save the files to to the file system
             // (and defer the save to the db, to a separate step - see below)
-            ////////////////////////////////////////////////////////////////////////////////////
+            // //////////////////////////////////////////////////////////////////////////////////
 
             // sync images
             await this.syncFilesOfTheCurrentZipFileLayer2(planInfo, imagesInfo, imageFilenames, syncRetVals);
@@ -230,32 +230,30 @@ class FileZip_withJson {
             // sync metadata (e.g. .json)
             await this.syncFilesOfTheCurrentZipFileLayer2(planInfo, metaDataFilesInfo, metaDataFilenames, syncRetVals);
 
-            //////////////////////////////////////////////////////
+            // ////////////////////////////////////////////////////
             // Check if the sync was successful
-            //////////////////////////////////////////////////////
+            // ////////////////////////////////////////////////////
             
             let allFilesSyncStatus = true;
-            let msgStr = "List of files that were not synced: ";
+            let msgStr = 'List of files that were not synced: ';
             syncRetVals.forEach(function(syncRetVal){
                 // console.log(syncRetVal);
-                if(!syncRetVal['syncStatus'])
-                {
+                if(!syncRetVal['syncStatus']) {
                     allFilesSyncStatus = false;
-                    let msgStr1 = "filePath: " + syncRetVal['filePath'] +
-                        ", syncStatus: " + syncRetVal['syncStatus'] + "<br /><br />";
+                    let msgStr1 = 'filePath: ' + syncRetVal['filePath'] +
+                        ', syncStatus: ' + syncRetVal['syncStatus'] + '<br /><br />';
                     
                     msgStr = msgStr + msgStr1;
                 }
             });
 
             
-            ////////////////////////////////////////////////////////////////////////////////////
+            // //////////////////////////////////////////////////////////////////////////////////
             // sync files of the current zipfile layer
             // optionally save the files to to the db in a separate step
-            ////////////////////////////////////////////////////////////////////////////////////
+            // //////////////////////////////////////////////////////////////////////////////////
 
-            if(allFilesSyncStatus)
-            {
+            if(allFilesSyncStatus) {
                 // insert/update/delete from the database with the new/updated/deleted images 
                 let jsonData = {image_db_operations_array: COL.model.image_db_operations_array};
                 let jsonDataAsStr = JSON.stringify(jsonData);
@@ -281,22 +279,20 @@ class FileZip_withJson {
                 await COL.errorHandlingUtil.handleErrors(response);
             }
 
-            if(allFilesSyncStatus)
-            {
-                msgStr = "All files were synced!";
+            if(allFilesSyncStatus) {
+                msgStr = 'All files were synced!';
             }
             console.log('msgStr', msgStr);
 
             return true;
         }
-        catch (err)
-        {
+        catch (err) {
             console.error('err', err);
             throw new Error('Error from syncZipSitePlanFilesWithWebServer2');
         }
-    };
+    }
 
-    syncFilesOfTheCurrentZipFileLayer2 = async function (planInfo, filesInfo, filenames, syncRetVals) {
+    async syncFilesOfTheCurrentZipFileLayer2 (planInfo, filesInfo, filenames, syncRetVals) {
         // console.log('BEG syncFilesOfTheCurrentZipFileLayer2');
 
         console.log('sync files to webserver');
@@ -310,17 +306,15 @@ class FileZip_withJson {
         
         for (let filename in filenames) {
             counter += 1;
-            if(counter % reportEveryNumFiles == 0)
-            {
-                let msgStr = counter + " of: " + filenamesLength;
+            if(counter % reportEveryNumFiles == 0) {
+                let msgStr = counter + ' of: ' + filenamesLength;
                 console.log(msgStr);
             }
             
-    	    let fileInfo = filesInfo.getByKey(filename);
-    	    let blobInfo = fileInfo.blobInfo;
+            let fileInfo = filesInfo.getByKey(filename);
+            let blobInfo = fileInfo.blobInfo;
 
-            if(COL.util.isObjectInvalid(blobInfo))
-            {
+            if(COL.util.isObjectInvalid(blobInfo)) {
                 // sanity check
                 console.error('blobInfo is invalid');
             }
@@ -334,7 +328,7 @@ class FileZip_withJson {
                 // The file is not yet in memory, but its offset is stored in memory.
                 // Unzip the image file data
 
-                await FileZip_withJson.readZipEntryData(filenameFullPath)
+                await FileZip_withJson.readZipEntryData(filenameFullPath);
 
                 blobInfo = await this.addBlobToFilesInfo(filenameFullPath, filesInfo);
                 
@@ -362,38 +356,38 @@ class FileZip_withJson {
             // the buffer and url is the same in blobInfo.blobUrl, which is released above
             // (the memory is cleared via "revokeObjectURL(blobInfo.blobUrl)"
             let zipFileInfo = COL.model.getSelectedZipFileInfo();
-            zipFileInfo.files[filenameFullPath].buffer = "";
+            zipFileInfo.files[filenameFullPath].buffer = '';
             // console.log('revokeObjectURL for zipFileInfo.files[filenameFullPath].url');
             // URL.revokeObjectURL(zipFileInfo.files[filenameFullPath].url);
             zipFileInfo.files[filenameFullPath].url = null;
 
             syncRetVals.push(syncRetVal);
         }
-    };
+    }
     
-    syncZipFileBlobWithWebServer2 = async function (planInfo, blobInfo) {
+    async syncZipFileBlobWithWebServer2 (planInfo, blobInfo) {
 
         let filename = blobInfo.filename;
 
         // sanity check
         if(COL.util.isObjectInvalid(blobInfo.blobUrl)) {
             // At this point the blob should be in memory
-	    console.log('blobInfo.filename', blobInfo.filename); 
-	    console.log('blobInfo.dirname', blobInfo.dirname);
+            console.log('blobInfo.filename', blobInfo.filename); 
+            console.log('blobInfo.dirname', blobInfo.dirname);
             throw new Error('Invalid blobInfo.blobUrl');
         }
 
         let syncRetVal = {};
-        syncRetVal["filePath"] = filename;
-        syncRetVal["syncStatus"] = false;
+        syncRetVal['filePath'] = filename;
+        syncRetVal['syncStatus'] = false;
         
         let fileType = COL.util.getFileTypeFromFilename(filename);
         switch(fileType) {
-            case "mtl":
-            case "obj":
-            case "jpg":
-            case "png":
-            case "json": {
+            case 'mtl':
+            case 'obj':
+            case 'jpg':
+            case 'png':
+            case 'json': {
                 // blobInfo.isDirty = true;
                 // await blobInfo.syncBlobToWebServer(sitesInfo);
                 // blobInfo.isDirty = false;
@@ -402,8 +396,7 @@ class FileZip_withJson {
                 
                 // verify that the dirname matches the path pattern: siteId/planId
                 let matchResults = blobInfo.dirname.match( /(\d+)\/(\d+)/i );
-                if(matchResults)
-                {
+                if(matchResults) {
                     blobInfo.isDirty = true;
                     // extract siteId, planId from sitesInfo and filePathOrig stripped from siteId/planId
                     let retVal = Layer.GetSiteIdPlanIdAndFilePath(planInfo);
@@ -415,9 +408,8 @@ class FileZip_withJson {
                     syncRetVal = await blobInfo.syncBlobToWebServer(siteId, planId, filePath, doDeferFileSystemAndDbSync);
                     blobInfo.isDirty = false;
                 }
-                else
-                {
-                    console.error("Failed to match blobInfo.dirname");
+                else {
+                    console.error('Failed to match blobInfo.dirname');
                     console.log('blobInfo', blobInfo); 
                     console.log('matchResults', matchResults);
                 }
@@ -425,14 +417,14 @@ class FileZip_withJson {
                 break;
             }
             default: {
-                console.error("File extention is not supported", fileExtention);
+                console.error('File extention is not supported', fileExtention);
                 break;
             }
         }
         return syncRetVal;
-    };
+    }
 
-    syncZipSitePlanWithWebServer2 = async function (plan_inFileZip) {
+    async syncZipSitePlanWithWebServer2 (plan_inFileZip) {
         console.log('BEG syncZipSitePlanWithWebServer2');
         
         // Sync the plan entry in the database
@@ -440,21 +432,20 @@ class FileZip_withJson {
         let retval1 = await this.syncZipSitePlanEntryWithWebServer2(plan_inFileZip);
 
         let retval2 = false;
-        if(retval1)
-        {
+        if(retval1) {
             // Upload the plan related files to the webserver (persist in the database, and upload to the file system)
             retval2 = await this.syncZipSitePlanFilesWithWebServer2(plan_inFileZip);
         }
 
         return retval2;
-    };
+    }
 
-    syncZipSiteWithWebServer2 = async function (siteInfo_inFileZip, siteInfo_inBackend) {
+    async syncZipSiteWithWebServer2 (siteInfo_inFileZip, siteInfo_inBackend) {
         console.log('BEG syncZipSiteWithWebServer2');
         
-        ///////////////////////////////////////////
+        // /////////////////////////////////////////
         // delete the old site
-        ///////////////////////////////////////////
+        // /////////////////////////////////////////
 
         // @bp.route('/admin/delete/site/<site_id>', methods=['DELETE'])
         // @bp.route('/admin/delete/site/<site_id>', methods=['POST'])
@@ -472,9 +463,9 @@ class FileZip_withJson {
         await COL.errorHandlingUtil.handleErrors(response);
 
         
-        /////////////////////////////////////////////
+        // ///////////////////////////////////////////
         // Sync the site from the .zip file
-        /////////////////////////////////////////////
+        // ///////////////////////////////////////////
         
         let retval = false;
         let iter = siteInfo_inFileZip.plans.iterator();
@@ -485,11 +476,10 @@ class FileZip_withJson {
             plan_inFileZip.name = plan_inFileZip.name.replace('_zip','');
 
             let retval2 = await this.syncZipSitePlanWithWebServer2(plan_inFileZip);
-            if(retval2)
-            {
-                /////////////////////////////////////////////
+            if(retval2) {
+                // ///////////////////////////////////////////
                 // remove the layer from the model, now that it is succesfully synced to the webserver
-                /////////////////////////////////////////////
+                // ///////////////////////////////////////////
 
                 let layerName = plan_inFileZip.siteName + '__' + plan_inFileZip.name  + '_zip';
                 COL.model.removeLayerByName(layerName);
@@ -497,8 +487,7 @@ class FileZip_withJson {
                 // remove the entry from '#sitesId option' 
                 let matchPattern1 = 'name.*' + plan_inFileZip.name  + '_zip';
                 let optionIndex = COL.util.FindPlanInSiteplanMenu(matchPattern1);
-                if(optionIndex > 0)
-                {
+                if(optionIndex > 0) {
                     $('#sitesId')[0].remove(optionIndex);
                 }
             }
@@ -506,9 +495,9 @@ class FileZip_withJson {
             retval = (retval || retval2);
         }
         return retval;
-    };
+    }
 
-    migrateSite = function (softwareVersion1, softwareVersion2) {
+    migrateSite (softwareVersion1, softwareVersion2) {
         
         // TBD
         // migrate the site to the new vesion
@@ -524,21 +513,21 @@ class FileZip_withJson {
         // - migrate the data in the .json file to the new vesion if needed
     }
 
-    syncZipSitesWithWebServer2 = async function () {
+    async syncZipSitesWithWebServer2 () {
         console.log('BEG syncZipSitesWithWebServer2');
         
         let retval1 = true;
-        let syncZipSitesWithWebServer_statusStr = "";
+        let syncZipSitesWithWebServer_statusStr = '';
         let zipFileInfo = COL.model.getSelectedZipFileInfo();
         let iter = zipFileInfo.getSitesInfo().iterator();
 
         while (iter.hasNext()) {
             let siteInfo_inFileZip = iter.next();
 
-            /////////////////////////////////////////////
+            // ///////////////////////////////////////////
             // the site is already valid to be uploaded to the website
             // because the .zip file have loaded. Now check if we should upgrade to newer version.
-            /////////////////////////////////////////////
+            // ///////////////////////////////////////////
 
             let siteName = siteInfo_inFileZip.siteName;
             let getSiteByNameResultAsJson = await COL.model.getSiteByName(siteName);
@@ -549,8 +538,7 @@ class FileZip_withJson {
                 throw new Error(msgStr);
             }
 
-            if(COL.loaders.utils.isSemVerSmaller(siteVersion, COL.getSoftwareVersion()))
-            {
+            if(COL.loaders.utils.isSemVerSmaller(siteVersion, COL.getSoftwareVersion())) {
                 // migrate the site to the new vesion before syncing it to the webserver
                 this.migrateSite(siteVersion, COL.getSoftwareVersion());
             }
@@ -561,32 +549,27 @@ class FileZip_withJson {
             };
 
             if(getSiteByNameResultAsJson.name) {
-                let siteInfo = await this.createSiteInfoFromJson(siteInfo_inFileZip, getSiteByNameResultAsJson)
+                let siteInfo = await this.createSiteInfoFromJson(siteInfo_inFileZip, getSiteByNameResultAsJson);
                 retval4['status'] = true;
                 retval4['siteInfo_inBackend'] = siteInfo;
             }
-            else
-            {
+            else {
                 console.log('File is invalid for upload'); 
             }
         
-            if(retval4.status)
-            {
+            if(retval4.status) {
                 let retval_syncZipSiteWithWebServer2 = await this.syncZipSiteWithWebServer2(siteInfo_inFileZip,
-                                                                                            retval4.siteInfo_inBackend);
+                    retval4.siteInfo_inBackend);
                 
-                if(!retval_syncZipSiteWithWebServer2)
-                {
+                if(!retval_syncZipSiteWithWebServer2) {
                     syncZipSitesWithWebServer_statusStr += (`Failed to sync site: ${siteName}\n`);
                 }
-                else
-                {
+                else {
                     syncZipSitesWithWebServer_statusStr += (`Succeeded to sync site: ${siteName}\n`);
                 }
                 retval1 = (retval1 || retval_syncZipSiteWithWebServer2);
             }
-            else
-            {
+            else {
                 syncZipSitesWithWebServer_statusStr += (`Site is invalid for upload: ${siteName}\n`);
                 retval1 = false;
             }
@@ -595,14 +578,14 @@ class FileZip_withJson {
         let retval3 = {
             retval: retval1,
             syncZipSitesWithWebServer_statusStr: syncZipSitesWithWebServer_statusStr
-        }
+        };
 
         return retval3;
-    };
+    }
 
     // --------------------------------------------------------------
     
-    ////////////////////////////////////////////////////////////////////////////
+    // //////////////////////////////////////////////////////////////////////////
     // We create zipFileInfo.sitesFilesInfo, which is a dictionary of sites-plans
     // each site-plan stores 
     // - plan specific images (in structure planImagesInfo)
@@ -613,9 +596,9 @@ class FileZip_withJson {
     //
     // Get the planImagesInfo, planMetaDataFilesInfo, origSiteId, origPlanId from sitesFilesInfo
     // for a specified filenameFullPath (which relates to a specific site plan)
-    ////////////////////////////////////////////////////////////////////////////
+    // //////////////////////////////////////////////////////////////////////////
     
-    sortFileToPlan = function (filenameFullPath) {
+    sortFileToPlan (filenameFullPath) {
         
         let zipFileInfo = COL.model.getSelectedZipFileInfo();
         let pathElements = COL.util.getPathElements(filenameFullPath);
@@ -629,28 +612,24 @@ class FileZip_withJson {
         let otherDataSharedBetweenAllSitePlans = undefined;
         let origSiteId = undefined;
         let origPlanId = undefined;
-        if(extension)
-        {
+        if(extension) {
             // This is a regular file, i.e. not a directory
             origSiteId = 0;
             origPlanId = 0;
 
             let matchResults = dirname.match( /(\d+)\/(\d+).*/i );
 
-            if(matchResults)
-            {
+            if(matchResults) {
                 // This is a plan-specific file, e.g. image1.jpg, plan.json
                 
                 origSiteId = matchResults[1];
                 origPlanId = matchResults[2];
 
-                if(!zipFileInfo.getSitesFilesInfo()["sites"][origSiteId])
-                {
-                    zipFileInfo.getSitesFilesInfo()["sites"][origSiteId] = {};
+                if(!zipFileInfo.getSitesFilesInfo()['sites'][origSiteId]) {
+                    zipFileInfo.getSitesFilesInfo()['sites'][origSiteId] = {};
                 }
-                if(!zipFileInfo.getSitesFilesInfo()["sites"][origSiteId][origPlanId])
-                {
-                    zipFileInfo.getSitesFilesInfo()["sites"][origSiteId][origPlanId] = {
+                if(!zipFileInfo.getSitesFilesInfo()['sites'][origSiteId][origPlanId]) {
+                    zipFileInfo.getSitesFilesInfo()['sites'][origSiteId][origPlanId] = {
                         imagesInfo: new COL.util.AssociativeArray(),
                         metaDataFilesInfo: new COL.util.AssociativeArray()
                     };
@@ -658,15 +637,15 @@ class FileZip_withJson {
                 let fileType = COL.util.getFileTypeFromFilename(filenameFullPath);
 
                 switch(fileType) {
-                    case "jpg":
-                    case "png": {
-                        planImagesInfo = zipFileInfo.getSitesFilesInfo()["sites"][origSiteId][origPlanId].imagesInfo;
+                    case 'jpg':
+                    case 'png': {
+                        planImagesInfo = zipFileInfo.getSitesFilesInfo()['sites'][origSiteId][origPlanId].imagesInfo;
                         isRegularFile = true;
                         break;
                     }
-                    case "json":
-                    case "txt": {
-                        planMetaDataFilesInfo = zipFileInfo.getSitesFilesInfo()["sites"][origSiteId][origPlanId].metaDataFilesInfo;
+                    case 'json':
+                    case 'txt': {
+                        planMetaDataFilesInfo = zipFileInfo.getSitesFilesInfo()['sites'][origSiteId][origPlanId].metaDataFilesInfo;
                         isRegularFile = true;
                         break;
                     }
@@ -677,22 +656,18 @@ class FileZip_withJson {
                 }
 
             }
-            else
-            {
+            else {
                 // This is a shared-across-sites file (i.e. non plan specific file),
                 // e.g. sitesInfo.json
-                if(FileZipUtils.isSharedDataBetweenAllSitePlans(filenameFullPath))
-                {
-                    if(!zipFileInfo.getSitesFilesInfo()["otherDataSharedBetweenAllSitePlans"])
-                    {
-                        zipFileInfo.getSitesFilesInfo()["otherDataSharedBetweenAllSitePlans"] = new COL.util.AssociativeArray();
+                if(FileZipUtils.isSharedDataBetweenAllSitePlans(filenameFullPath)) {
+                    if(!zipFileInfo.getSitesFilesInfo()['otherDataSharedBetweenAllSitePlans']) {
+                        zipFileInfo.getSitesFilesInfo()['otherDataSharedBetweenAllSitePlans'] = new COL.util.AssociativeArray();
                     }
                     
-                    otherDataSharedBetweenAllSitePlans = zipFileInfo.getSitesFilesInfo()["otherDataSharedBetweenAllSitePlans"];
+                    otherDataSharedBetweenAllSitePlans = zipFileInfo.getSitesFilesInfo()['otherDataSharedBetweenAllSitePlans'];
                     isRegularFile = true;
                 }
-                else
-                {
+                else {
                     console.error('dirname', dirname); 
                     console.error('matchResults', matchResults); 
                     let msgStr = 'Invalid filenameFullPath: ' + filenameFullPath;
@@ -700,8 +675,7 @@ class FileZip_withJson {
                 }
             }
         }
-        else
-        {
+        else {
             // This could be a directory, not an actual file
             console.log('The file does not have an extension, i.e. it is a directory');
             console.log('filenameFullPath', filenameFullPath);
@@ -717,11 +691,11 @@ class FileZip_withJson {
             'isRegularFile': isRegularFile
         };
         
-    };
+    }
 
     
     
-    loadFilesFromZipFileInfoIntoBlobs_via_ZipLoader = async function () {
+    async loadFilesFromZipFileInfoIntoBlobs_via_ZipLoader () {
         console.log('BEG loadFilesFromZipFileInfoIntoBlobs_via_ZipLoader');
 
         // /////////////////////////////////////////////////////////////
@@ -739,16 +713,15 @@ class FileZip_withJson {
         console.log('numFiles', numFiles); 
         let countIndex = 0;
 
-        let msgStr = "Loading " + numFiles + " files";
+        let msgStr = 'Loading ' + numFiles + ' files';
         let numFilesBetweenReporting = 10;
         
         for (var i in filenames) {
 
-            if( (countIndex % numFilesBetweenReporting) == 0 )
-            {
+            if( (countIndex % numFilesBetweenReporting) == 0 ) {
                 // show progress - update the spinner, and send a log message with the number of files
                 // that were loaded so far
-                let msgStr = countIndex + " out of " + numFiles;
+                let msgStr = countIndex + ' out of ' + numFiles;
                 console.log(msgStr);
                 let spinnerEl = document.getElementById('inProgressSpinnerId');
                 spinnerEl.setAttribute('data-text', msgStr);
@@ -784,8 +757,7 @@ class FileZip_withJson {
 
             // console.log('filenameFullPath', filenameFullPath);
 
-            if(!isRegularFile)
-            {
+            if(!isRegularFile) {
                 // skip e.g. directories
                 continue;
             }
@@ -797,8 +769,8 @@ class FileZip_withJson {
                 case undefined:
                     // e.g. skip directory names
                     break;
-                case "jpg":
-                case "png": {
+                case 'jpg':
+                case 'png': {
 
                     // imagesInfo is loaded from the json file (tbd - fix dirName)
 
@@ -808,26 +780,24 @@ class FileZip_withJson {
 
                     break;
                 }
-                case "json": {
+                case 'json': {
                     await FileZip_withJson.extractAsBlobUrl( fileInfo, contentType );
                     
                     let blobInfo = new BlobInfo({filenameFullPath: filenameFullPath,
-                                                 blobUrl: fileInfo.url,
-                                                 isDirty: true});
+                        blobUrl: fileInfo.url,
+                        isDirty: true});
                     let imageInfo = new ImageInfo({filename: filename, blobInfo: blobInfo});
                     
-                    if(FileZipUtils.isSharedDataBetweenAllSitePlans(filenameFullPath))
-                    {
+                    if(FileZipUtils.isSharedDataBetweenAllSitePlans(filenameFullPath)) {
                         otherDataSharedBetweenAllSitePlans.set(filename, imageInfo);
                     }
-                    else
-                    {
+                    else {
                         planMetaDataFilesInfo.set(filename, imageInfo);
                     }
 
                     // console.log('filenameFullPath', filenameFullPath);
                     // console.log('blobInfo', blobInfo); 
-                    let jsonData = await FileZipUtils.loadFile_viaFetch(filenameFullPath, blobInfo, "json");
+                    let jsonData = await FileZipUtils.loadFile_viaFetch(filenameFullPath, blobInfo, 'json');
                     // console.log('jsonData', jsonData); 
                     
                     let notes_metadata_re = /notes/;
@@ -849,10 +819,10 @@ class FileZip_withJson {
                     
             }
         }
-    };
+    }
 
 
-    createSiteInfoFromJson = async function (siteInfo_inFileZip, siteInfo_asJson) {
+    async createSiteInfoFromJson (siteInfo_inFileZip, siteInfo_asJson) {
         console.log('BEG createSiteInfoFromJson');
 
         let zipFileInfo = COL.model.getSelectedZipFileInfo();
@@ -862,12 +832,12 @@ class FileZip_withJson {
         this.setSoftwareVersionInZipFile(softwareVersionInZipFile);
 
         switch(this.softwareVersionInZipFile) {
-            case "1.1.0": 
+            case '1.1.0': 
             {
                 siteInfo = new SiteInfo({generalInfo: siteInfo_inFileZip.generalInfo,
-                                         siteId: siteInfo_asJson.id,
-                                         siteName: siteInfo_asJson.name,
-                                         plans: new COL.util.AssociativeArray()});
+                    siteId: siteInfo_asJson.id,
+                    siteName: siteInfo_asJson.name,
+                    plans: new COL.util.AssociativeArray()});
                 
                 for (let planName in siteInfo_asJson.plans) {
                     let planInfoDict = siteInfo_asJson.plans[planName];
@@ -877,13 +847,13 @@ class FileZip_withJson {
                     // to load the layer from the zip file and not from the webserver
                     // console.log('planInfoDict', planInfoDict); 
                     let planInfo = new PlanInfo({id: planInfoDict.id,
-                                                 name: planInfoDict.name,
-                                                 url: planInfoDict.url,
-                                                 planFilename: planInfoDict.plan_filename,
-                                                 siteId: planInfoDict.site_id,
-                                                 siteName: planInfoDict.site_name,
-                                                 files: planInfoDict.files,
-                                                 zipFileName: zipFileInfo.zipFileName});
+                        name: planInfoDict.name,
+                        url: planInfoDict.url,
+                        planFilename: planInfoDict.plan_filename,
+                        siteId: planInfoDict.site_id,
+                        siteName: planInfoDict.site_name,
+                        files: planInfoDict.files,
+                        zipFileName: zipFileInfo.zipFileName});
                     siteInfo.addPlan(planName, planInfo);
                 }
                 
@@ -896,9 +866,9 @@ class FileZip_withJson {
         }
 
         return siteInfo;
-    };
+    }
     
-    validateVersionInSiteInto = async function () {
+    async validateVersionInSiteInto () {
         // get the sitesInfo file
         let zipFileInfo = COL.model.getSelectedZipFileInfo();
         let filename = 'sitesInfo.json';
@@ -908,8 +878,8 @@ class FileZip_withJson {
         await FileZip_withJson.extractAsBlobUrl( fileInfo, 'application/json' );
                     
         let blobInfo = new BlobInfo({filenameFullPath: filenameFullPath,
-                                     blobUrl: fileInfo.url,
-                                     isDirty: true});
+            blobUrl: fileInfo.url,
+            isDirty: true});
         let sitesInfoAsDict = await FileZipUtils.loadFile_viaFetch(filenameFullPath, blobInfo, 'json');
         console.log('sitesInfoAsDict', sitesInfoAsDict); 
         // Validate the version but there is no need to migrate the version, at this point, if the siteVersion is not the latest.
@@ -919,16 +889,15 @@ class FileZip_withJson {
             let siteInfoAsDict = sitesInfoAsDict[siteId];
             let siteName = siteInfoAsDict.name;
             let siteVersion = COL.util.getNestedObject(siteInfoAsDict, ['generalInfo', 'softwareVersion']);
-            if(!COL.loaders.utils.validateVersion(siteVersion, COL.model.getMinSoftwareVersion(), 'GreaterOrEqual'))
-            {
+            if(!COL.loaders.utils.validateVersion(siteVersion, COL.model.getMinSoftwareVersion(), 'GreaterOrEqual')) {
                 let msgStr = 'Version validation failed while loading layer from zip file. siteName: ' + siteName +
                     ', site version: ' + siteVersion;
                 throw new Error(msgStr);
             }
         }
-    };
+    }
 
-    extractSitesInfo2 = async function () {
+    async extractSitesInfo2 () {
         console.log('BEG extractSitesInfo2');
         // /////////////////////////////////////////////////////////////
         // Extract sitesInfo - based on sitesInfo we create the various layers
@@ -938,8 +907,8 @@ class FileZip_withJson {
         let zipFileInfo = COL.model.getSelectedZipFileInfo();
 
         // Get sitesInfo
-        let sitesInfoFilename = "sitesInfo.json";
-        let imagesInfoOtherData = zipFileInfo.getSitesFilesInfo()["otherDataSharedBetweenAllSitePlans"];
+        let sitesInfoFilename = 'sitesInfo.json';
+        let imagesInfoOtherData = zipFileInfo.getSitesFilesInfo()['otherDataSharedBetweenAllSitePlans'];
         let imageInfoOtherData = imagesInfoOtherData.getByKey(sitesInfoFilename);
         let blobInfo = imageInfoOtherData.blobInfo;
 
@@ -953,9 +922,9 @@ class FileZip_withJson {
 
         // load via fetch from blob URL that is in memory (not on webserver)
 
-        let sitesInfo_inFileZipAsDict = await FileZipUtils.loadFile_viaFetch(sitesInfoFilename, blobInfo, "json");
+        let sitesInfo_inFileZipAsDict = await FileZipUtils.loadFile_viaFetch(sitesInfoFilename, blobInfo, 'json');
 
-        ///////////////////////////////////////////////////////////////
+        // /////////////////////////////////////////////////////////////
         // fill-in zipFileInfo._sitesInfo
         // convert from:
         //  sitesInfo_inFileZipAsDict (uses: snake format, dictionary of dictionaries)
@@ -963,7 +932,7 @@ class FileZip_withJson {
         //  zipFileInfo._sitesInfo (uses: camelCase format, AssociativeArray of AssociativeArrays,
         //    and also has the field zipFileName to indicate that the plan is loaded from zip file
         //    and not from the webserver)
-        ///////////////////////////////////////////////////////////////
+        // /////////////////////////////////////////////////////////////
 
         zipFileInfo.setSitesInfo(new COL.util.AssociativeArray());
 
@@ -971,7 +940,7 @@ class FileZip_withJson {
             let siteInfo_inFileZipAsDict = sitesInfo_inFileZipAsDict[siteId_inFileZip];
             
             // zipFileName field is added to siteInfo_asJson.plans in createSiteInfoFromJson
-            let siteInfo = await this.createSiteInfoFromJson(siteInfo_inFileZipAsDict, siteInfo_inFileZipAsDict)
+            let siteInfo = await this.createSiteInfoFromJson(siteInfo_inFileZipAsDict, siteInfo_inFileZipAsDict);
             zipFileInfo.getSitesInfo().set(siteId_inFileZip, siteInfo);
 
             for (const [key, planInfo_inFileZip] of Object.entries(siteInfo_inFileZipAsDict.plans)) {
@@ -981,9 +950,9 @@ class FileZip_withJson {
                 this.layerJsonFilenames.push(planFilenameFullPath);
             }
         }
-    };
+    }
     
-    appendSitesInfoToSiteplanMenu = function () {
+    appendSitesInfoToSiteplanMenu () {
         // console.log('BEG appendSitesInfoToSiteplanMenu');
 
         let zipFileInfo = COL.model.getSelectedZipFileInfo();
@@ -995,7 +964,7 @@ class FileZip_withJson {
 
         while (iterSites.hasNext()) {
             let siteInfo_inFileZip = iterSites.next();
-            let optionGroupEl = $('<optgroup label="' + siteInfo_inFileZip.siteName + " (zip)" + '" />');
+            let optionGroupEl = $('<optgroup label="' + siteInfo_inFileZip.siteName + ' (zip)' + '" />');
             
             let iterPlans = siteInfo_inFileZip.getPlans().iterator();
             while (iterPlans.hasNext()) {
@@ -1021,9 +990,9 @@ class FileZip_withJson {
             console.log('optionGroupEl', optionGroupEl);
             optionGroupEl.appendTo($('#sitesId'));
         }
-    };
+    }
 
-    createLayers = function () {
+    createLayers () {
         console.log('BEG createLayers');
 
         for (let index in this.layerJsonFilenames) {
@@ -1042,10 +1011,12 @@ class FileZip_withJson {
             let origPlanId = retVal.origPlanId;
 
             let metaDataFileInfo = planMetaDataFilesInfo.getByKey(layerJsonFilename);
+            console.log('bar3');
+            console.log('layerJsonFilename', layerJsonFilename);
+            console.log('metaDataFileInfo', metaDataFileInfo);
             let blobInfo = metaDataFileInfo.blobInfo;
 
-            if(COL.util.isObjectInvalid(blobInfo) || COL.util.isObjectInvalid(blobInfo.blobUrl))
-            {            
+            if(COL.util.isObjectInvalid(blobInfo) || COL.util.isObjectInvalid(blobInfo.blobUrl)) {            
                 // should not reach here
                 planMetaDataFilesInfo.printKeysAndValues();
                 let msgStr = 'Invalid blobInfo for layerJsonFilename: ' + layerJsonFilename;
@@ -1060,9 +1031,9 @@ class FileZip_withJson {
             let layer = COL.model.createLayer(planInfo, isLayerFromZipFile);
             COL.model.addLayerToList(layer);
         }
-    };
+    }
 
-    populateLayers = async function () {
+    async populateLayers () {
         // console.log('BEG populateLayers');
 
         // /////////////////////////////////////////////////////////////
@@ -1072,7 +1043,7 @@ class FileZip_withJson {
         let layer0 = undefined;
 
         let zipFileInfo = COL.model.getSelectedZipFileInfo();
-        let sitesFilesInfo = zipFileInfo.getSitesFilesInfo()
+        let sitesFilesInfo = zipFileInfo.getSitesFilesInfo();
         
         for (let index in this.layerJsonFilenames) {
 
@@ -1081,23 +1052,22 @@ class FileZip_withJson {
             let retVal = this.sortFileToPlan(planViewJsonFullPath);
             let origSiteId = retVal.origSiteId;
             let origPlanId = retVal.origPlanId;
-            let imagesInfo = sitesFilesInfo["sites"][origSiteId][origPlanId].imagesInfo;
-            let metaDataFilesInfo = sitesFilesInfo["sites"][origSiteId][origPlanId].metaDataFilesInfo;
+            let imagesInfo = sitesFilesInfo['sites'][origSiteId][origPlanId].imagesInfo;
+            let metaDataFilesInfo = sitesFilesInfo['sites'][origSiteId][origPlanId].metaDataFilesInfo;
             let pathElements = COL.util.getPathElements(planViewJsonFullPath);
             let layerJsonFilename = pathElements['filename'];
             
             // Get the plan from the path
             let planInfo = zipFileInfo.getPlanInfoBySiteIdAndPlanId(origSiteId, origPlanId);
 
-            if(COL.util.isObjectInvalid(planInfo))
-            {
+            if(COL.util.isObjectInvalid(planInfo)) {
                 // The .zip file has planViewJsonFullPath (e.g. 1/2/modelWith4Images.structure.layer0.json)
                 // that is not in the file sitesInfo.json (e.g. that includes only part of the json files, e.g.
                 // 6/8/modelWith4Images.structure.layer0.json, 6/9/modelWith4Images.structure.layer0.json, 7/10/modelWith4Images.structure.layer0.json
                 // but not 1/2/modelWith4Images.structure.layer0.json)
                 // this is part of bug "only save content that refers ... in notesConstructionOverlay.WebServer.v2.txt"
                 // that will be fixed in tbd
-                let msgStr = "origSiteId/origPlanId: " + origSiteId + "/" + origPlanId;
+                let msgStr = 'origSiteId/origPlanId: ' + origSiteId + '/' + origPlanId;
                 console.warn('planInfo is undefined for: ', msgStr);
                 
                 continue;
@@ -1110,9 +1080,9 @@ class FileZip_withJson {
                 throw new Error('layer is invalid');
             }
 
-            //////////////////////////////////////////////////////////////////////////////////
+            // ////////////////////////////////////////////////////////////////////////////////
             // populate the layer with metaDataFilesInfo
-            //////////////////////////////////////////////////////////////////////////////////
+            // ////////////////////////////////////////////////////////////////////////////////
 
             // tbd - layer.setImagesInfo is called later on in the function again - maybe not needed here.
             layer.setImagesInfo(imagesInfo);
@@ -1120,17 +1090,16 @@ class FileZip_withJson {
 
             let planViewJsonFileInfo = metaDataFilesInfo.getByKey(layerJsonFilename); 
             let planViewJsonBlobInfo = planViewJsonFileInfo.blobInfo;
-            if(COL.util.isObjectInvalid(planViewJsonBlobInfo) || COL.util.isObjectInvalid(planViewJsonBlobInfo.blobUrl))
-            {
+            if(COL.util.isObjectInvalid(planViewJsonBlobInfo) || COL.util.isObjectInvalid(planViewJsonBlobInfo.blobUrl)) {
                 metaDataFilesInfo.printKeysAndValues();
                 let msgStr = 'Invalid blobInfo for layerJsonFilename: ' + layerJsonFilename;
                 throw new Error(msgStr);
             }
-            await FileZipUtils.loadFile_viaFetch(layerJsonFilename, planViewJsonBlobInfo, "json");
+            await FileZipUtils.loadFile_viaFetch(layerJsonFilename, planViewJsonBlobInfo, 'json');
 
-            //////////////////////////////////////////////////////////////////////////////////
+            // ////////////////////////////////////////////////////////////////////////////////
             // populate the layer with imagesInfo
-            //////////////////////////////////////////////////////////////////////////////////
+            // ////////////////////////////////////////////////////////////////////////////////
 
             // Load files related to planViewJson file (e.g. floorPlan image file,  overlay image files) into imageInfoVec
             await COL.loaders.CO_ObjectLoader.loadLayerJsonFile_fromZipFile(layerJsonFilename, layer);
@@ -1172,22 +1141,22 @@ class FileZip_withJson {
         $('#sitesId')[0].selectedIndex = optionIndex;
         
         return true;
-    };
+    }
 
     
-    static getContentTypeFromFilename = function (filename) {
+    static getContentTypeFromFilename (filename) {
         let fileType = COL.util.getFileTypeFromFilename(filename);
         let contentType;
         switch(fileType) {
-            case "jpg": {
+            case 'jpg': {
                 contentType = 'image/jpeg';
                 break;
             }
-            case "png": {
+            case 'png': {
                 contentType = 'image/png';
                 break;
             }
-            case "json": {
+            case 'json': {
                 contentType = 'application/json';
                 // contentType = 'text/plain';
                 break;
@@ -1207,11 +1176,10 @@ class FileZip_withJson {
     // filesInfo is a placeholder for imagesInfo, or metaDataFilesInfo:
     // - When adding an image file (e.g. .jpg, .png), filesInfo === imagesInfo
     // - When adding an metaData file (e.g. .json, .txt), filesInfo === metaDataFilesInfo
-    addBlobToFilesInfo = async function (filenameFullPath, filesInfo) {
+    async addBlobToFilesInfo (filenameFullPath, filesInfo) {
         // console.log('BEG addBlobToFilesInf1o');
         
-        try
-        {
+        try {
             // loop over keys
             let pathElements = COL.util.getPathElements(filenameFullPath);
             let dirname = pathElements['dirname'];
@@ -1226,13 +1194,13 @@ class FileZip_withJson {
             let fileType2 = COL.util.getFileTypeFromFilename(filename);
             let contentType = FileZip_withJson.getContentTypeFromFilename(filename);
             switch(fileType2) {
-                case "jpg":
-                case "png": {
+                case 'jpg':
+                case 'png': {
                     if (fileInfo.url) {
                         // the url already exists
                         blobInfo = new BlobInfo({filenameFullPath: filenameFullPath,
-                                                 blobUrl: fileInfo.url,
-                                                 isDirty: true});
+                            blobUrl: fileInfo.url,
+                            isDirty: true});
                         let imageInfo = new ImageInfo({filename: filename, blobInfo: blobInfo});
                         filesInfo.set(filename, imageInfo);
                     }
@@ -1242,17 +1210,16 @@ class FileZip_withJson {
                         await FileZip_withJson.extractAsBlobUrl( fileInfo, contentType );
 
                         blobInfo = new BlobInfo({filenameFullPath: filenameFullPath,
-                                                 blobUrl: fileInfo.url,
-                                                 isDirty: false});
+                            blobUrl: fileInfo.url,
+                            isDirty: false});
                         
                         let pathElements = COL.util.getPathElements(fileInfo.filename);
                         let extension = pathElements['extension'];
 
                         // initialize imageTags to default values
                         let imageTags = { filename: fileInfo.filename,
-                                          imageOrientation: -1 };
-                        if(extension === 'jpg')
-                        {
+                            imageOrientation: -1 };
+                        if(extension === 'jpg') {
                             let response = await fetch(blobInfo.blobUrl);
                             await COL.errorHandlingUtil.handleErrors(response);
                             let blob = await response.blob();
@@ -1260,18 +1227,18 @@ class FileZip_withJson {
                         }
 
                         let imageInfo = new ImageInfo({filename: filenameFullPath,
-                                                       imageTags: imageTags,
-                                                       blobInfo: blobInfo});
+                            imageTags: imageTags,
+                            blobInfo: blobInfo});
                         filesInfo.set(filename, imageInfo);
                     }
                     break;
                 }
-                case "json": {
+                case 'json': {
                     await FileZip_withJson.extractAsBlobUrl( fileInfo, contentType );
 
                     blobInfo = new BlobInfo({filenameFullPath: filenameFullPath,
-                                             blobUrl: fileInfo.url,
-                                             isDirty: true});
+                        blobUrl: fileInfo.url,
+                        isDirty: true});
                     let imageInfo = new ImageInfo({filename: filename, blobInfo: blobInfo});
                     filesInfo.set(filename, imageInfo);
                     break;
@@ -1284,23 +1251,20 @@ class FileZip_withJson {
             }
             return blobInfo;
         }
-        catch (err)
-        {
+        catch (err) {
             console.error('err', err);
             throw new Error(400);
         }
-    };
+    }
 
-    getImageBlobUrlFromZipFile = async function (imageFilenameFullPath, imagesInfo) {
+    async getImageBlobUrlFromZipFile (imageFilenameFullPath, imagesInfo) {
         console.log('BEG getImageBlobUrlFromZipFile');
 
-        try
-        {
+        try {
             let zipFileInfo = COL.model.getSelectedZipFileInfo();
             console.log('imageFilenameFullPath', imageFilenameFullPath); 
             let fileInfo = zipFileInfo.files[imageFilenameFullPath];
-            if(!fileInfo)
-            {
+            if(!fileInfo) {
                 console.log('zipFileInfo.files', zipFileInfo.files); 
                 
                 let msgStr = 'fileInfo is undefined. imageFilename: ' + imageFilenameFullPath;
@@ -1328,7 +1292,7 @@ class FileZip_withJson {
             //     let numBlobUrls = 0;
             //     while (iter.hasNext()) {
             //         let imageInfo = iter.next();
-    	    //         let blobInfo = imageInfo.blobInfo;
+            //         let blobInfo = imageInfo.blobInfo;
 
             //         if(COL.util.isObjectValid(blobInfo) && COL.util.isObjectValid(blobInfo.blobUrl)) {
             //             numBlobUrls ++;
@@ -1364,47 +1328,42 @@ class FileZip_withJson {
             console.error('err', err);
 
             // raise a toast to indicate the failure
-            let toastTitleStr = "getImageBlobUrlFromZipFile";
-            let msgStr = "Failed to getImageBlobUrlFromZipFile." + err;
+            let toastTitleStr = 'getImageBlobUrlFromZipFile';
+            let msgStr = 'Failed to getImageBlobUrlFromZipFile.' + err;
             toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
             throw new Error(msgStr);
         }
         
-    };
+    }
 
 
     // --------------------------------------------------------------
 
-    isExtensionValid = function (extension) {
+    isExtensionValid (extension) {
         switch (extension.toLowerCase()) {
-            case "zip":
+            case 'zip':
                 return true;
         }
         return false;
     }
 
     // Loads slice from the zip file in pure webapp or in jasonette_android
-    static getZipFileSlice = async function(sliceBeg, sliceEnd)
-    {
+    static async getZipFileSlice (sliceBeg, sliceEnd) {
         console.log('BEG getZipFileSlice');
-        try
-        {
+        try {
             const zipFileInfo = COL.model.getSelectedZipFileInfo();
             let zipFile = zipFileInfo.zipFile;
             let zipFileUrl = zipFileInfo.zipFileUrl;
             
             let blobSlice = null;
 
-            if( COL.util.isObjectInvalid(window.$agent_jasonette_android) )
-            {
+            if( COL.util.isObjectInvalid(window.$agent_jasonette_android) ) {
                 // in non-mobile webapp
-                try
-                {
+                try {
                     blobSlice = zipFile.slice(sliceBeg, sliceEnd);
                     
-                    if(blobSlice.size == 0)
-                    {
-                        throw new Error("blob size is 0");
+                    if(blobSlice.size == 0) {
+                        throw new Error('blob size is 0');
                     }
                 }
                 catch(err) {
@@ -1412,14 +1371,13 @@ class FileZip_withJson {
                     console.error('err', err);
 
                     // raise a toast to indicate the failure
-                    let toastTitleStr = "foo7";
-                    let msgStr = "Failed to foo7." + err;
+                    let toastTitleStr = 'foo7';
+                    let msgStr = 'Failed to foo7.' + err;
                     toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
                     throw new Error(msgStr);
                 }
             }
-            else
-            {
+            else {
                 // in mobile app jasonette-android
 
                 let queryParams = new URLSearchParams({
@@ -1448,21 +1406,19 @@ class FileZip_withJson {
             console.error('err', err);
 
             // raise a toast to indicate the failure
-            let toastTitleStr = "getZipFileSlic1e";
-            let msgStr = "Failed to getZipFileSlic1e." + err;
+            let toastTitleStr = 'getZipFileSlic1e';
+            let msgStr = 'Failed to getZipFileSlic1e.' + err;
             toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
             throw new Error(msgStr);
         }
         
-    };
+    }
 
 
     // https://stackoverflow.com/questions/16245767/creating-a-blob-from-a-base64-string-in-javascript
 
-    static b64toBlob = function(filenameInZipFile, b64Data, contentType='', sliceSize=512)
-    {
-        try
-        {
+    static b64toBlob (filenameInZipFile, b64Data, contentType='', sliceSize=512) {
+        try {
             const byteCharacters = atob(b64Data);
 
             const byteArrays = [];
@@ -1494,26 +1450,23 @@ class FileZip_withJson {
 
             
             // raise a toast to indicate the failure
-            let toastTitleStr = "b64toBlob";
-            let msgStr = "Failed to b64toBlob. " + err;
+            let toastTitleStr = 'b64toBlob';
+            let msgStr = 'Failed to b64toBlob. ' + err;
             toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
             throw new Error(msgStr);
         }
     }
     
     // Loads slice from the zip file in jasonette_ios
-    static getZipFileSlice_native_ios = async function(filenameInZipFile)
-    {
-        try
-        {
+    static async getZipFileSlice_native_ios (filenameInZipFile) {
+        try {
             // in mobile app jasonette-ios
             const zipFileInfo = COL.model.getSelectedZipFileInfo();
             let zipFileUrl = zipFileInfo.zipFileUrl;
             
-            if(COL.util.isObjectInvalid(window.$agent_jasonette_ios))
-            {
+            if(COL.util.isObjectInvalid(window.$agent_jasonette_ios)) {
                 // sanity check
-                throw new Error("window.$agent_jasonette_ios is invalid");
+                throw new Error('window.$agent_jasonette_ios is invalid');
             }
 
             // console.log('foo3 111');
@@ -1540,24 +1493,22 @@ class FileZip_withJson {
             console.error('err', err);
 
             // raise a toast to indicate the failure
-            let toastTitleStr = "getZipFileSlice_native_ios";
-            let msgStr = "Failed to getZipFileSlice_native_ios. " + err;
+            let toastTitleStr = 'getZipFileSlice_native_ios';
+            let msgStr = 'Failed to getZipFileSlice_native_ios. ' + err;
             toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
             throw new Error(msgStr);
         }
         
-    };
+    }
 
 
     // Loads blob slice (optionally the entire blob) from the zip file, and reads it into the layer
-    static loadFromZipFile = async function (sliceBeg, sliceEnd, doSkipFileData, filenameInZipFile = undefined) {
+    static async loadFromZipFile (sliceBeg, sliceEnd, doSkipFileData, filenameInZipFile = undefined) {
         // console.log('BEG loadFromZipFil1e');
-        try
-        {
+        try {
             let zipFileInfo = COL.model.getSelectedZipFileInfo();
 
-            if( COL.util.isObjectInvalid(window.$agent_jasonette_ios) )
-            {
+            if( COL.util.isObjectInvalid(window.$agent_jasonette_ios) ) {
                 // in non-mobile webapp, or in mobile app jasonette-android
                 let blobSlice = await FileZip_withJson.getZipFileSlice(sliceBeg, sliceEnd);
 
@@ -1581,8 +1532,7 @@ class FileZip_withJson {
                 // console.log('zipLoaderSizeInBytes0', COL.util.numberWithCommas(zipLoaderSizeInBytes0));
                 return zipLoader;
             }
-            else
-            {
+            else {
                 // in mobile app jasonette-ios
                 let blobSlice = await FileZip_withJson.getZipFileSlice_native_ios(filenameInZipFile);
 
@@ -1596,18 +1546,18 @@ class FileZip_withJson {
             console.error('err', err);
 
             // raise a toast to indicate the failure
-            let toastTitleStr = "loadFromZipFil1e";
-            let msgStr = "Failed to loadFromZipFil1e." + err;
+            let toastTitleStr = 'loadFromZipFil1e';
+            let msgStr = 'Failed to loadFromZipFil1e.' + err;
             toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
             throw new Error(msgStr);
         }
         
-    };
+    }
 
     // this function is called for the non-mobile webapp.
     // (in case of mobile webapp loading the zip file headers is done
     //  by trigerring a call to jasonette).
-    loadZipfileHeaders_nonMobile = async function (zipFile) {
+    async loadZipfileHeaders_nonMobile (zipFile) {
         console.log('BEG loadZipfileHeaders_nonMobile'); 
 
         let retval;
@@ -1617,9 +1567,9 @@ class FileZip_withJson {
         let zipFileUrl = URL.createObjectURL(zipFile);
         
         let zipFileInfo = new ZipFileInfo({zipFile: zipFile,
-                                           zipFileName: zipFile.name,
-                                           zipFileUrl: zipFileUrl,
-                                           files: {}});
+            zipFileName: zipFile.name,
+            zipFileUrl: zipFileUrl,
+            files: {}});
 
         // update model::_zipFilesInfo, regardless if the zipFile already exists
         COL.model.setZipFilesInfo(zipFileInfo);
@@ -1632,7 +1582,7 @@ class FileZip_withJson {
         
         // MAX_BLOB_SLICE_SIZE_IN_BYTES needs to be bigger than the maximum individual file in the .zip file
         // 100 MB
-        const MAX_BLOB_SLICE_SIZE_IN_BYTES = Number("1E8");
+        const MAX_BLOB_SLICE_SIZE_IN_BYTES = Number('1E8');
         let sliceBeg = 0;
 
         let numTotalBytesRead = 0;
@@ -1645,8 +1595,7 @@ class FileZip_withJson {
             // as it is only used for jasonette_ios, and this function (loadZipfileHeaders_nonMobile)
             // is not used in jasonette_ios.
             let retval = await FileZip_withJson.loadFromZipFile(sliceBeg, sliceEnd, doSkipFileData);
-            if(retval.numBytesRead == 0)
-            {
+            if(retval.numBytesRead == 0) {
                 // nothing was read in the last slice, i.e. we reached the last zip entry
                 break;
             }
@@ -1663,25 +1612,23 @@ class FileZip_withJson {
         }
 
         console.log('zipFileInfo.files', zipFileInfo.files);
-    };
+    }
     
     // Loads the zip file, and reads it into the layer.
     // The zip file is loaded in slices.
     // The variable zipFile is only used in non-mobile webapp.
     // In mobile app, the zipfile info is taken from model._selectedZipFileInfo
-    openSingleZipFile = async function (zipFile) {
+    async openSingleZipFile (zipFile) {
         console.log('BEG openSingleZipFile'); 
 
         let spinnerJqueryObj = $('#inProgressSpinnerId');
-        spinnerJqueryObj.addClass("is-active");
+        spinnerJqueryObj.addClass('is-active');
 
-        let toastTitleStr = "Load from zip file";
         try{
-            if( COL.util.isObjectInvalid(window.$agent_jasonette_android) && COL.util.isObjectInvalid(window.$agent_jasonette_ios) )
-            {
+            if( COL.util.isObjectInvalid(window.$agent_jasonette_android) && COL.util.isObjectInvalid(window.$agent_jasonette_ios) ) {
                 // in non-mobile webapp
                 if (!(zipFile instanceof File)) {
-                    console.error("Error from openSingleZipFile(): the parameter 'zipFile' must be a File instance.");
+                    console.error('Error from openSingleZipFile(): the parameter \'zipFile\' must be a File instance.');
                     throw new Error('Error from openSingleZipFile');
                 }
 
@@ -1691,45 +1638,49 @@ class FileZip_withJson {
                 // Validate file extension
                 let extension = COL.util.getFileTypeFromFilename(zipFile.name);
                 if (!this.isExtensionValid(extension)) {
-                    console.error("The file must have '.zip' suffix. \nTry again.");
-                    spinnerJqueryObj.removeClass("is-active");
-                    throw new Error("Not a zip file: " + zipFile.name);
+                    console.error('The file must have \'.zip\' suffix. \nTry again.');
+                    spinnerJqueryObj.removeClass('is-active');
+                    throw new Error('Not a zip file: ' + zipFile.name);
                 }
 
                 // load the zip file headers
-                console.time("time loadZipfileHeaders_nonMobile");
+                console.time('time loadZipfileHeaders_nonMobile');
                 await this.loadZipfileHeaders_nonMobile(zipFile);
-                console.timeEnd("time loadZipfileHeaders_nonMobile");
+                console.timeEnd('time loadZipfileHeaders_nonMobile');
             }
-            else
-            {
+            else {
                 // in mobile app - the headers are already loaded
                 // (in model._selectedZipFileInfo.files )
-	        // (when using jasonette-android, zipFile is invalid)
+            // (when using jasonette-android, zipFile is invalid)
             }
 
+            console.log('foo1');
             FileZipUtils.filenamesFailedToLoad = [];
+            console.log('foo2');
 
             await this.validateVersionInSiteInto();
+            console.log('foo3');
 
-            console.time("time loadFilesFromZipFileInfoIntoBlobs_via_ZipLoader");
+            console.time('time loadFilesFromZipFileInfoIntoBlobs_via_ZipLoader');
             await this.loadFilesFromZipFileInfoIntoBlobs_via_ZipLoader();
-            console.timeEnd("time loadFilesFromZipFileInfoIntoBlobs_via_ZipLoader");
+            console.timeEnd('time loadFilesFromZipFileInfoIntoBlobs_via_ZipLoader');
+            console.log('foo4');
 
             await this.extractSitesInfo2();
+            console.log('foo5');
 
             // e.g. '"zipFileName":"demo_plan.zip"'
             const zipFileInfo = COL.model.getSelectedZipFileInfo();
             let matchPattern = '\\"zipFileName\\"\\:\\"' + zipFileInfo.zipFileName;
             let optionIndex = COL.util.FindPlanInSiteplanMenu(matchPattern);
             
-            if(optionIndex == 0)
-            {
+            if(optionIndex == 0) {
                 // The zipFileName is not in the options list. Add it to the list
                 this.appendSitesInfoToSiteplanMenu();
             }
             
             this.createLayers();
+            console.log('foo6');
 
             await this.populateLayers();
             
@@ -1737,36 +1688,34 @@ class FileZip_withJson {
             let layer = await COL.colJS.loadLayer(selectedLayer.name, zipFileInfo.zipFileName);
             await COL.model.setSelectedLayer(layer);
             PlanView.Render();
+            console.log('foo7');
 
             // after loading from zip file mark the model as not-in-sync with the webserver
             COL.model.updateIsSyncedWithWebServer();
+            console.log('foo8');
 
-            let msgStr = "Succeeded to load";
-            toastr.success(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
-            spinnerJqueryObj.removeClass("is-active");
+            spinnerJqueryObj.removeClass('is-active');
         }
         catch(err) {
             console.error('err', err);
             
             let filenamesFailedToLoadAsStr = FileZipUtils.filenamesFailedToLoad.join();
-            let msgStr = "Failed to load. ";
-            if(filenamesFailedToLoadAsStr !== '')
-            {
+            let msgStr = 'Failed to load. ';
+            if(filenamesFailedToLoadAsStr !== '') {
                 // let msgStr = "Failed to load from zip file. Failed files: " + filenamesFailedToLoadAsStr;
                 // COL.errorHandlingUtil.bootstrap_alert_danger(msgStr);
-                msgStr += "Failed files: " + filenamesFailedToLoadAsStr;
+                msgStr += 'Failed files: ' + filenamesFailedToLoadAsStr;
             }
-            else
-            {
+            else {
                 msgStr += err;
             }
-            spinnerJqueryObj.removeClass("is-active");
+            spinnerJqueryObj.removeClass('is-active');
             // rethrow
             throw new Error(msgStr);
         }
-    };
+    }
 
-    static addNewPlan = async function (planInfo) {
+    static async addNewPlan (planInfo) {
 
         let getSiteByNameResultAsJson = await COL.model.getSiteByName(planInfo.siteName);
 
@@ -1788,10 +1737,10 @@ class FileZip_withJson {
         let addNewSitePlanResultAsJson = await FileZip_withJson.addNewSitePlan(siteId, planInfo);
         console.log('addNewSitePlanResultAsJson', addNewSitePlanResultAsJson); 
         return addNewSitePlanResultAsJson;
-    };
+    }
 
     // extractAsBlobUrl fills-in fileInfo.buffer, (fileInfo points to an entry in zipFileInfo.files[xxx])
-    static extractAsBlobUrl = async function (fileInfo, contentType) {
+    static async extractAsBlobUrl (fileInfo, contentType) {
         // console.log('BEG extractAsBlobUrl');
         
         if (fileInfo.url) {
@@ -1809,16 +1758,15 @@ class FileZip_withJson {
             // after creating the blobUrl we can clear fileInfo.buffer
             fileInfo.buffer = null;
         }
-        else
-        {
-            throw new Error("Error from extractAsBlobUrl: Failed to read the buffer for file: " + fileInfo.filename);
+        else {
+            throw new Error('Error from extractAsBlobUrl: Failed to read the buffer for file: ' + fileInfo.filename);
         }
         
         return;
-    };
+    }
 
     // Load the image file data from the zip file as blob into memory
-    static readZipEntryData = async function (filename) {
+    static async readZipEntryData (filename) {
         
         let zipFileInfo = COL.model.getSelectedZipFileInfo();
         let zipFileInfoFile = zipFileInfo.files[filename];
@@ -1864,48 +1812,45 @@ class FileZip_withJson {
         // }
         // console.log('foo1'); 
         
-    };
+    }
 
-    static addNewSitePlan = function (siteId, planInfo) {
+    static async addNewSitePlan (siteId, planInfo) {
         console.log('BEG addNewSitePlan');
 
-        return new Promise(async function(resolve, reject) {
-            // ////////////////////////////////////////////////
-            // POST - Add new metadata
-            // ////////////////////////////////////////////////
+        // ////////////////////////////////////////////////
+        // POST - Add new metadata
+        // ////////////////////////////////////////////////
 
-            console.log('planInfo', planInfo); 
+        console.log('planInfo', planInfo); 
 
-            let plan_url = planInfo.planFilename;
-            let jsonData = {plan_name: planInfo.name,
-                            plan_url: plan_url,
-                            is_selected: false,
-                            site_id: siteId};
-            let jsonDataAsStr = JSON.stringify(jsonData);
-            console.log('jsonDataAsStr', jsonDataAsStr);
+        let plan_url = planInfo.planFilename;
+        let jsonData = {plan_name: planInfo.name,
+            plan_url: plan_url,
+            is_selected: false,
+            site_id: siteId};
+        let jsonDataAsStr = JSON.stringify(jsonData);
+        console.log('jsonDataAsStr', jsonDataAsStr);
             
-            let postNewSitePlanUrl = Model.GetUrlBase() + 'api/v1_2/create_plan';
+        let postNewSitePlanUrl = Model.GetUrlBase() + 'api/v1_2/create_plan';
 
-            let headersData = {
-                'Content-Type': 'application/json',
-                'X-CSRF-Token': COL.model.csrf_token
-            };
+        let headersData = {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': COL.model.csrf_token
+        };
 
-            let fetchData = { 
-                method: 'POST', 
-                body: jsonDataAsStr,
-                headers: headersData
-            };
+        let fetchData = { 
+            method: 'POST', 
+            body: jsonDataAsStr,
+            headers: headersData
+        };
             
-            let dataAsJson = await fetch(postNewSitePlanUrl, fetchData).then(response => response.json());
-            resolve(dataAsJson);
-        });
-        
-    };
+        let dataAsJson = await fetch(postNewSitePlanUrl, fetchData).then(response => response.json());
+        return dataAsJson;
+    }
 
-};
+}
 
 window.resolvePromise = resolvePromise;
-FileZip_withJson.zipLibrary = "ZipLoader";
+FileZip_withJson.zipLibrary = 'ZipLoader';
 
 export { FileZip_withJson };

@@ -233,7 +233,7 @@ class Layer {
         
         let imagesNames_asDict_asJson_numElements = Object.keys(imagesNames_asDict).length;
         let floorPlanFilename = Object.keys(imagesNames_asDict)[0];
-
+        console.log('floorPlanFilename1', floorPlanFilename);
         this.setFloorPlanImageFilename(floorPlanFilename);
 
         let planInfo = this.getPlanInfo();
@@ -863,6 +863,8 @@ class Layer {
     }
 
     getFloorPlanImageFilename () {
+        console.log('floorPlanFilename2', this._floorPlanImageFilename);
+
         return this._floorPlanImageFilename;
     }
 
@@ -981,12 +983,11 @@ class Layer {
 
         try {
             let imageInfo = this._imagesInfo.getByKey(imageFilename);
-            let blobInfo = imageInfo.blobInfo;
+            if(COL.util.isObjectInvalid(imageInfo)) {
+                let a =3;
+            }
             
-            // if(imageFilename === "image8.jpg")
-            // {
-            // ImageInfo.PrintImagesInfo(this._imagesInfo);
-            // }
+            let blobInfo = imageInfo.blobInfo;
             
             let blobUrl = undefined;
             if(COL.util.isObjectValid(blobInfo)) {        

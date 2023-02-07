@@ -1003,51 +1003,62 @@ function savePhotoFromImageUrl(imageUrl) {
 }
 
 
-function callbackLoadZipFileHeaders(param) {
+async function callbackLoadZipFileHeaders(param) {
     console.log('BEG callbackLoadZipFileHeaders');
 
-    // in mobile app - this function is called from jasonette
-    // after getting a zipfile from the file system, with the file headers.
-
-    // populate zipFileInfo with the file headers in the .zip file 
-    let zipFileInfoFiles_asJson = JSON.parse( param.zipFileInfoFiles_asJsonStr );
-    console.log('zipFileInfoFiles_asJson', zipFileInfoFiles_asJson); 
-
-    if(COL.util.isObjectValid(param.isJasonette_iOS)) {
-        console.log('In jasonette-ios'); 
-        // populate the fields in zipFileInfo
-        for (const filenameFullPath of Object.keys(zipFileInfoFiles_asJson)) {
-            let zipFileInfoFile = zipFileInfoFiles_asJson[filenameFullPath];
-            zipFileInfoFile.sliceBeg = 0;
-            zipFileInfoFile.sliceEnd = 0;
-            zipFileInfoFile.headerSize = 0;
-        }
-    }
-    else {
-        console.log('In jasonette-android'); 
-        // populate the fields sliceBeg, sliceEnd in zipFileInfo
-        for (const filenameFullPath of Object.keys(zipFileInfoFiles_asJson)) {
-            let zipFileInfoFile = zipFileInfoFiles_asJson[filenameFullPath];
-            zipFileInfoFile.sliceBeg = zipFileInfoFile.offsetInZipFile;
-            zipFileInfoFile.sliceEnd = zipFileInfoFile.offsetInZipFile +
-                zipFileInfoFile.headerSize +
-                zipFileInfoFile.compressedSize;
-        }
-    }
+    let toastTitleStr = 'Callback load model from zip file';
+    try {
+        // in mobile app - this function is called from jasonette
+        // after getting a zipfile from the file system, with the file headers.
     
-    let zipFileInfo = new ZipFileInfo({zipFile: null,
-        zipFileName: param.colZipPath,
-        zipFileUrl: null,
-        files: zipFileInfoFiles_asJson});
+        // populate zipFileInfo with the file headers in the .zip file 
+        let zipFileInfoFiles_asJson = JSON.parse( param.zipFileInfoFiles_asJsonStr );
+        console.log('zipFileInfoFiles_asJson', zipFileInfoFiles_asJson); 
     
-    COL.model.setZipFilesInfo(zipFileInfo);
-    COL.model.setSelectedZipFileInfo(zipFileInfo);
+        if(COL.util.isObjectValid(param.isJasonette_iOS)) {
+            console.log('In jasonette-ios'); 
+            // populate the fields in zipFileInfo
+            for (const filenameFullPath of Object.keys(zipFileInfoFiles_asJson)) {
+                let zipFileInfoFile = zipFileInfoFiles_asJson[filenameFullPath];
+                zipFileInfoFile.sliceBeg = 0;
+                zipFileInfoFile.sliceEnd = 0;
+                zipFileInfoFile.headerSize = 0;
+            }
+        }
+        else {
+            console.log('In jasonette-android'); 
+            // populate the fields sliceBeg, sliceEnd in zipFileInfo
+            for (const filenameFullPath of Object.keys(zipFileInfoFiles_asJson)) {
+                let zipFileInfoFile = zipFileInfoFiles_asJson[filenameFullPath];
+                zipFileInfoFile.sliceBeg = zipFileInfoFile.offsetInZipFile;
+                zipFileInfoFile.sliceEnd = zipFileInfoFile.offsetInZipFile +
+                    zipFileInfoFile.headerSize +
+                    zipFileInfoFile.compressedSize;
+            }
+        }
+        
+        let zipFileInfo = new ZipFileInfo({zipFile: null,
+            zipFileName: param.colZipPath,
+            zipFileUrl: null,
+            files: zipFileInfoFiles_asJson});
+        
+        COL.model.setZipFilesInfo(zipFileInfo);
+        COL.model.setSelectedZipFileInfo(zipFileInfo);
+    
+        // load the rest of the zip file (e.g. individual files within the .zip file)
+        let sceneBar = COL.model.getSceneBar();
+        await sceneBar.onChange_openZipFileButton();
 
-    // load the rest of the zip file (e.g. individual files within the .zip file)
-    let sceneBar = COL.model.getSceneBar();
-    sceneBar.onChange_openZipFileButton();
+        let msgStr = 'Callback succeeded';
+        toastr.success(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
+    }
+    catch (err) {
+        console.error('Error from callbackLoadZipFileHeaders:', err);
+        let msgStr = err;
+        toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
+    }
 }
-
+    
 // Expose savePhoto to Jasonette
 window.callbackLoadZipFileHeaders = callbackLoadZipFileHeaders;
 window.savePhotoFromImageUrl = savePhotoFromImageUrl;

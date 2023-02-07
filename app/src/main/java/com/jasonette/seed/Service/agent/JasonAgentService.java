@@ -364,7 +364,6 @@ public class JasonAgentService {
          **/
         WebView agent;
 
-
         /*******************************************
          1. Initialize WebView
 
@@ -698,6 +697,10 @@ public class JasonAgentService {
                         return false;
                     }
                 });
+
+		        // avner: added based on instructions from chatGPT. This enabled to remote debug the webview javascript code in chrome debugger
+                agent.setWebContentsDebuggingEnabled(true);
+
                 agent.setVerticalScrollBarEnabled(false);
                 agent.setHorizontalScrollBarEnabled(false);
                 if (options.has("style") && options.getJSONObject("style").has("background")) {

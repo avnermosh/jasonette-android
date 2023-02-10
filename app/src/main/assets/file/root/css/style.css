@@ -705,15 +705,15 @@ e.g. zipFile related buttons, editOverlay related buttons, planview-settings-mod
     padding: 0.5rem;
 }
 
-.internet-connection-unknown, .synced-with-webserver-unknown {
+.connection-to-the-server-is-unknown, .synced-with-webserver-unknown {
     color: white;
 }
 
-.internet-connected, .logged-in, .synced-with-webserver {
+.connection-to-the-server-is-ok, .logged-in, .synced-with-webserver {
     color: green;
 }
 
-.internet-disconnected, .logged-out, .not-synced-with-webserver {
+.connection-to-the-server-is-down, .logged-out, .not-synced-with-webserver {
    color: red;
 }
 /* ---------------------------------------------------- */

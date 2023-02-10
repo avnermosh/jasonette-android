@@ -9,7 +9,7 @@
 {% endblock %}
 
 {% block content1 %}
-<main id="main-container-id" class="d-flex flex-column" role="main">
+<main id="main-container-id" class="hideElementClass" role="main">
     <meta content="{{ csrf_token() }}" name="csrf-token" />
 
     <select id="sitesId" style="display: none">
@@ -47,13 +47,13 @@
             </button>
         </div>
         <div id='connectionStatusId' class="col-3">
-            <span id='internetConnectionStatusId' class="connection-status internet-connection-unknown" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Connected to the cloud.">
-                <i id='internetConnectionStatusIconId' class="bi bi-wifi-off"></i>
+            <span id='connectionToTheServerStatusId' class="connection-status connection-to-the-server-is-unknown" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Connection to the server.">
+                <i id='connectionToTheServerStatusIconId' class="bi bi-wifi-off"></i>
             </span>
             <span id='loggedInStatusId' class="connection-status logged-out" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Logged-in.">
                 <i id='loggedInStatusIconId' class="bi bi-arrow-left-square"></i>
             </span>
-            <span id='syncWithWebServerStatusId' class="connection-status synced-with-webserver-unknown" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Synced to the cloud.">
+            <span id='syncWithWebServerStatusId' class="connection-status synced-with-webserver-unknown" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Synced to the server.">
                 <i id='syncWithWebServerStatusIconId' class="bi bi-cloud-arrow-down"></i>
             </span>
         </div>

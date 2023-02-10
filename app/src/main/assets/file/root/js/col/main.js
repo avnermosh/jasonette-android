@@ -98,7 +98,15 @@ async function main() {
     // https://stackoverflow.com/questions/43431550/async-await-class-constructor
     COL.colJS = new ColJS(COL.component);
 
-    await COL.colJS.initColJS(COL.component);
+    try {
+        await COL.colJS.initColJS(COL.component);
+    }
+    catch(err){
+        // failed to initialize.
+        let toastTitleStr = 'System Initialization';
+        let msgStr = 'Failed to initialize the system. ' + err;
+        toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
+    }
 
     // COL.util.listAllEventListeners();
     // console.log('END main');   

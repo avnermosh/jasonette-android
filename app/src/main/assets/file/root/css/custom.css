@@ -39,6 +39,10 @@ body {
   height: 50%;
 }
 
+.hideElementClass {
+    display:none;
+}
+
 .mainHeaderClass {
   --bs-gutter-x: 0;
   padding: 0;

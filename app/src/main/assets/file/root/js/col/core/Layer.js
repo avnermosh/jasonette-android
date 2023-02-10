@@ -770,7 +770,7 @@ class Layer {
             console.error('err', err);
 
             let toastTitleStr = 'setSelectedOverlayRect';
-            let msgStr = 'Failed to setSelectedOverlayRect.' + err;
+            let msgStr = 'Failed to setSelectedOverlayRect. ' + err;
             toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
             throw new Error(msgStr);
         }
@@ -920,7 +920,7 @@ class Layer {
             console.error('err', err);
 
             let toastTitleStr = 'playImagesInSelectedOverlayRect';
-            let msgStr = 'Failed to playImagesInSelectedOverlayRect.' + err;
+            let msgStr = 'Failed to playImagesInSelectedOverlayRect. ' + err;
             console.trace();
             let consoleStack = err.stack;
             console.log('consoleStack', consoleStack); 
@@ -964,7 +964,7 @@ class Layer {
             console.error('err', err);
 
             let toastTitleStr = 'playImagesInAllOverlayRects';
-            let msgStr = 'Failed to playImagesInAllOverlayRects.' + err;
+            let msgStr = 'Failed to playImagesInAllOverlayRects. ' + err;
             toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
             throw new Error(msgStr);
         }
@@ -1037,7 +1037,7 @@ class Layer {
 
             // raise a toast to indicate the failure
             let toastTitleStr = 'getImageBlobUrl';
-            let msgStr = 'Failed to getImageBlobUrl.' + err;
+            let msgStr = 'Failed to getImageBlobUrl. ' + err;
             toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
             throw new Error(msgStr);
         }
@@ -1172,7 +1172,7 @@ class Layer {
 
             // raise a toast to indicate the failure
             let toastTitleStr = 'manageMemory';
-            let msgStr = 'Failed to manageMemory.' + err;
+            let msgStr = 'Failed to manageMemory. ' + err;
             toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
             throw new Error(msgStr);
         }

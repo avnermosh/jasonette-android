@@ -119,7 +119,18 @@ class ManageGUI {
     async login() {
         console.log('BEG login'); 
 
-        let serverAddress = await COL.model.getDataFromIndexedDb('serverAddressId');
+        let dbSystemParamsAsJson = await COL.model.getDbSystemParams();
+        let databaseVersion = dbSystemParamsAsJson['database_version'];
+        if(!COL.loaders.utils.validateVersion(databaseVersion, this.dbVersion, 'Equal')) {
+            let msgStr = 'Database version validation failed.';
+            // throw new Error(msgStr);
+
+            let toastTitleStr = 'Login to the webserver';
+            toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
+            return;
+        }
+
+        let serverAddress = await COL.model.getDataFromIndexedDb('serverAddress');
         window.location.href='https://' + serverAddress + '/login';
     }
 
@@ -514,6 +525,8 @@ class ManageGUI {
         let numPlans = $('#sitesId option').length;
         // console.log('numPlans: ', numPlans);
 
+        let doDisplayDemoSite = await COL.model.getDataFromIndexedDb('doDisplayDemoSite');
+
         if(numPlans > 0) {
             for(let i = 0; i < numPlans; i++){
                 let option = $('#sitesId')[0][i];
@@ -523,6 +536,14 @@ class ManageGUI {
                 let optionValueAsDict = JSON.parse(option.value);
                 let sitePlanName = optionValueAsDict.site_name + '__' + optionValueAsDict.name;
 
+                if(optionValueAsDict.site_name == 'demo_site' && !doDisplayDemoSite){
+                    // ///////////////////////////////
+                    // site is demo_site, and doDisplayDemoSite is false
+                    // Don't load the layer
+                    // ///////////////////////////////
+
+                    continue;
+                }
                 // create the layer and load the floorPlanImage
                 let layer = await COL.colJS.loadLayer(sitePlanName, optionValueAsDict.zipFileName);
                 let floorPlanImageFilename = layer.getFloorPlanImageFilename();

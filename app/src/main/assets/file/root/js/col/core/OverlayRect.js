@@ -574,7 +574,7 @@ class OverlayRect {
             console.error('err', err);
 
             let toastTitleStr = 'updateOverlayRectInPlanView';
-            let msgStr = 'Failed to updateOverlayRectInPlanView.' + err;
+            let msgStr = 'Failed to updateOverlayRectInPlanView. ' + err;
             toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
             throw new Error(msgStr);
         }
@@ -687,7 +687,7 @@ class OverlayRect {
             console.error('err', err);
 
             let toastTitleStr = 'nextOrPrevSelectedImage';
-            let msgStr = 'Failed to nextOrPrevSelectedImage.' + err;
+            let msgStr = 'Failed to nextOrPrevSelectedImage. ' + err;
             toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
             throw new Error(msgStr);
         }
@@ -728,7 +728,7 @@ class OverlayRect {
             console.error('err', err);
 
             let toastTitleStr = 'playImages';
-            let msgStr = 'Failed to playImages.' + err;
+            let msgStr = 'Failed to playImages. ' + err;
             toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
             throw new Error(msgStr);
         }

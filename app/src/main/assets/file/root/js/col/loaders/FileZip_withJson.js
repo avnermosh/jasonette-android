@@ -549,7 +549,7 @@ class FileZip_withJson {
             };
 
             if(getSiteByNameResultAsJson.name) {
-                let siteInfo = await this.createSiteInfoFromJson(siteInfo_inFileZip, getSiteByNameResultAsJson);
+                let siteInfo = await this.createSiteInfoFromJson(siteInfo_inFileZip, getSiteByNameResultAsJson.id);
                 retval4['status'] = true;
                 retval4['siteInfo_inBackend'] = siteInfo;
             }
@@ -822,25 +822,25 @@ class FileZip_withJson {
     }
 
 
-    async createSiteInfoFromJson (siteInfo_inFileZip, siteInfo_asJson) {
+    async createSiteInfoFromJson (siteInfo_inFileZipAsJson, siteId) {
         console.log('BEG createSiteInfoFromJson');
 
         let zipFileInfo = COL.model.getSelectedZipFileInfo();
         let siteInfo;
 
-        let softwareVersionInZipFile = COL.util.getNestedObject(siteInfo_inFileZip, ['generalInfo', 'softwareVersion']);
+        let softwareVersionInZipFile = COL.util.getNestedObject(siteInfo_inFileZipAsJson, ['generalInfo', 'softwareVersion']);
         this.setSoftwareVersionInZipFile(softwareVersionInZipFile);
 
         switch(this.softwareVersionInZipFile) {
             case '1.1.0': 
             {
-                siteInfo = new SiteInfo({generalInfo: siteInfo_inFileZip.generalInfo,
-                    siteId: siteInfo_asJson.id,
-                    siteName: siteInfo_asJson.name,
+                siteInfo = new SiteInfo({generalInfo: siteInfo_inFileZipAsJson.generalInfo,
+                    siteId: siteId,
+                    siteName: siteInfo_inFileZipAsJson.name,
                     plans: new COL.util.AssociativeArray()});
                 
-                for (let planName in siteInfo_asJson.plans) {
-                    let planInfoDict = siteInfo_asJson.plans[planName];
+                for (let planName in siteInfo_inFileZipAsJson.plans) {
+                    let planInfoDict = siteInfo_inFileZipAsJson.plans[planName];
 
                     // add zipFileName field to planInfo - this indicates,
                     // when selecting a siteplan in the dropdown divSitePlanMenu
@@ -940,7 +940,7 @@ class FileZip_withJson {
             let siteInfo_inFileZipAsDict = sitesInfo_inFileZipAsDict[siteId_inFileZip];
             
             // zipFileName field is added to siteInfo_asJson.plans in createSiteInfoFromJson
-            let siteInfo = await this.createSiteInfoFromJson(siteInfo_inFileZipAsDict, siteInfo_inFileZipAsDict);
+            let siteInfo = await this.createSiteInfoFromJson(siteInfo_inFileZipAsDict, siteInfo_inFileZipAsDict.id);
             zipFileInfo.getSitesInfo().set(siteId_inFileZip, siteInfo);
 
             for (const [key, planInfo_inFileZip] of Object.entries(siteInfo_inFileZipAsDict.plans)) {
@@ -1011,7 +1011,6 @@ class FileZip_withJson {
             let origPlanId = retVal.origPlanId;
 
             let metaDataFileInfo = planMetaDataFilesInfo.getByKey(layerJsonFilename);
-            console.log('bar3');
             console.log('layerJsonFilename', layerJsonFilename);
             console.log('metaDataFileInfo', metaDataFileInfo);
             let blobInfo = metaDataFileInfo.blobInfo;
@@ -1268,6 +1267,9 @@ class FileZip_withJson {
                 console.log('zipFileInfo.files', zipFileInfo.files); 
                 
                 let msgStr = 'fileInfo is undefined. imageFilename: ' + imageFilenameFullPath;
+
+                // tbd - continueFromHere - logic flaw, when loading multiple zip files need to update the currentZipInfo ...
+
                 throw msgStr;
             }
 
@@ -1329,7 +1331,7 @@ class FileZip_withJson {
 
             // raise a toast to indicate the failure
             let toastTitleStr = 'getImageBlobUrlFromZipFile';
-            let msgStr = 'Failed to getImageBlobUrlFromZipFile.' + err;
+            let msgStr = 'Failed to getImageBlobUrlFromZipFile. ' + err;
             toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
             throw new Error(msgStr);
         }
@@ -1372,7 +1374,7 @@ class FileZip_withJson {
 
                     // raise a toast to indicate the failure
                     let toastTitleStr = 'foo7';
-                    let msgStr = 'Failed to foo7.' + err;
+                    let msgStr = 'Failed to foo7. ' + err;
                     toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
                     throw new Error(msgStr);
                 }
@@ -1407,7 +1409,7 @@ class FileZip_withJson {
 
             // raise a toast to indicate the failure
             let toastTitleStr = 'getZipFileSlic1e';
-            let msgStr = 'Failed to getZipFileSlic1e.' + err;
+            let msgStr = 'Failed to getZipFileSlic1e. ' + err;
             toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
             throw new Error(msgStr);
         }
@@ -1547,7 +1549,7 @@ class FileZip_withJson {
 
             // raise a toast to indicate the failure
             let toastTitleStr = 'loadFromZipFil1e';
-            let msgStr = 'Failed to loadFromZipFil1e.' + err;
+            let msgStr = 'Failed to loadFromZipFil1e. ' + err;
             toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
             throw new Error(msgStr);
         }

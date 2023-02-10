@@ -343,10 +343,20 @@ class ColJS {
         COL.model = new Model();
         await COL.model.initModel();
 
+        let startTime1 = performance.now();
         let hamburgerBtnEl = document.getElementById('hamburgerBtnId');
         console.log('hamburgerBtnEl: ', hamburgerBtnEl);
         await COL.manageGUI.setPane(hamburgerBtnEl);
         COL.manageGUI.showHideProjectMenu(false);
+
+        // now that the page is ready, show the main-container-id
+        $('#main-container-id').removeClass('hideElementClass');
+        $('#main-container-id').addClass('d-flex');
+        $('#main-container-id').addClass('flex-column');
+
+        let endTime1 = performance.now();
+        let duration1 = endTime1 - startTime1;
+        console.log('duration setPane in initColJS: ' + duration1 + ' milliseconds.');
 
         // // BEG prevent an iOS side-effect of scaling-the-page when double-touching
         // {
@@ -453,29 +463,28 @@ class ColJS {
         // // END prevent an iOS side-effect of scaling-the-page when double-touching
     }
 
-    setInternetConnectionStatus(isInternetConnected) {
-        console.log('BEG setInternetConnectionStatus');
+    setConnectionToTheServerStatus(isInternetConnected) {
+        console.log('BEG setConnectionToTheServerStatus');
 
-        $('#internetConnectionStatusId').removeClass('internet-connection-unknown');
+        $('#connectionToTheServerStatusId').removeClass('connection-to-the-server-is-unknown');
         if(isInternetConnected) {
-            $('#internetConnectionStatusId').removeClass('internet-disconnected');
-            $('#internetConnectionStatusIconId').removeClass('bi-wifi-off');
+            $('#connectionToTheServerStatusId').removeClass('connection-to-the-server-is-down');
+            $('#connectionToTheServerStatusIconId').removeClass('bi-wifi-off');
 
-            $('#internetConnectionStatusId').addClass('internet-connected');
-            $('#internetConnectionStatusIconId').addClass('bi-wifi');            
+            $('#connectionToTheServerStatusId').addClass('connection-to-the-server-is-ok');
+            $('#connectionToTheServerStatusIconId').addClass('bi-wifi');            
         }
         else{
-            $('#internetConnectionStatusId').removeClass('internet-connected');
-            $('#internetConnectionStatusIconId').removeClass('bi-wifi');
+            $('#connectionToTheServerStatusId').removeClass('connection-to-the-server-is-ok');
+            $('#connectionToTheServerStatusIconId').removeClass('bi-wifi');
 
-            $('#internetConnectionStatusId').addClass('internet-disconnected');
-            $('#internetConnectionStatusIconId').addClass('bi-wifi-off');            
+            $('#connectionToTheServerStatusId').addClass('connection-to-the-server-is-down');
+            $('#connectionToTheServerStatusIconId').addClass('bi-wifi-off');            
         }
         COL.doWorkOnline = isInternetConnected;
     }
 
     async loadLayer(sitePlanName=undefined, zipFileName=undefined) {
-        let layer = undefined;
         let planInfo = new PlanInfo({});
         try {
 
@@ -523,8 +532,8 @@ class ColJS {
             let optionIndex = COL.util.FindPlanInSiteplanMenu(matchPattern1, matchPattern2);
 
             let option = $('#sitesId')[0][optionIndex];
-            // console.log('option.value', option.value);                 
             let planInfoStr = option.value;
+            // console.log('planInfoStr', planInfoStr);
 
             if(!COL.util.IsValidJsonString(planInfoStr)) {
                 throw new Error('planInfoStr json string is invalid');
@@ -549,22 +558,42 @@ class ColJS {
             let loggedInFlag = COL.model.getLoggedInFlag();
             // console.log('loggedInFlag', loggedInFlag);
 
+            let doDisplayDemoSite = await COL.model.getDataFromIndexedDb('doDisplayDemoSite');
+            let layer = undefined;
             if( COL.util.isObjectInvalid(planInfo.zipFileName) &&
-               (loggedInFlag || (planInfo.siteName == 'demo_site')) ) {
+                (loggedInFlag || planInfo.siteName == 'demo_site')){
                 // ///////////////////////////////
                 // user is logged-in (i.e. current_user.is_authenticated === true), or
                 // user is logged-off and site is demo_site
                 // planInfo is not from zip (i.e. from webserver)
-                // Get planInfo from webServer
                 // ///////////////////////////////
-                // console.log('Get planInfo from webServer');
-                
-                let layerName = Layer.CreateLayerName(planInfo.siteName, planInfo.name);
-                layer = COL.model.getLayerByName(layerName);
 
-                if(COL.util.isObjectInvalid(layer)) {
-                    // the layer is not yet in memory
-                    layer = await COL.model.loadLayerFromWebServer(planInfo);
+                if (planInfo.siteName != 'demo_site'){
+                    // ///////////////////////////////
+                    // site is not demo_site
+                    // Get planInfo from webServer
+                    // ///////////////////////////////
+                       
+                    let layerName = Layer.CreateLayerName(planInfo.siteName, planInfo.name);
+                    layer = COL.model.getLayerByName(layerName);
+        
+                    if(COL.util.isObjectInvalid(layer)) {
+                        // the layer is not yet in memory
+                        layer = await COL.model.loadLayerFromWebServer(planInfo);
+                    }
+                }
+                else if(doDisplayDemoSite){
+                    // ///////////////////////////////
+                    // site is demo_site, and doDisplayDemoSite is true
+                    // Get planInfo from webServer
+                    // ///////////////////////////////
+                    let layerName = Layer.CreateLayerName(planInfo.siteName, planInfo.name);
+                    layer = COL.model.getLayerByName(layerName);
+        
+                    if(COL.util.isObjectInvalid(layer)) {
+                        // the layer is not yet in memory
+                        layer = await COL.model.loadLayerFromWebServer(planInfo);
+                    }
                 }
             }
             else {

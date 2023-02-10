@@ -142,6 +142,10 @@ class Model {
           Server address:
           <input id="serverAddressId" type="text" value="bldlog.com"/>
         </label>
+        <label>
+          Load Demo Site
+          <input type="checkbox" id="doDisplayDemoSiteId" name="checkbox1" value="value1">
+        </label>
         <p>
             Software Version: <span id="softwareVersionId"></span>
         </p>
@@ -182,34 +186,58 @@ class Model {
             console.log('serverAddressId', serverAddress);
             COL.model.setDataToIndexedDb('serverAddress', serverAddress);
         };
+        document.getElementById('doDisplayDemoSiteId').onchange = function(){
+            // console.log('BEG onchange doDisplayDemoSiteId');
+            COL.model.setDataToIndexedDb('doDisplayDemoSite', this.checked);
+        };
     }
 
+    async updateSettingsOnClientSide(){
+        // fill in the field serverAddress from localforage indexedDb
+        let serverAddressVal = await this.getDataFromIndexedDb('serverAddress');
+        document.getElementById('serverAddressId').value = serverAddressVal;
+        document.getElementById('softwareVersionId').innerText = COL.softwareVersion;
+
+        // Update the status of doDisplayDemoSite in the web page and load the demo_site if doDisplayDemoSite is selected 
+        let doDisplayDemoSite = await this.getDataFromIndexedDb('doDisplayDemoSite');
+        // console.log('doDisplayDemoSite', doDisplayDemoSite);
+        document.getElementById('doDisplayDemoSiteId').checked = doDisplayDemoSite;
+
+        const url = new URL(window.location);
+        let hostname = undefined;
+
+        if(window.location.protocol == 'file:') {
+            hostname = 'local device';
+        }
+        else {
+            hostname = url.hostname;
+        }
+
+        document.getElementById('settingStrId').innerText = 'Host: ' + hostname + '\n' + 'Software Version: ' + COL.softwareVersion;
+    }
     async initModel() {
         // console.log('BEG initModel');
 
-        console.log('COL.doWorkOnline before', COL.doWorkOnline);
+        let startTime1 = performance.now();
+        // let dbSystemParamsAsJson;
         try {
             let dbSystemParamsAsJson = await this.getDbSystemParams();
             // force setting COL.doWorkOnline to false
             // throw new Error('dummy throw');
-
-            let databaseVersion = dbSystemParamsAsJson['database_version'];
-            if(!COL.loaders.utils.validateVersion(databaseVersion, this.dbVersion, 'Equal')) {
-                let msgStr = 'Database version validation failed.';
-                throw new Error(msgStr);
-            }
-    
-            COL.colJS.setInternetConnectionStatus(true);
+            COL.colJS.setConnectionToTheServerStatus(true);
         }
         catch(err){
             // getDbSystemParams failed with exception.
-            // This indicates that the system is in offline mode (i.e. no web server)
-            // this can happen:
-            // - if there is no connection to the server (e.g. server is down, or internet is down, etc..)
-            // - if working from files within a mobile device with the "Offline" button (i.e. working from from files)
+            // This indicates that there is no connection to the server (e.g. server is down, or internet is down, etc..)
             console.log('Detected offline mode.');
-            COL.colJS.setInternetConnectionStatus(false);
+            COL.colJS.setConnectionToTheServerStatus(false);
         }
+
+        let endTime1 = performance.now();
+        let duration1 = endTime1 - startTime1;
+        console.log('duration1: ' + duration1 + ' milliseconds.');
+        
+        console.log('COL.doWorkOnline before', COL.doWorkOnline);
         console.log('COL.doWorkOnline after', COL.doWorkOnline);
 
         let getCurrentUserResultAsJson = {dummy_val: 'True'};
@@ -305,10 +333,13 @@ class Model {
         // console.log('this._rendererPlanView2.capabilities.maxTextureSize', this._rendererPlanView2.capabilities.maxTextureSize);
 
         if(!COL.doWorkOnline && COL.util.isObjectValid(window.$agent_jasonette_android)) {
+            let doDisplayDemoSite = await this.getDataFromIndexedDb('doDisplayDemoSite');
+            if(doDisplayDemoSite) {
             // in mobile app (e.g. jasonette-android), and offline mode
             // load canned demo siteplan.
             // in online mode, the demo_site is loaded from the webserver)
-            window.$agent_jasonette_android.trigger('media.loadDemoZipFileHeaders');
+                window.$agent_jasonette_android.trigger('media.loadDemoZipFileHeaders');
+            }
         }
 
         this.detectWebGL();
@@ -318,28 +349,13 @@ class Model {
         const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
         const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
 
-        // fill in the field serverAddress from localforage indexedDb
-        let serverAddressVal = await this.getDataFromIndexedDb('serverAddress');
-        document.getElementById('serverAddressId').value = serverAddressVal;
-        document.getElementById('softwareVersionId').innerText = COL.softwareVersion;
-
-        const url = new URL(window.location);
-        let hostname = undefined;
-
-        if(window.location.protocol == 'file:') {
-            hostname = 'local device';
-        }
-        else {
-            hostname = url.hostname;
-        }
-
-        document.getElementById('settingStrId').innerText = 'Host: ' + hostname + '\n' + 'Software Version: ' + COL.softwareVersion;
+        this.updateSettingsOnClientSide();
 
     }
 
     async setDataToIndexedDb(key, data) {
         await localforage.setItem(key, data);
-        console.log('User has been saved');
+        console.log('Data has been saved to local db.');
     }
 
     async getDataFromIndexedDb(key) {
@@ -394,18 +410,8 @@ class Model {
         console.log('this._browserDetect.browser', this._browserDetect.browser);
         console.log('this._browserDetect.version', this._browserDetect.version);
 
-
-        // window.resizeTo(
-        //     window.screen.availWidth / 2,
-        //     window.screen.availHeight / 2
-        // );
-
-        // console.log('window.innerWidth2:', window.innerWidth);
-        // console.log('window.screen.availWidth2:', window.screen.availWidth);
-        // console.log('document.documentElement.clientWidth2:', document.documentElement.clientWidth);
-        // console.log('window.devicePixelRatio2', window.devicePixelRatio); 
         // raise a toast to show the browser type
-        let toastTitleStr = 'BrowserDetect';
+        // let toastTitleStr = 'BrowserDetect';
         let msgStr = navigator.userAgent + ', OS: ' +
             this._browserDetect.OS + ', Browser: ' +
             this._browserDetect.browser + ', Version: ' +
@@ -794,12 +800,23 @@ class Model {
     async getDbSystemParams () {
         // console.log('BEG getDbSystemParams');
         
-        let queryUrl = Model.GetUrlBase() + 'api/v1_2/get_system_params';
+        let startTime1 = performance.now();
+        // let queryUrl = Model.GetUrlBase() + 'api/v1_2/get_system_params';
+
+        let serverAddress = await COL.model.getDataFromIndexedDb('serverAddress');
+        let queryUrl = 'https://' + serverAddress + '/api/v1_2/get_system_params';
         // https://localhost/api/v1_2/get_system_params
         // console.log('queryUrl', queryUrl); 
         let response = await fetch(queryUrl);
+        let endTime1 = performance.now();
+        let duration1 = endTime1 - startTime1;
+        console.log('duration1: ' + duration1 + ' milliseconds.');
+
         await COL.errorHandlingUtil.handleErrors(response);
         let dbSystemParamsAsJson = await response.json();
+        let endTime2 = performance.now();
+        let duration2 = endTime2 - startTime1;
+        console.log('duration2: ' + duration2 + ' milliseconds.');
         // console.log('dbSystemParamsAsJson', dbSystemParamsAsJson); 
         return dbSystemParamsAsJson;
     }

@@ -463,11 +463,11 @@ class ColJS {
         // // END prevent an iOS side-effect of scaling-the-page when double-touching
     }
 
-    setConnectionToTheServerStatus(isInternetConnected) {
+    setConnectionToTheServerStatus(isConnectedToServer) {
         console.log('BEG setConnectionToTheServerStatus');
 
         $('#connectionToTheServerStatusId').removeClass('connection-to-the-server-is-unknown');
-        if(isInternetConnected) {
+        if(isConnectedToServer) {
             $('#connectionToTheServerStatusId').removeClass('connection-to-the-server-is-down');
             $('#connectionToTheServerStatusIconId').removeClass('bi-wifi-off');
 
@@ -481,7 +481,6 @@ class ColJS {
             $('#connectionToTheServerStatusId').addClass('connection-to-the-server-is-down');
             $('#connectionToTheServerStatusIconId').addClass('bi-wifi-off');            
         }
-        COL.doWorkOnline = isInternetConnected;
     }
 
     async loadLayer(sitePlanName=undefined, zipFileName=undefined) {
@@ -558,10 +557,14 @@ class ColJS {
             let loggedInFlag = COL.model.getLoggedInFlag();
             // console.log('loggedInFlag', loggedInFlag);
 
-            let doDisplayDemoSite = await COL.model.getDataFromIndexedDb('doDisplayDemoSite');
+            // tbd - investigate why calling getDataFromIndexedDb()
+            //       causes the scrollPosition to not restore to the previous location
+            // let doDisplayDemoSite = await COL.util.getDataFromIndexedDb('doDisplayDemoSite');
+            let doDisplayDemoSite = COL.model.getDoDisplayDemoSite();
             let layer = undefined;
+
             if( COL.util.isObjectInvalid(planInfo.zipFileName) &&
-                (loggedInFlag || planInfo.siteName == 'demo_site')){
+               (loggedInFlag || (planInfo.siteName == 'demo_site')) ) {
                 // ///////////////////////////////
                 // user is logged-in (i.e. current_user.is_authenticated === true), or
                 // user is logged-off and site is demo_site
@@ -571,14 +574,14 @@ class ColJS {
                 if (planInfo.siteName != 'demo_site'){
                     // ///////////////////////////////
                     // site is not demo_site
-                    // Get planInfo from webServer
-                    // ///////////////////////////////
+                // Get planInfo from webServer
+                // ///////////////////////////////
                        
                     let layerName = Layer.CreateLayerName(planInfo.siteName, planInfo.name);
                     layer = COL.model.getLayerByName(layerName);
         
                     if(COL.util.isObjectInvalid(layer)) {
-                        // the layer is not yet in memory
+                    // the layer is not yet in memory
                         layer = await COL.model.loadLayerFromWebServer(planInfo);
                     }
                 }
@@ -619,22 +622,15 @@ class ColJS {
         }
         catch(err) {
             console.error('err', err);
-            console.error('Failed to load the plan file: ', planInfo.planFilename);
-
-            // remove the canvas from planView
-            let layer = COL.model.getLayerByName(planInfo.planFilename);
-            
-            if(COL.util.isObjectInvalid(layer)) {
-                console.log('layer is invalid');
-            }
+            let msgStr = 'Failed to load the plan: ' + planInfo.planFilename;
+            console.error(msgStr);
 
             // raise a toast to indicate the failure
-            let toastTitleStr = 'Change site';
-            let msgStr = 'Failed.';
+            let toastTitleStr = 'Load layer';
             toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
 
             // rethrow
-            throw new Error('Failed to loadObjectAndMaterialFiles fromWebServerObjFile2');
+            throw new Error(msgStr);
         }
     }
 

@@ -19,6 +19,7 @@ const COL = {
     buttonDivs: undefined,
     clickedElements: [],
     isOldGUIEnabled: false,
+    fetchTimeoutInMilliSec: 4000,
     // tbd - softwareVersion should be read from package.json
     softwareVersion: '1.1.0'
 

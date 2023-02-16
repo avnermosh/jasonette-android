@@ -478,7 +478,7 @@ class FileZip_withJson {
             let retval2 = await this.syncZipSitePlanWithWebServer2(plan_inFileZip);
             if(retval2) {
                 // ///////////////////////////////////////////
-                // remove the layer from the model, now that it is succesfully synced to the webserver
+                // remove the zip layer from the model, now that it is succesfully synced to the webserver
                 // ///////////////////////////////////////////
 
                 let layerName = plan_inFileZip.siteName + '__' + plan_inFileZip.name  + '_zip';

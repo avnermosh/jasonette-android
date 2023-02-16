@@ -105,6 +105,7 @@ async function main() {
         // failed to initialize.
         let toastTitleStr = 'System Initialization';
         let msgStr = 'Failed to initialize the system. ' + err;
+        console.error('msgStr', msgStr);
         toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
     }
 

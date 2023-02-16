@@ -52,8 +52,10 @@ class Model {
         this.isUserLoggedIn = false;
         this._rendererPlanView2 = undefined;
         this._rendererImageViewPane = undefined;
-        this.planThumbnailsPaneScrollPosition = undefined;
+        this.planThumbnailsPaneScrollPosition = {scrollTop: 0, scrollLeft: 0};
         this.isSyncedWithWebServer = undefined;
+
+        this.doDisplayDemoSite = false;
 
         // container for the db operations that are executed in single request
         this.image_db_operations_array = [];
@@ -63,6 +65,14 @@ class Model {
         this.isPlanThumbnailMenuVisible = false;
 
         this.csrf_token = COL.util.getCSRFToken();
+    }
+
+    getDoDisplayDemoSite() {
+        return this.doDisplayDemoSite;
+    }
+
+    setDoDisplayDemoSite(doDisplayDemoSite) {
+        this.doDisplayDemoSite = doDisplayDemoSite;
     }
 
     getimageViewPaneSize2() {
@@ -184,23 +194,27 @@ class Model {
             console.log('BEG onchange serverAddressId');
             let serverAddress = document.getElementById('serverAddressId').value;
             console.log('serverAddressId', serverAddress);
-            COL.model.setDataToIndexedDb('serverAddress', serverAddress);
+            COL.util.setDataToIndexedDb('serverAddress', serverAddress);
         };
         document.getElementById('doDisplayDemoSiteId').onchange = function(){
             // console.log('BEG onchange doDisplayDemoSiteId');
-            COL.model.setDataToIndexedDb('doDisplayDemoSite', this.checked);
+            COL.util.setDataToIndexedDb('doDisplayDemoSite', this.checked);
+            this.setDoDisplayDemoSite(this.checked);
         };
     }
 
     async updateSettingsOnClientSide(){
         // fill in the field serverAddress from localforage indexedDb
-        let serverAddressVal = await this.getDataFromIndexedDb('serverAddress');
+        let serverAddressVal = await COL.util.getDataFromIndexedDb('serverAddress');
         document.getElementById('serverAddressId').value = serverAddressVal;
         document.getElementById('softwareVersionId').innerText = COL.softwareVersion;
 
         // Update the status of doDisplayDemoSite in the web page and load the demo_site if doDisplayDemoSite is selected 
-        let doDisplayDemoSite = await this.getDataFromIndexedDb('doDisplayDemoSite');
-        // console.log('doDisplayDemoSite', doDisplayDemoSite);
+
+        // tbd - investigate why calling getDataFromIndexedDb()
+        //       causes the scrollPosition to not restore to the previous location
+        // let doDisplayDemoSite = await COL.util.getDataFromIndexedDb('doDisplayDemoSite');
+        let doDisplayDemoSite = this.getDoDisplayDemoSite();
         document.getElementById('doDisplayDemoSiteId').checked = doDisplayDemoSite;
 
         const url = new URL(window.location);
@@ -219,30 +233,30 @@ class Model {
         // console.log('BEG initModel');
 
         let startTime1 = performance.now();
-        // let dbSystemParamsAsJson;
+        let isConnectedToServer;
         try {
             let dbSystemParamsAsJson = await this.getDbSystemParams();
             // force setting COL.doWorkOnline to false
             // throw new Error('dummy throw');
-            COL.colJS.setConnectionToTheServerStatus(true);
+            isConnectedToServer = true;
         }
         catch(err){
             // getDbSystemParams failed with exception.
             // This indicates that there is no connection to the server (e.g. server is down, or internet is down, etc..)
-            console.log('Detected offline mode.');
-            COL.colJS.setConnectionToTheServerStatus(false);
+            console.log('Detected no connection to the server.');
+            isConnectedToServer = false;
         }
+        COL.colJS.setConnectionToTheServerStatus(isConnectedToServer);
 
         let endTime1 = performance.now();
         let duration1 = endTime1 - startTime1;
         console.log('duration1: ' + duration1 + ' milliseconds.');
         
-        console.log('COL.doWorkOnline before', COL.doWorkOnline);
-        console.log('COL.doWorkOnline after', COL.doWorkOnline);
 
         let getCurrentUserResultAsJson = {dummy_val: 'True'};
         COL.model.setLoggedInFlag(false);
-        if(COL.doWorkOnline) {
+        COL.doWorkOnline = false;
+        if(isConnectedToServer) {
             // //////////////////////////////////////////////////////////////////////////////
             // check if the user is logged-on
             // //////////////////////////////////////////////////////////////////////////////
@@ -251,9 +265,12 @@ class Model {
             getCurrentUserResultAsJson = await this.get_current_user();
             if(getCurrentUserResultAsJson['user_email']) {
                 COL.model.setLoggedInFlag(true);
+                // the machine is connected to the server and the user is logged-in.
+                COL.doWorkOnline = true;
             }
         }
 
+        console.log('COL.doWorkOnline', COL.doWorkOnline);
         this._browserDetect = undefined;
         this.detectUserAgent();
         
@@ -333,11 +350,14 @@ class Model {
         // console.log('this._rendererPlanView2.capabilities.maxTextureSize', this._rendererPlanView2.capabilities.maxTextureSize);
 
         if(!COL.doWorkOnline && COL.util.isObjectValid(window.$agent_jasonette_android)) {
-            let doDisplayDemoSite = await this.getDataFromIndexedDb('doDisplayDemoSite');
+            // tbd - investigate why calling getDataFromIndexedDb()
+            //       causes the scrollPosition to not restore to the previous location
+            // let doDisplayDemoSite = await COL.util.getDataFromIndexedDb('doDisplayDemoSite');
+            let doDisplayDemoSite = this.getDoDisplayDemoSite();
             if(doDisplayDemoSite) {
-            // in mobile app (e.g. jasonette-android), and offline mode
-            // load canned demo siteplan.
-            // in online mode, the demo_site is loaded from the webserver)
+                // in mobile app (e.g. jasonette-android), and offline mode
+                // load canned demo siteplan.
+                // in online mode, the demo_site is loaded from the webserver)
                 window.$agent_jasonette_android.trigger('media.loadDemoZipFileHeaders');
             }
         }
@@ -351,21 +371,6 @@ class Model {
 
         this.updateSettingsOnClientSide();
 
-    }
-
-    async setDataToIndexedDb(key, data) {
-        await localforage.setItem(key, data);
-        console.log('Data has been saved to local db.');
-    }
-
-    async getDataFromIndexedDb(key) {
-        let val1 = await localforage.getItem(key);
-        if(key == 'serverAddress' && COL.util.isObjectInvalid(val1) ) {
-            val1 = 'bldlog.com';
-        }
-        console.log('val1', val1);
-
-        return val1;
     }
 
     getSyncWithWebServerStatus() {
@@ -466,7 +471,7 @@ class Model {
     }
 
     static GetUrlBase () {
-        // console.log('BEG GetUrlBase444');
+        // console.log('BEG GetUrlBase');
 
         // console.log('window.$agent_jasonette_android', window.$agent_jasonette_android);
         // console.log('window.location.origin', window.location.origin);
@@ -495,9 +500,15 @@ class Model {
     async get_current_user() {
         // console.log('BEG get_current_user'); 
 
-        // console.log('COL.model', COL.model); 
-        let queryUrl = Model.GetUrlBase() + 'api/v1_2/get_current_user';
-        let dataAsJson = await fetch(queryUrl).then(response => response.json());
+        let serverAddress = await COL.util.getDataFromIndexedDb('serverAddress');
+        let queryUrl = 'https://' + serverAddress + '/api/v1_2/get_current_user';
+
+        let fetchData = { 
+            timeout: COL.fetchTimeoutInMilliSec
+        };
+        let dataAsJson = await COL.util.fetchWithTimeout(queryUrl, fetchData)
+            .then(response => response.json());
+
         return dataAsJson;
     }
 
@@ -609,7 +620,7 @@ class Model {
 
         // "https://192.168.1.75/avner/img/168/188/geographic_map.structure.layer0.json"
         let planFilename = planInfo.planFilename;
-        console.log('planFilename', planFilename);
+        // console.log('planFilename', planFilename);
 
         let queryUrl = Model.GetUrlBase() + COL.model.getUrlImagePathBase() +
             '/' + planInfo.siteId + '/' +
@@ -618,7 +629,7 @@ class Model {
         let response = await fetch(queryUrl);
         await COL.errorHandlingUtil.handleErrors(response);
         let dataAsJson = await response.json();
-        console.log('dataAsJson', dataAsJson);
+        // console.log('dataAsJson', dataAsJson);
         // get the generalInfo section from the entire json data
         let generalInfoAsJson = dataAsJson['generalInfo'];
         let layerSoftwareVersion = COL.util.getNestedObject(generalInfoAsJson, ['softwareVersion']);
@@ -698,6 +709,13 @@ class Model {
         // //////////////////////////////////////////////////////////////////////////////
 
         this._selectedLayer = layer;
+
+        if(this._selectedLayer.isLayerFromZipFile) {
+            // update the selectedZipFileInfo
+            let selectedLayerZipFileName = this._selectedLayer.planInfo.zipFileName;
+            let zipFileInfo = COL.model.getZipFilesInfo().getByKey(selectedLayerZipFileName);
+            COL.model.setSelectedZipFileInfo(zipFileInfo);
+        }
 
         if(COL.util.isObjectInvalid(layer)) {
             // unselect the layer
@@ -803,15 +821,32 @@ class Model {
         let startTime1 = performance.now();
         // let queryUrl = Model.GetUrlBase() + 'api/v1_2/get_system_params';
 
-        let serverAddress = await COL.model.getDataFromIndexedDb('serverAddress');
+        let serverAddress = await COL.util.getDataFromIndexedDb('serverAddress');
         let queryUrl = 'https://' + serverAddress + '/api/v1_2/get_system_params';
         // https://localhost/api/v1_2/get_system_params
         // console.log('queryUrl', queryUrl); 
-        let response = await fetch(queryUrl);
+
+        // let response = await fetch(queryUrl);
+        let response;
+        try {
+            let fetchData = { 
+                method: 'GET',
+                timeout: COL.fetchTimeoutInMilliSec
+            };
+
+            response = await COL.util.fetchWithTimeout(queryUrl, fetchData);
+        }
+        catch (err) {
+            // Timeouts with err.name === 'AbortError', if the request takes longer than COL.fetchTimeoutInMilliSec
+            if(err.name === 'AbortError') {
+                console.error('Fetch request from the web server timed out. err: ' + err);
+            }
+        }
+
         let endTime1 = performance.now();
         let duration1 = endTime1 - startTime1;
         console.log('duration1: ' + duration1 + ' milliseconds.');
-
+        // console.log('response', response);
         await COL.errorHandlingUtil.handleErrors(response);
         let dbSystemParamsAsJson = await response.json();
         let endTime2 = performance.now();

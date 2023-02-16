@@ -74,8 +74,8 @@ COL.loaders.utils.validateVersion = function (versionA, versionB, comparisonOper
     
     let isVersionValid = false;
     
-    console.log('versionA', versionA);
-    console.log('versionB', versionB);
+    // console.log('versionA', versionA);
+    // console.log('versionB', versionB);
     
     if(comparisonOperator == 'GreaterOrEqual') {
         isVersionValid = (versionA && 

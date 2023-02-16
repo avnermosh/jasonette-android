@@ -233,7 +233,7 @@ class Layer {
         
         let imagesNames_asDict_asJson_numElements = Object.keys(imagesNames_asDict).length;
         let floorPlanFilename = Object.keys(imagesNames_asDict)[0];
-        console.log('floorPlanFilename1', floorPlanFilename);
+        // console.log('floorPlanFilename1', floorPlanFilename);
         this.setFloorPlanImageFilename(floorPlanFilename);
 
         let planInfo = this.getPlanInfo();
@@ -631,7 +631,7 @@ class Layer {
         // console.log('BEG setSyncWithWebServerStatus');
         this.isSyncedWithWebServer2 = otherisSyncedWithWebServer2;
         COL.util.setSyncWithWebServerStatus(this.isSyncedWithWebServer2);
-        console.log('this.isSyncedWithWebServer2', this.isSyncedWithWebServer2);
+        // console.log('this.isSyncedWithWebServer2', this.isSyncedWithWebServer2);
     }
 
     getSprite () {
@@ -863,7 +863,7 @@ class Layer {
     }
 
     getFloorPlanImageFilename () {
-        console.log('floorPlanFilename2', this._floorPlanImageFilename);
+        // console.log('floorPlanFilename2', this._floorPlanImageFilename);
 
         return this._floorPlanImageFilename;
     }

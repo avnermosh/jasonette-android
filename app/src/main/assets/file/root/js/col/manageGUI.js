@@ -11,7 +11,8 @@ import { COL } from './COL.js';
 import { Model } from './core/Model.js';
 import { OrbitControlsPlanView } from './orbitControl/OrbitControlsPlanView.js';
 import { OverlayRect } from './core/OverlayRect.js';
-import { onClick_planThumbnail, onMouseDown_planThumbnailsPane } from './core/PlanThumbnailsView_eventListener.js';
+import { onMouseDown_planThumbnailsPane, onMouseWheel_planThumbnailsPane, 
+    onTouchStart_planThumbnailsPane } from './core/PlanThumbnailsView_eventListener.js';
 
 // //////////////////////////////////////////////////////////
 
@@ -121,7 +122,7 @@ class ManageGUI {
 
         let dbSystemParamsAsJson = await COL.model.getDbSystemParams();
         let databaseVersion = dbSystemParamsAsJson['database_version'];
-        if(!COL.loaders.utils.validateVersion(databaseVersion, this.dbVersion, 'Equal')) {
+        if(!COL.loaders.utils.validateVersion(databaseVersion, COL.model.dbVersion, 'Equal')) {
             let msgStr = 'Database version validation failed.';
             // throw new Error(msgStr);
 
@@ -130,7 +131,8 @@ class ManageGUI {
             return;
         }
 
-        let serverAddress = await COL.model.getDataFromIndexedDb('serverAddress');
+        let serverAddress = await COL.util.getDataFromIndexedDb('serverAddress');
+        // let serverAddress = '192.168.1.74';
         window.location.href='https://' + serverAddress + '/login';
     }
 
@@ -262,14 +264,14 @@ class ManageGUI {
         let toastTitleStr = 'Load model from zip file';
         try{
             if( COL.util.isObjectValid(window.$agent_jasonette_android) ) {
-                // window.$agent_jasonette_android is defined, i.e. the client is the jasonette mobile app
-                // call loadModelFromFile() which will
-                // trigger a request to load the .zip file from the file system on the mobile device.
+            // window.$agent_jasonette_android is defined, i.e. the client is the jasonette mobile app
+            // call loadModelFromFile() which will
+            // trigger a request to load the .zip file from the file system on the mobile device.
                 console.log('Before trigger media.loadZipFileHeaders'); 
                 window.$agent_jasonette_android.trigger('media.loadZipFileHeaders');
     
-                // (the callback from trigger media.loadZipFileHeaders internally calls
-                //  onChange_openZipFileButton, which calls setPane, to show the plan of the zipfile)
+            // (the callback from trigger media.loadZipFileHeaders internally calls
+            //  onChange_openZipFileButton, which calls setPane, to show the plan of the zipfile)
             }
             else{
                 var input = event.srcElement;
@@ -525,70 +527,105 @@ class ManageGUI {
         let numPlans = $('#sitesId option').length;
         // console.log('numPlans: ', numPlans);
 
-        let doDisplayDemoSite = await COL.model.getDataFromIndexedDb('doDisplayDemoSite');
+        // tbd - investigate why calling getDataFromIndexedDb()
+        //       causes the scrollPosition to not restore to the previous location
+        // let doDisplayDemoSite1 = await COL.util.getDataFromIndexedDb('doDisplayDemoSite1');
+        let doDisplayDemoSite = COL.model.getDoDisplayDemoSite();
 
+        let sitePlanName = 'na';
         if(numPlans > 0) {
             for(let i = 0; i < numPlans; i++){
-                let option = $('#sitesId')[0][i];
-                // console.log('option.value', option.value); 
-                // console.log('option.text', option.text); 
+                try{
+                    // reset the sitePlanName to inital value to avoid reporting a wrong sitePlanName, 
+                    // if the block throws, before the sitePlanName is parsed.
+                    sitePlanName = 'na';
 
-                let optionValueAsDict = JSON.parse(option.value);
-                let sitePlanName = optionValueAsDict.site_name + '__' + optionValueAsDict.name;
+                    let option = $('#sitesId')[0][i];
+                    // console.log('option.value', option.value); 
+                    // console.log('option.text', option.text); 
 
-                if(optionValueAsDict.site_name == 'demo_site' && !doDisplayDemoSite){
-                    // ///////////////////////////////
-                    // site is demo_site, and doDisplayDemoSite is false
-                    // Don't load the layer
-                    // ///////////////////////////////
+                    let optionValueAsDict = JSON.parse(option.value);
+                    sitePlanName = optionValueAsDict.site_name + '__' + optionValueAsDict.name;
 
-                    continue;
-                }
-                // create the layer and load the floorPlanImage
-                let layer = await COL.colJS.loadLayer(sitePlanName, optionValueAsDict.zipFileName);
-                let floorPlanImageFilename = layer.getFloorPlanImageFilename();
-                let blobUrl = await layer.getImageBlobUrl(floorPlanImageFilename);
+                    if(optionValueAsDict.site_name == 'demo_site' && !doDisplayDemoSite){
+                        // ///////////////////////////////
+                        // site is demo_site, and doDisplayDemoSite is false
+                        // Don't load the layer
+                        // ///////////////////////////////
+                        continue;
+                    }
+                    // create the layer and load the floorPlanImage
+                    let layer = await COL.colJS.loadLayer(sitePlanName, optionValueAsDict.zipFileName);
+                    let floorPlanImageFilename = layer.getFloorPlanImageFilename();
+                    let blobUrl = await layer.getImageBlobUrl(floorPlanImageFilename);
 
-                const liEl = document.createElement('li');
-                const figureEl = document.createElement('figure');
-                const figcaptionEl = document.createElement('figcaption');
+                    const liEl = document.createElement('li');
+                    const figureEl = document.createElement('figure');
+                    const figcaptionEl = document.createElement('figcaption');
 
-                let siteName = layer.planInfo.siteName;
-                let planFilename = layer.planInfo.planFilename;
-                let layerSubname = planFilename;
-                // extract part of planFilename (xxx.yyy.foo.json -> foo)
-                var substrings = planFilename.split( '.' );
-                if(COL.util.isObjectValid(substrings) && (substrings.length > 2)){
-                    layerSubname = substrings[ substrings.length - 2 ];
-                }
+                    let siteName = layer.planInfo.siteName;
+                    let planFilename = layer.planInfo.planFilename;
+                    let layerSubname = planFilename;
+                    // extract part of planFilename (xxx.yyy.foo.json -> foo)
+                    var substrings = planFilename.split( '.' );
+                    if(COL.util.isObjectValid(substrings) && (substrings.length > 2)){
+                        layerSubname = substrings[ substrings.length - 2 ];
+                    }
 
-                // Create the plan-name-to-be-dispalyed-in-the-footer
-                let numChars = 25;
-                let siteSubName = this.truncateLongString(siteName, numChars);
-                figcaptionEl.innerHTML = '<p class="p-class">' + siteSubName + '<br>' + layerSubname + '</p>';
-                if(layer.isLayerFromZipFile) {
-                    figcaptionEl.innerHTML = '<p class="p-class">' + siteSubName + '<br>' + layerSubname + ' (zip)</p>';
-                }
-                else{
+                    // Create the plan-name-to-be-dispalyed-in-the-footer
+                    let numChars = 25;
+                    let siteSubName = this.truncateLongString(siteName, numChars);
                     figcaptionEl.innerHTML = '<p class="p-class">' + siteSubName + '<br>' + layerSubname + '</p>';
-                }
+                    if(layer.isLayerFromZipFile) {
+                        figcaptionEl.innerHTML = '<p class="p-class">' + siteSubName + '<br>' + layerSubname + ' (zip)</p>';
+                    }
+                    else{
+                        figcaptionEl.innerHTML = '<p class="p-class">' + siteSubName + '<br>' + layerSubname + '</p>';
+                    }
                 
-                let planThumbnailEl =  document.createElement('img');
-                planThumbnailEl.setAttribute('id', layer.name);
+                    let planThumbnailEl =  document.createElement('img');
+                    planThumbnailEl.setAttribute('id', layer.name);
                 
-                planThumbnailEl.setAttribute('src', blobUrl);
-                planThumbnailEl.setAttribute('class','plan-image');
+                    planThumbnailEl.setAttribute('src', blobUrl);
+                    planThumbnailEl.setAttribute('class','plan-image');
         
-                planThumbnailEl.addEventListener('click', onClick_planThumbnail);
-                planThumbnailEl.addEventListener('mousedown', onMouseDown_planThumbnailsPane, {
-                    capture: false,
-                    passive: false,
-                });
+                    if (COL.util.isTouchDevice()) {
+                        planThumbnailEl.addEventListener('touchstart', onTouchStart_planThumbnailsPane, {
+                            capture: false,
+                            passive: false,
+                        });
+                    }
+                    else{
+                        planThumbnailEl.addEventListener('mousedown', onMouseDown_planThumbnailsPane, {
+                            capture: false,
+                            passive: false,
+                        });
+                        planThumbnailEl.addEventListener('wheel', onMouseWheel_planThumbnailsPane, {
+                            capture: false,
+                            passive: false,
+                        });
+                    }
 
-                figureEl.appendChild(planThumbnailEl);
-                figureEl.appendChild(figcaptionEl);
-                liEl.appendChild(figureEl);
-                planListEl.appendChild(liEl);
+                    figureEl.appendChild(planThumbnailEl);
+                    figureEl.appendChild(figcaptionEl);
+                    liEl.appendChild(figureEl);
+                    planListEl.appendChild(liEl);
+
+                }
+                catch(err) {
+                    // Failed to load the layer, e.g. because the version isn't supprted.
+                    // Continue to the next layer
+                    let msgStr = 'Failed to load the layer: ' + sitePlanName + ', err: ' + err;
+                    console.error(msgStr);
+
+                    // remove the canvas from planView, and update the options list.
+                    $('#sitesId')[0].remove(i);
+                    numPlans -= 1;
+                    i -= 1;
+
+                    continue;    
+                }
+
             }
         }
         else {
@@ -607,6 +644,21 @@ class ManageGUI {
         document.querySelector('#hamburgerBtnId').style.display = 'block';
         document.querySelector('#planPaneWrapperId').style.display = 'block';
         document.querySelector('#planThumbnailsPaneId').style.display = 'block';
+
+        {
+            // tbd - investigate why calling getDataFromIndexedDb()
+            //       causes the scrollPosition to not restore to the previous location
+    
+            // let planThumbnailsPaneScrollPosition = COL.model.getPlanThumbnailsPaneScrollPosition();
+            // console.log('planThumbnailsPaneScrollPosition', planThumbnailsPaneScrollPosition);
+            // let el1 = document.getElementById('planThumbnailsPaneId');
+            // // console.log('el1', el1);
+            // console.log('el1.scrollTop', el1.scrollTop);
+            // el1.scrollTop = planThumbnailsPaneScrollPosition.scrollTop;
+            // console.log('el1.scrollTop22', el1.scrollTop);
+            // // add         compute of planThumbnailsPaneScrollPosition to mouseUp
+            // // debug pageY, clientY
+        }
 
         await COL.manageGUI.loadPlansAsThumbnails();
         // await this.loadPlansAsThumbnails();
@@ -654,6 +706,7 @@ class ManageGUI {
 
     showHideProjectMenu(doShowProjectMenu) {
         console.log('BEG showHideProjectMenu');
+        
         // show / hide the projectMenu
         const projectMenuEl = document.getElementById('project-menu-id');
 

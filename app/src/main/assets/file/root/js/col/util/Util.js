@@ -60,49 +60,48 @@ COL.util.Color = {
     //   #596672, rgb(89,102,114)
     //   #3C444C, rgb(60,68,76)
     //   #2D3339, rgb(45,51,57)
-}
+};
 
-
-
-//////////////////////////////////////
+ 
+// ////////////////////////////////////
 // BEG File related utils
-//////////////////////////////////////
+// ////////////////////////////////////
 
 COL.util.getFileTypeFromFilename = function (filename) {
     let fileExtention = COL.util.getFileExtention(filename);
     let fileType = undefined;
     switch(fileExtention) {
-        case "":{
+        case '':{
             fileType = undefined;
             break;
         }
-        case "jpg":
-        case "jpeg":
-        case "JPG": {
+        case 'jpg':
+        case 'jpeg':
+        case 'JPG': {
             fileType = 'jpg';
             break;
         }
-        case "png": {
+        case 'png': {
             fileType = 'png';
             break;
         }
-        case "mtl": {
+        case 'mtl': {
             fileType = 'mtl';
             break;
         }
-        case "obj": {
+        case 'obj': {
             fileType = 'obj';
             break;
         }
-        case "json": {
+        case 'json': {
             fileType = 'json';
             break;
         }
-        case "zip": {
+        case 'zip': {
             fileType = 'zip';
             break;
         }
-        case "txt": {
+        case 'txt': {
             fileType = 'txt';
             break;
         }
@@ -116,7 +115,7 @@ COL.util.getFileTypeFromFilename = function (filename) {
 
 COL.util.getFileExtention = function (filename2) {
     // http://www.jstips.co/en/javascript/get-file-extension/
-    var fileExt = filename2.slice((filename2.lastIndexOf(".") - 1 >>> 0) + 2);
+    var fileExt = filename2.slice((filename2.lastIndexOf('.') - 1 >>> 0) + 2);
     return fileExt;
 };
 
@@ -131,16 +130,16 @@ COL.util.getPathElements = function (str) {
     let dirname = new String(str).substring(0, location1); 
     let basename = new String(str).substring(location1 + 1); 
     let extension = undefined;
-    if(basename.lastIndexOf(".") != -1) {
-        extension = basename.substring(basename.lastIndexOf(".") + 1);
-        basename = basename.substring(0, basename.lastIndexOf("."));
+    if(basename.lastIndexOf('.') != -1) {
+        extension = basename.substring(basename.lastIndexOf('.') + 1);
+        basename = basename.substring(0, basename.lastIndexOf('.'));
     }
     let filename = basename + '.' + extension;
     
     let path_elements = {dirname: dirname,
-                         basename: basename,
-                         extension: extension,
-                         filename: filename};
+        basename: basename,
+        extension: extension,
+        filename: filename};
     
     return path_elements;
 };
@@ -151,13 +150,13 @@ COL.util.filePathToFilename = function (file_path) {
     return filename;
 };
 
-//////////////////////////////////////
+// ////////////////////////////////////
 // END File related utils
-//////////////////////////////////////
+// ////////////////////////////////////
     
-//////////////////////////////////////
+// ////////////////////////////////////
 // BEG Status related utils
-//////////////////////////////////////
+// ////////////////////////////////////
 
 COL.util.setSyncWithWebServerStatus = function (isSyncedWithWebserver) {
     // console.log('BEG setSyncWithWebServerStatus');
@@ -177,11 +176,11 @@ COL.util.setSyncWithWebServerStatus = function (isSyncedWithWebserver) {
         $('#syncWithWebServerStatusId').addClass('not-synced-with-webserver');
         $('#syncWithWebServerStatusIconId').addClass('bi-cloud-arrow-down');            
     }
-}
+};
 
-//////////////////////////////////////
+// ////////////////////////////////////
 // END Status related utils
-//////////////////////////////////////
+// ////////////////////////////////////
 
 COL.util.FindPlanInSiteplanMenu = function (matchPattern1, matchPattern2=undefined) {
 
@@ -219,17 +218,15 @@ COL.util.FindPlanInSiteplanMenu = function (matchPattern1, matchPattern2=undefin
         }
     }
     return optionIndex;
-}
+};
 
 COL.util.isTouchDevice = function () {
     // console.log('BEG COL.util.isTouchDevice'); 
     let isTouchDevice1 = true;
-    if ("ontouchstart" in document.documentElement)
-    {
+    if ('ontouchstart' in document.documentElement) {
         isTouchDevice1 = true;
     }
-    else
-    {
+    else {
         isTouchDevice1 = false;
     }
     return isTouchDevice1;
@@ -262,12 +259,11 @@ COL.util.getPointFromEvent = function (event) {
         }
     }
     return point2d;
-}
+};
 
 COL.util.isNumberInvalid = function (number) {
     let retval = false;
-    if(COL.util.isObjectInvalid(number) || (isNaN(number)))
-    {
+    if(COL.util.isObjectInvalid(number) || (isNaN(number))) {
         retval = true;
     }
     return retval;
@@ -283,8 +279,7 @@ COL.util.isDateInvalid = function (date) {
 
 COL.util.isObjectValid = function (object) {
     let retval = true;
-    if( (object === undefined) || (object === null))
-    {
+    if( (object === undefined) || (object === null)) {
         retval = false;
     }
     return retval;
@@ -306,11 +301,11 @@ COL.util.IsValidJsonString = function (str) {
     try {
         JSON.parse(str);
     }
-    catch {
+    catch(err){
         return false;
     }
     return true;
-}
+};
 
 // https://www.abeautifulsite.net/adding-and-removing-elements-on-the-fly-using-javascript
 // add html elemnt dynamically
@@ -348,7 +343,7 @@ COL.util.getNestedObject = function (nestedObj, pathArr) {
 
 COL.util.loadFile = function (path, callback) {
     if (!jQuery.isFunction(callback)) {
-        console.warn("The callback paramter must be a funciton.");
+        console.warn('The callback paramter must be a funciton.');
     }
 
     var tmpArray = [];
@@ -367,9 +362,9 @@ COL.util.loadFile = function (path, callback) {
         $.ajax({
             url: path,
             error: function (xhr, textStatus, errorThrown) {
-                var msg = "An error occurred. Status code: ";
-                console.warn(msg + xhr.status + ". Status text: " + textStatus);
-                results.set(fileName,"");
+                var msg = 'An error occurred. Status code: ';
+                console.warn(msg + xhr.status + '. Status text: ' + textStatus);
+                results.set(fileName,'');
             },
             success: function (data) {
                 results.set(fileName,data);
@@ -396,10 +391,10 @@ COL.util.loadFile = function (path, callback) {
 };
 
 COL.util.getURLParam = function(name) {
-    name = name.replace(/[[]/, "\\[").replace(/[\]]/, "\\]");
-    var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
+    name = name.replace(/[[]/, '\\[').replace(/[\]]/, '\\]');
+    var regex = new RegExp('[\\?&]' + name + '=([^&#]*)'),
         results = regex.exec(location.search);
-    return results === null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
+    return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
 };
 
 /**
@@ -442,7 +437,7 @@ COL.util.compareObjects = function (object1, object2) {
 // https://www.sitepoint.com/delay-sleep-pause-wait/
 COL.util.sleep = function (ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
-}
+};
 
 
 // https://www.sqlpac.com/en/documents/javascript-listing-active-event-listeners.html
@@ -500,11 +495,11 @@ COL.util.listAllEventListeners = function () {
     }
 
     return elements.sort();
-}
+};
 
 COL.util._showEvents = function (events) {
     for (let evt of Object.keys(events)) {
-        console.log(evt + " ----------------> " + events[evt].length);
+        console.log(evt + ' ----------------> ' + events[evt].length);
         for (let i=0; i < events[evt].length; i++) {
             console.log(events[evt][i].listener.toString());
             console.log(events[evt][i]);
@@ -515,12 +510,13 @@ COL.util._showEvents = function (events) {
 // https://bloggie.io/@kinopyo/sending-non-get-requests-with-fetch-javascript-api-in-rails
 // Grab the CSRF token from the meta tag
 COL.util.getCSRFToken = function () {
-    const csrfToken = document.querySelector("[name='csrf-token']")
+    const csrfToken = document.querySelector('[name=\'csrf-token\']');
 
     if (csrfToken) {
-        return csrfToken.content
-    } else {
-        return null
+        return csrfToken.content;
+    }
+    else {
+        return null;
     }
 };
 
@@ -528,8 +524,7 @@ COL.util.getCSRFToken = function () {
 // https://stackoverflow.com/questions/40017796/make-javascript-local-variable-to-global-for-recursive-loops
 COL.util.countNumberOfObjects = function (object) {
 
-    function fn1(object)
-    {
+    function fn1(object) {
         let child;
         for (let i = 0; i < object.children.length; i++) {
             child = object.children[i];
@@ -577,13 +572,12 @@ COL.util.roughSizeOfObject = function (object) {
             bytes += 8;
         }
         else if
-            (
-                // avner: "objectList.indexOf( value ) === -1" means no match, i.e.
-                // the object is not in objectList already (to prevent close-cycles ??
-                typeof value === 'object'
+        (
+        // avner: "objectList.indexOf( value ) === -1" means no match, i.e.
+        // the object is not in objectList already (to prevent close-cycles ??
+            typeof value === 'object'
                     && objectList.indexOf( value ) === -1
-            )
-        {
+        ) {
             objectList.push( value );
 
             for( var i in value ) {
@@ -597,8 +591,47 @@ COL.util.roughSizeOfObject = function (object) {
     return bytes;
 };
 
-
 // https://stackoverflow.com/questions/2901102/how-to-print-a-number-with-commas-as-thousands-separators-in-javascript
 COL.util.numberWithCommas = function (x) {
-    return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+};
+
+COL.util.fetchWithTimeout = async function (resource, options = {}) {
+    const { timeout = 8000 } = options;
+    
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), timeout);
+
+    console.log('options', options);
+    let options1 = options;
+    console.log('options1', options1);
+
+    // // test the timeout - set sleep to bigger number than the timeout. the fetch should abort with "err.name === 'AbortError'""
+    // // sleep for some time
+    // await COL.util.sleep(6000);
+
+    const response = await fetch(resource, {
+        ...options,
+        signal: controller.signal  
+    });
+    
+    clearTimeout(id);
+    return response;
+};
+
+COL.util.setDataToIndexedDb = async function (key, data) {
+    await localforage.setItem(key, data);
+    console.log('Data has been saved to local db.');
+}
+
+COL.util.getDataFromIndexedDb = async function (key) {
+    console.log('BEG getDataFromIndexedDb');
+
+    let val1 = await localforage.getItem(key);
+    if(key == 'serverAddress' && COL.util.isObjectInvalid(val1) ) {
+        val1 = 'bldlog.com';
+    }
+    console.log('val1', val1);
+
+    return val1;
 }

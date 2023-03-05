@@ -186,15 +186,15 @@ async function onMouseUpOrTouchEnd_planView(event) {
     // console.log('orbitControlsState4:', orbitControls.getState());
 }
 
-function onMouseWheel_planView(event) {
-    console.log('BEG onMouseWheel_planView');
+function onWheel_planView(event) {
+    console.log('BEG onWheel_planView');
 
     // event.preventDefault();
 
     let selectedLayer = COL.model.getSelectedLayer();
     let planView = selectedLayer.getPlanView();
     let orbitControls = planView.getOrbitControls();
-    handleMouseWheel_planView(event);
+    handleWheel_planView(event);
 }
 
 function onKeyDown_planView(event) {
@@ -209,7 +209,7 @@ function onKeyDown_planView(event) {
     let orbitControls = planView.getOrbitControls();
 
     if(selectedLayer.getEditOverlayRectFlag()) {
-        handleMouseWheel_planView(event);
+        handleWheel_planView(event);
     }
 }
 
@@ -787,8 +787,8 @@ function handleTwoFingerTouchMove_planView(event) {
     orbitControls.update();
 }
 
-function handleMouseWheel_planView(event) {
-    console.log('BEG handleMouseWheel_planView');
+function handleWheel_planView(event) {
+    console.log('BEG handleWheel_planView');
 
     let selectedLayer = COL.model.getSelectedLayer();
     let planView = selectedLayer.getPlanView();
@@ -811,5 +811,5 @@ function handleMouseWheel_planView(event) {
 // /////////////////////////////////
 
 
-export { onMouseDownOrTouchStart_planView, onMouseWheel_planView, onMouseUpOrTouchEnd_planView,
+export { onMouseDownOrTouchStart_planView, onWheel_planView, onMouseUpOrTouchEnd_planView,
     onKeyDown_planView, onKeyUp_planView };

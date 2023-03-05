@@ -12,7 +12,7 @@
 // Unlike TrackballControls, it maintains the "up" direction camera.up (+Y by default).
 //
 //    Orbit - left mouse / touch: one-finger move
-//    Zoom - middle mouse, or mousewheel / touch: two-finger spread or squish
+//    Zoom - middle mouse, or wheel / touch: two-finger spread or squish
 //    Pan - right mouse, or left mouse + ctrl/metaKey, or arrow keys / touch: two-finger move
 
 import {
@@ -290,7 +290,7 @@ class OrbitControlsPlanView extends THREE_EventDispatcher {
 
     update() {
         // console.log('BEG OrbitControlsPlanView::update()');
-
+        
         if (COL.util.isObjectInvalid(this.camera) || COL.util.isObjectInvalid(this.camera.position)) {
             let a =3;
         }

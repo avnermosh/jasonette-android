@@ -11,7 +11,7 @@ import { COL } from './COL.js';
 import { Model } from './core/Model.js';
 import { OrbitControlsPlanView } from './orbitControl/OrbitControlsPlanView.js';
 import { OverlayRect } from './core/OverlayRect.js';
-import { onMouseDown_planThumbnailsPane, onMouseWheel_planThumbnailsPane, 
+import { onMouseDown_planThumbnailsPane, onWheel_planThumbnailsPane, 
     onTouchStart_planThumbnailsPane } from './core/PlanThumbnailsView_eventListener.js';
 
 // //////////////////////////////////////////////////////////
@@ -137,7 +137,7 @@ class ManageGUI {
     }
 
     async syncFromZipFileToWebServer() {
-        console.log('BEG syncFromZipFileToWebServer'); 
+        // console.log('BEG syncFromZipFileToWebServer'); 
 
         // let doUploadToWebServer = confirm("Uploading to the webserver will overwrite all pre-existing data for the site!");
         // if(!doUploadToWebServer)
@@ -147,6 +147,8 @@ class ManageGUI {
         // }
 
         let spinnerJqueryObj = $('#inProgressSpinnerId');
+        let spinnerEl = document.getElementById('inProgressSpinnerId');
+        spinnerEl.setAttribute('data-text', 'Uploading sites to the webserver');
         spinnerJqueryObj.addClass('is-active');
         
         let toastTitleStr = 'Sync site plans from the zip file to the webserver';
@@ -166,10 +168,10 @@ class ManageGUI {
 
             let selectedLayer = COL.model.getSelectedLayer();
             let selectedLayerNameFromZipfile = selectedLayer.name;
-            console.log('selectedLayerNameFromZipfile', selectedLayerNameFromZipfile);
+            // console.log('selectedLayerNameFromZipfile', selectedLayerNameFromZipfile);
 
             let selectedLayerNameAfterSync = selectedLayerNameFromZipfile.replace('_zip','');
-            console.log('selectedLayerNameAfterSync', selectedLayerNameAfterSync);
+            // console.log('selectedLayerNameAfterSync', selectedLayerNameAfterSync);
 
             let retval1 = await COL.model.fileZip.syncZipSitesWithWebServer2();
 
@@ -178,7 +180,7 @@ class ManageGUI {
             // // disable cache, so that '#sitesId option' data is reread from the db
             // let queryUrl = Model.GetUrlBase() + 'view_sites';
             // let headersData = {
-            //     'X-CSRF-Token': COL.model.csrf_token,
+            //     'X-CSRF-Token': COL.util.getCSRFToken(),
             //     'Cache-Control': 'no-cache, no-store, must-revalidate'
             // };
             // let fetchData = { 
@@ -342,8 +344,8 @@ class ManageGUI {
     
     showPlanView(elementId) {
         let selectedLayer = COL.model.getSelectedLayer();
-        console.log('selectedLayer.name', selectedLayer.name);
-        console.log('selectedLayer.isLayerFromZipFile', selectedLayer.isLayerFromZipFile);
+        // console.log('selectedLayer.name', selectedLayer.name);
+        // console.log('selectedLayer.isLayerFromZipFile', selectedLayer.isLayerFromZipFile);
 
         // show or hide the button to syncFromZipFileToWebServer
         if(selectedLayer.isLayerFromZipFile) {
@@ -398,9 +400,7 @@ class ManageGUI {
         }
         else {
             console.error('obj: ', obj);
-            throw new Error(
-                'obj is invalid. It should be an instance of event or DOM element.'
-            );
+            throw new Error('obj is invalid. It should be an instance of event or DOM element.');
         }
 
         // console.log('Hide everything');
@@ -408,7 +408,7 @@ class ManageGUI {
         COL.manageGUI.hideAllButtons();
         COL.manageGUI.hideAllPanes();
 
-        console.log('elementId: ', elementId);
+        // console.log('elementId: ', elementId);
 
         if (isPlanImg) {
             // Show the planView pane
@@ -465,7 +465,7 @@ class ManageGUI {
                         selectedOverlayRect.clearMenuThumbnailImage();
                     }
         
-                    console.log('lastPlanViewId', lastPlanViewId);
+                    // console.log('lastPlanViewId', lastPlanViewId);
                     COL.manageGUI.showPlanView(lastPlanViewId);
                     break;
 
@@ -600,7 +600,7 @@ class ManageGUI {
                             capture: false,
                             passive: false,
                         });
-                        planThumbnailEl.addEventListener('wheel', onMouseWheel_planThumbnailsPane, {
+                        planThumbnailEl.addEventListener('wheel', onWheel_planThumbnailsPane, {
                             capture: false,
                             passive: false,
                         });

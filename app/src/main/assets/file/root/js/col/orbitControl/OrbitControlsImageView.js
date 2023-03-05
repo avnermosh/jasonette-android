@@ -9,7 +9,7 @@
 // Unlike TrackballControls, it maintains the "up" direction camera.up (+Y by default).
 //
 //    Orbit - left mouse / touch: one-finger move
-//    Zoom - middle mouse, or mousewheel / touch: two-finger spread or squish
+//    Zoom - middle mouse, or wheel / touch: two-finger spread or squish
 //    Pan - right mouse, or left mouse + ctrl/metaKey, or arrow keys / touch: two-finger move
 
 import {
@@ -203,7 +203,7 @@ class OrbitControlsImageView extends THREE_EventDispatcher {
     }
 
     update() {
-    // console.log('BEG OrbitControlsImageView::update()');
+        // console.log('BEG OrbitControlsImageView::update()');
 
         // move target to panned location
         this.target.add(this.panOffset);
@@ -699,8 +699,8 @@ class OrbitControlsImageView extends THREE_EventDispatcher {
         this.update();
     }
 
-    handleMouseWheel_imageView(event) {
-        console.log('BEG handleMouseWheel_imageView');
+    handleWheel_imageView(event) {
+        console.log('BEG handleWheel_imageView');
 
         if (this.state !== OrbitControlsImageView.STATE.NONE) {
             return;

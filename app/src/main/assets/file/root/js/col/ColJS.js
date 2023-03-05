@@ -690,7 +690,7 @@ class ColJS {
         let queryUrl = Model.GetUrlBase() + 'api/v1_2/set_selected_plan/' + planId;
 
         let headersData = {
-            'X-CSRF-Token': COL.model.csrf_token,
+            'X-CSRF-Token': COL.util.getCSRFToken(),
             'Cache-Control': 'no-cache, no-store, must-revalidate'
         };
 
@@ -764,8 +764,6 @@ $(window).on('load', function () {
 // }
 
 
-// https://developer.mozilla.org/en-US/docs/Web/API/Element/wheel_event
-// 'wheel' deprecates 'mousewheel'
 function onWheel5( event ) {
     console.log('BEG onWheel5');
     // event.preventDefault();

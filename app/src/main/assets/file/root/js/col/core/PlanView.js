@@ -39,7 +39,7 @@ import '../util/Util.js';
 import '../util/ThreejsUtil.js';
 import '../util/Util.AssociativeArray.js';
 import '../util/ErrorHandlingUtil.js';
-import { onMouseDownOrTouchStart_planView, onMouseWheel_planView, onMouseUpOrTouchEnd_planView,
+import { onMouseDownOrTouchStart_planView, onWheel_planView, onMouseUpOrTouchEnd_planView,
     onKeyDown_planView, onKeyUp_planView } from './PlanViewEventListeners.js';
 
 const cameraPlanViewHeight = 2000;
@@ -341,16 +341,20 @@ class PlanView {
             );
         }
         else {
-            containerPlanView.addEventListener(
-                'mousemove',
-                this._orbitControls.update.bind(this._orbitControls),
-                { capture: false, passive: false }
-            );
-            containerPlanView.addEventListener(
-                'mousewheel',
-                this._orbitControls.update.bind(this._orbitControls),
-                { capture: false, passive: false }
-            );
+
+            // tbd - remove the binding of mousemove to _orbitControls.update.bind
+            //   it is probably not needed, but leaving it here for a while to get some milege.
+            //   the eventListener on mousemove is triggered after mousedown
+            //   we can probably remove the binding of the OrbitControlsPlanView::update()
+            //   because:
+            //   1. the onMouseMoveOrTouchMove_planView eventListener on mousemove, (while mousedown) calls OrbitControlsPlanView::update()
+            //   2. there is no functionality need for OrbitControlsPlanView::update() when there is no mousedown (like in the next evetListener)
+            //
+            // containerPlanView.addEventListener(
+            //     'mousemove',
+            //     this._orbitControls.update.bind(this._orbitControls),
+            //     { capture: false, passive: false }
+            // );
     
             // needed for firefox ???
             // containerPlanView.addEventListener('DOMMouseScroll', this._orbitControls.update.bind(this._orbitControls), {capture: false, passive: false}); // firefox
@@ -380,29 +384,30 @@ class PlanView {
 
                 case 'deleteOverlayRect':
                 {
-                    console.log('deleteOverlayRect');
-                    let selectedOverlayRect = selectedLayer.getSelectedOverlayRect();
-                    if (COL.util.isObjectValid(selectedOverlayRect)) {
-                        // delete the overlayRect
-                        let meshObject = selectedOverlayRect.getMeshObject();
-                        selectedLayer.removeFromOverlayMeshGroup(meshObject);
-                        await selectedLayer.setSelectedOverlayRect(undefined);
-
-                        // mark as not-synced after deleting an overlayRect. 
-                        selectedLayer.setSyncWithWebServerStatus(false);
-
-                        // sync to the webserver after deleting an overlayRect. 
-                        let syncStatus = await selectedLayer.syncBlobsWithWebServer();
-                        if(!syncStatus) {
-                            throw new Error('Error from _syncWithBackendBtn');
+                    if (confirm("Are you sure you want to delete this overlayRect?")) {
+                        let selectedOverlayRect = selectedLayer.getSelectedOverlayRect();
+                        if (COL.util.isObjectValid(selectedOverlayRect)) {
+                            // delete the overlayRect
+                            let meshObject = selectedOverlayRect.getMeshObject();
+                            selectedLayer.removeFromOverlayMeshGroup(meshObject);
+                            await selectedLayer.setSelectedOverlayRect(undefined);
+    
+                            // mark as not-synced after deleting an overlayRect. 
+                            selectedLayer.setSyncWithWebServerStatus(false);
+    
+                            // sync to the webserver after deleting an overlayRect. 
+                            let syncStatus = await selectedLayer.syncBlobsWithWebServer();
+                            if(!syncStatus) {
+                                throw new Error('Error from _syncWithBackendBtn');
+                            }
+                            PlanView.Render();
                         }
-                        PlanView.Render();
+            
+                        planView.clearMenuPlanView();
+                        // No need to keep a state e.g. EDIT_MODE_DELETE_OVERLAY_RECT. 
+                        // because the delete operation has no lingering effects.
+                        orbitControls.setState( OrbitControlsPlanView.STATE.NONE );
                     }
-        
-                    planView.clearMenuPlanView();
-                    // No need to keep a state e.g. EDIT_MODE_DELETE_OVERLAY_RECT. 
-                    // because the delete operation has no lingering effects.
-                    orbitControls.setState( OrbitControlsPlanView.STATE.NONE );
                     break;
                 }
 
@@ -621,7 +626,7 @@ class PlanView {
                     capture: false,
                     passive: false,
                 });
-                containerPlanView.addEventListener('wheel', onMouseWheel_planView, {
+                containerPlanView.addEventListener('wheel', onWheel_planView, {
                     capture: false,
                     passive: false,
                 });
@@ -666,7 +671,7 @@ class PlanView {
                 //     passive: false,
                 // });
 
-                containerPlanView.removeEventListener('wheel', onMouseWheel_planView, {
+                containerPlanView.removeEventListener('wheel', onWheel_planView, {
                     capture: false,
                     passive: false,
                 });

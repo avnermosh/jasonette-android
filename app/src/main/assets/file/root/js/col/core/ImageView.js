@@ -33,7 +33,7 @@ import '../orbitControl/OrbitControlsUtils.js';
 import '../util/Util.js';
 import '../util/ThreejsUtil.js';
 
-import { onMouseDownOrTouchStart_imageView, onMouseWheel_imageView, onKeyDown_imageView } from './ImageView_eventListeners.js';
+import { onMouseDownOrTouchStart_imageView, onWheel_imageView, onKeyDown_imageView } from './ImageView_eventListeners.js';
 
 class ImageView {
     constructor() {
@@ -212,11 +212,6 @@ class ImageView {
         else {
             imageViewPaneEl.addEventListener(
                 'mousemove',
-                this.orbitControls.update.bind(this.orbitControls),
-                { capture: false, passive: false }
-            );
-            imageViewPaneEl.addEventListener(
-                'mousewheel',
                 this.orbitControls.update.bind(this.orbitControls),
                 { capture: false, passive: false }
             );
@@ -770,7 +765,7 @@ class ImageView {
                     capture: false,
                     passive: false,
                 });
-                imageViewPaneEl.addEventListener('wheel', onMouseWheel_imageView, {
+                imageViewPaneEl.addEventListener('wheel', onWheel_imageView, {
                     capture: false,
                     passive: false,
                 });
@@ -797,7 +792,7 @@ class ImageView {
                     capture: false,
                     passive: false,
                 });
-                imageViewPaneEl.removeEventListener('wheel', onMouseWheel_imageView, {
+                imageViewPaneEl.removeEventListener('wheel', onWheel_imageView, {
                     capture: false,
                     passive: false,
                 });

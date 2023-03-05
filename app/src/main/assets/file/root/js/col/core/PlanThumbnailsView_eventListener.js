@@ -131,8 +131,8 @@ async function onScroll_planThumbnailsPane( event ) {
 
 }
 
-async function onMouseWheel_planThumbnailsPane(event) {
-    console.log('BEG onMouseWheel_planThumbnailsPane');
+async function onWheel_planThumbnailsPane(event) {
+    console.log('BEG onWheel_planThumbnailsPane');
 
     let el1 = document.getElementById('planThumbnailsPaneId');
     console.log('el1', el1);
@@ -237,6 +237,6 @@ async function onTouchEnd_planThumbnailsPane(event) {
     await handleMouseUp_orOneFingerTouchEnd_planThumbnail(event);
 }
 
-export { onScroll_planThumbnailsPane, onMouseDown_planThumbnailsPane, onMouseWheel_planThumbnailsPane, 
+export { onScroll_planThumbnailsPane, onMouseDown_planThumbnailsPane, onWheel_planThumbnailsPane, 
     onKeyDown_planThumbnailsPane, onKeyUp_planThumbnailsPane, 
     onTouchStart_planThumbnailsPane };    

@@ -121,7 +121,7 @@ class FileZip_withJson {
     }
 
     async syncZipSitePlanEntryWithWebServer2 (plan_inFileZip) {
-        console.log('BEG syncZipSitePlanEntryWithWebServer2');
+        // console.log('BEG syncZipSitePlanEntryWithWebServer2');
 
         // ///////////////////////////////////////////
         // Do xxx
@@ -188,7 +188,7 @@ class FileZip_withJson {
             // this helps preventing "out of memory" errors
             // ///////////////////////////////////////////
 
-            console.log('clear all blobsUrls');
+            // console.log('clear all blobsUrls');
             for (let filename in imageFilenames) {
                 let imageInfo = imagesInfo.getByKey(filename);
                 let blobInfo = imageInfo.blobInfo;
@@ -262,7 +262,7 @@ class FileZip_withJson {
                 formData.append('json_data_as_str', jsonDataAsStr);
 
                 let headersData = {
-                    'X-CSRF-Token': COL.model.csrf_token
+                    'X-CSRF-Token': COL.util.getCSRFToken()
                 };
                 
                 let fetchData = { 
@@ -295,22 +295,27 @@ class FileZip_withJson {
     async syncFilesOfTheCurrentZipFileLayer2 (planInfo, filesInfo, filenames, syncRetVals) {
         // console.log('BEG syncFilesOfTheCurrentZipFileLayer2');
 
-        console.log('sync files to webserver');
+        // console.log('sync files to webserver');
         
-        let counter = 0;
-        const reportEveryNumFiles = 10;
+        let countIndex = 0;
+        const numFilesBetweenReporting = 10;
 
         let selectedZipFileInfo = COL.model.getSelectedZipFileInfo();
         let sitesInfo = selectedZipFileInfo.getSitesInfo();
         let filenamesLength = Object.keys(filenames).length;
-        
+
+        let spinnerEl = document.getElementById('inProgressSpinnerId');
+        spinnerEl.setAttribute('data-text', 'Uploading plan ' + planInfo.name + ' to the webserver.');
+
         for (let filename in filenames) {
-            counter += 1;
-            if(counter % reportEveryNumFiles == 0) {
-                let msgStr = counter + ' of: ' + filenamesLength;
+            if(countIndex % numFilesBetweenReporting == 0) {
+                // update the spinner with the number of files that were handled so far
+                let msgStr = 'Uploading ' + planInfo.name + ': ' + countIndex + ' of: ' + filenamesLength;
                 console.log(msgStr);
+                spinnerEl.setAttribute('data-text', msgStr);
             }
-            
+            countIndex += 1;
+
             let fileInfo = filesInfo.getByKey(filename);
             let blobInfo = fileInfo.blobInfo;
 
@@ -383,8 +388,6 @@ class FileZip_withJson {
         
         let fileType = COL.util.getFileTypeFromFilename(filename);
         switch(fileType) {
-            case 'mtl':
-            case 'obj':
             case 'jpg':
             case 'png':
             case 'json': {
@@ -425,7 +428,7 @@ class FileZip_withJson {
     }
 
     async syncZipSitePlanWithWebServer2 (plan_inFileZip) {
-        console.log('BEG syncZipSitePlanWithWebServer2');
+        // console.log('BEG syncZipSitePlanWithWebServer2');
         
         // Sync the plan entry in the database
         // if the plan is not already in the db, create a new plan entry
@@ -441,7 +444,7 @@ class FileZip_withJson {
     }
 
     async syncZipSiteWithWebServer2 (siteInfo_inFileZip, siteInfo_inBackend) {
-        console.log('BEG syncZipSiteWithWebServer2');
+        // console.log('BEG syncZipSiteWithWebServer2');
         
         // /////////////////////////////////////////
         // delete the old site
@@ -480,10 +483,10 @@ class FileZip_withJson {
                 // ///////////////////////////////////////////
                 // remove the zip layer from the model, now that it is succesfully synced to the webserver
                 // ///////////////////////////////////////////
-
+    
                 let layerName = plan_inFileZip.siteName + '__' + plan_inFileZip.name  + '_zip';
                 COL.model.removeLayerByName(layerName);
-
+    
                 // remove the entry from '#sitesId option' 
                 let matchPattern1 = 'name.*' + plan_inFileZip.name  + '_zip';
                 let optionIndex = COL.util.FindPlanInSiteplanMenu(matchPattern1);
@@ -491,7 +494,11 @@ class FileZip_withJson {
                     $('#sitesId')[0].remove(optionIndex);
                 }
             }
-
+            else{
+                let msgStr = (`Site plan is invalid for upload: ${plan_inFileZip.name}\n`);
+                throw new Error(msgStr);
+            }
+    
             retval = (retval || retval2);
         }
         return retval;
@@ -501,7 +508,7 @@ class FileZip_withJson {
         
         // TBD
         // migrate the site to the new vesion
-        // (depending on the version (e.g. from 1.0.0.to 1.1.0))
+        // (depending on the version (e.g. from 1.1.0.to 1.2.0))
 
         // softwareVersion1 - the version in the file *.json
         // softwareVersion2 - the current software version 
@@ -514,7 +521,7 @@ class FileZip_withJson {
     }
 
     async syncZipSitesWithWebServer2 () {
-        console.log('BEG syncZipSitesWithWebServer2');
+        // console.log('BEG syncZipSitesWithWebServer2');
         
         let retval1 = true;
         let syncZipSitesWithWebServer_statusStr = '';
@@ -557,21 +564,26 @@ class FileZip_withJson {
                 console.log('File is invalid for upload'); 
             }
         
-            if(retval4.status) {
-                let retval_syncZipSiteWithWebServer2 = await this.syncZipSiteWithWebServer2(siteInfo_inFileZip,
-                    retval4.siteInfo_inBackend);
-                
-                if(!retval_syncZipSiteWithWebServer2) {
-                    syncZipSitesWithWebServer_statusStr += (`Failed to sync site: ${siteName}\n`);
+            try {
+                if(retval4.status) {
+                    let retval_syncZipSiteWithWebServer2 = await this.syncZipSiteWithWebServer2(siteInfo_inFileZip,
+                        retval4.siteInfo_inBackend);
+                    
+                    if(!retval_syncZipSiteWithWebServer2) {
+                        syncZipSitesWithWebServer_statusStr += (`Failed to sync site: ${siteName}\n`);
+                    }
+                    else {
+                        syncZipSitesWithWebServer_statusStr += (`Succeeded to sync site: ${siteName}\n`);
+                    }
+                    retval1 = (retval1 || retval_syncZipSiteWithWebServer2);
                 }
-                else {
-                    syncZipSitesWithWebServer_statusStr += (`Succeeded to sync site: ${siteName}\n`);
-                }
-                retval1 = (retval1 || retval_syncZipSiteWithWebServer2);
             }
-            else {
-                syncZipSitesWithWebServer_statusStr += (`Site is invalid for upload: ${siteName}\n`);
+            catch(err) {
+                let msgStr = (`Site is invalid for upload: ${siteName}\n. err: ${err}`);
+                syncZipSitesWithWebServer_statusStr += msgStr;
                 retval1 = false;
+                // rethrow
+                throw new Error(msgStr);
             }
         }
         
@@ -696,34 +708,34 @@ class FileZip_withJson {
     
     
     async loadFilesFromZipFileInfoIntoBlobs_via_ZipLoader () {
-        console.log('BEG loadFilesFromZipFileInfoIntoBlobs_via_ZipLoader');
+        // console.log('BEG loadFilesFromZipFileInfoIntoBlobs_via_ZipLoader');
 
         // /////////////////////////////////////////////////////////////
         // Load files from zip-file-info into blobs
         // skip jpg images
         // /////////////////////////////////////////////////////////////
 
-        console.log('Load files from zip file into blobs');
+        // console.log('Load files from zip file into blobs');
         
         // loop over keys
         let zipFileInfo = COL.model.getSelectedZipFileInfo();
         let filenames = Object.keys(zipFileInfo.files);
         // console.log('filenames', filenames);
         let numFiles = filenames.length;
-        console.log('numFiles', numFiles); 
+        // console.log('numFiles', numFiles); 
         let countIndex = 0;
 
-        let msgStr = 'Loading ' + numFiles + ' files';
+        let msgStr = 'Loading11 ' + numFiles + ' files';
         let numFilesBetweenReporting = 10;
-        
+        let spinnerEl = document.getElementById('inProgressSpinnerId');
+        $('#inProgressSpinnerId').addClass('is-active');
         for (var i in filenames) {
 
             if( (countIndex % numFilesBetweenReporting) == 0 ) {
                 // show progress - update the spinner, and send a log message with the number of files
                 // that were loaded so far
-                let msgStr = countIndex + ' out of ' + numFiles;
+                let msgStr = 'Loading ' + countIndex + ' out of ' + numFiles;
                 console.log(msgStr);
-                let spinnerEl = document.getElementById('inProgressSpinnerId');
                 spinnerEl.setAttribute('data-text', msgStr);
             }
             countIndex += 1;
@@ -819,11 +831,12 @@ class FileZip_withJson {
                     
             }
         }
+        // update the spinner
+        $('#inProgressSpinnerId').removeClass('is-active');
     }
 
-
     async createSiteInfoFromJson (siteInfo_inFileZipAsJson, siteId) {
-        console.log('BEG createSiteInfoFromJson');
+        // console.log('BEG createSiteInfoFromJson');
 
         let zipFileInfo = COL.model.getSelectedZipFileInfo();
         let siteInfo;
@@ -987,13 +1000,13 @@ class FileZip_withJson {
                 optionEl.val(optionVal);
                 optionEl.appendTo(optionGroupEl);
             }
-            console.log('optionGroupEl', optionGroupEl);
+            // console.log('optionGroupEl', optionGroupEl);
             optionGroupEl.appendTo($('#sitesId'));
         }
     }
 
     createLayers () {
-        console.log('BEG createLayers');
+        // console.log('BEG createLayers');
 
         for (let index in this.layerJsonFilenames) {
 
@@ -1011,8 +1024,8 @@ class FileZip_withJson {
             let origPlanId = retVal.origPlanId;
 
             let metaDataFileInfo = planMetaDataFilesInfo.getByKey(layerJsonFilename);
-            console.log('layerJsonFilename', layerJsonFilename);
-            console.log('metaDataFileInfo', metaDataFileInfo);
+            // console.log('layerJsonFilename', layerJsonFilename);
+            // console.log('metaDataFileInfo', metaDataFileInfo);
             let blobInfo = metaDataFileInfo.blobInfo;
 
             if(COL.util.isObjectInvalid(blobInfo) || COL.util.isObjectInvalid(blobInfo.blobUrl)) {            
@@ -1257,14 +1270,14 @@ class FileZip_withJson {
     }
 
     async getImageBlobUrlFromZipFile (imageFilenameFullPath, imagesInfo) {
-        console.log('BEG getImageBlobUrlFromZipFile');
+        // console.log('BEG getImageBlobUrlFromZipFile');
 
         try {
             let zipFileInfo = COL.model.getSelectedZipFileInfo();
-            console.log('imageFilenameFullPath', imageFilenameFullPath); 
+            // console.log('imageFilenameFullPath', imageFilenameFullPath); 
             let fileInfo = zipFileInfo.files[imageFilenameFullPath];
             if(!fileInfo) {
-                console.log('zipFileInfo.files', zipFileInfo.files); 
+                // console.log('zipFileInfo.files', zipFileInfo.files); 
                 
                 let msgStr = 'fileInfo is undefined. imageFilename: ' + imageFilenameFullPath;
 
@@ -1351,7 +1364,7 @@ class FileZip_withJson {
 
     // Loads slice from the zip file in pure webapp or in jasonette_android
     static async getZipFileSlice (sliceBeg, sliceEnd) {
-        console.log('BEG getZipFileSlice');
+        // console.log('BEG getZipFileSlice');
         try {
             const zipFileInfo = COL.model.getSelectedZipFileInfo();
             let zipFile = zipFileInfo.zipFile;
@@ -1553,7 +1566,6 @@ class FileZip_withJson {
             toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
             throw new Error(msgStr);
         }
-        
     }
 
     // this function is called for the non-mobile webapp.
@@ -1682,7 +1694,7 @@ class FileZip_withJson {
             }
             
             this.createLayers();
-            console.log('foo6');
+            // console.log('foo6');
 
             await this.populateLayers();
             
@@ -1729,15 +1741,14 @@ class FileZip_withJson {
             siteId = getSiteByNameResultAsJson.id;
         }
         else {
-            let msgStr = 'siteName: ' + planInfo.siteName + ' do NOT exist for the user';
-            console.log(msgStr);
+            let msgStr = 'siteName: ' + planInfo.siteName + ' does NOT exist for the user. Adding new site';
+            // console.log(msgStr);
             let addNewSiteResultAsJson = await FileZipUtils.addNewSite(planInfo);
             siteId = addNewSiteResultAsJson.id;
         }
 
         // tbd - add the plan and update planInfo
         let addNewSitePlanResultAsJson = await FileZip_withJson.addNewSitePlan(siteId, planInfo);
-        console.log('addNewSitePlanResultAsJson', addNewSitePlanResultAsJson); 
         return addNewSitePlanResultAsJson;
     }
 
@@ -1769,6 +1780,7 @@ class FileZip_withJson {
 
     // Load the image file data from the zip file as blob into memory
     static async readZipEntryData (filename) {
+        // console.log('BEG readZipEntryData');
         
         let zipFileInfo = COL.model.getSelectedZipFileInfo();
         let zipFileInfoFile = zipFileInfo.files[filename];
@@ -1817,13 +1829,13 @@ class FileZip_withJson {
     }
 
     static async addNewSitePlan (siteId, planInfo) {
-        console.log('BEG addNewSitePlan');
+        // console.log('BEG addNewSitePlan');
 
         // ////////////////////////////////////////////////
         // POST - Add new metadata
         // ////////////////////////////////////////////////
 
-        console.log('planInfo', planInfo); 
+        // console.log('planInfo', planInfo); 
 
         let plan_url = planInfo.planFilename;
         let jsonData = {plan_name: planInfo.name,
@@ -1831,13 +1843,13 @@ class FileZip_withJson {
             is_selected: false,
             site_id: siteId};
         let jsonDataAsStr = JSON.stringify(jsonData);
-        console.log('jsonDataAsStr', jsonDataAsStr);
+        // console.log('jsonDataAsStr', jsonDataAsStr);
             
         let postNewSitePlanUrl = Model.GetUrlBase() + 'api/v1_2/create_plan';
 
         let headersData = {
             'Content-Type': 'application/json',
-            'X-CSRF-Token': COL.model.csrf_token
+            'X-CSRF-Token': COL.util.getCSRFToken()
         };
 
         let fetchData = { 

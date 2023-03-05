@@ -150,7 +150,6 @@ class Layer {
         
         // this._generalInfo - generalInfo for the layer, such as
         // - this._generalInfo.softwareVersion - the version for the layer
-        //   1.0 - load overlay from overlay.obj, overlay.mtl (obsolete)
         //   1.1 - load overlay from layer.getLayerJsonFilename()
         //   1.2 - rename topDown -> planView (structure change in the plan .json file)
         //   1.1.0 - remove generalMetadata, 
@@ -178,7 +177,7 @@ class Layer {
     migrateVersion(currentVersion, targetVersion){
         // TBD
         // migrate the layer to the new vesion
-        // (depending on the version (e.g. from 1.0.0.to 1.1.0))
+        // (depending on the version (e.g. from 1.1.0.to 1.2.0))
 
         // this.setGeneralInfo(generalInfoAsJson);
 
@@ -1733,8 +1732,6 @@ class Layer {
 
     
     async deleteImageFromLayer ( overlayRect, imageFilenameToRemove ) {
-        console.log('BEG deleteImageFromLayer'); 
-
         // meshObject is stored both in overlayRect and in this._overlayMeshGroup
         // meshObject may be deleted from overlayRect
         // Therefore, get meshObject, BEFORE calling overlayRect.deleteImageFromOverlayRect
@@ -1749,70 +1746,72 @@ class Layer {
             throw new Error('Invalid meshObject for deletion');
         }
 
-        // Remove the selected image from _imagesInfo and
-        // add the selected image to _removedImagesInfo (only if it is already synced with the back-end)
-        let imageInfo = this._imagesInfo.getByKey(imageFilenameToRemove);
-        if(COL.util.isObjectValid(imageInfo)) {
-            this._imagesInfo.remove(imageFilenameToRemove);
-
-            if(COL.util.isObjectInvalid(imageInfo.blobInfo)) {
+        if (confirm("Are you sure you want to delete this photo?")) {
+            // Remove the selected image from _imagesInfo and
+            // add the selected image to _removedImagesInfo (only if it is already synced with the back-end)
+            let imageInfo = this._imagesInfo.getByKey(imageFilenameToRemove);
+            if(COL.util.isObjectValid(imageInfo)) {
+                this._imagesInfo.remove(imageFilenameToRemove);
+    
+                if(COL.util.isObjectInvalid(imageInfo.blobInfo)) {
+                    // sanity check
+                    // an image that is about to be removed must have been loaded first, so it must have a defined blobInfo
+                    // (invalid blobInfo can only happen if the image has not been loaded yet)
+                    // throw new Error('image to be removed has invalid blobInfo');
+    
+                    // Ideally, we would just throw,
+                    // but in case of corrption, this prevents layerJsonFilename from being updated, and recovering
+                    // so be more lineant and just issue an error message?
+                    let msgStr = 'image to be removed: ' + imageFilenameToRemove + ' has invalid blobInfo';
+                    console.error(msgStr); 
+                }
+                else if(imageInfo.blobInfo.isDirty == false) {
+                    // the image to be removed is synced with the back-end, i.e. we need to add it to the removed list)
+                    // tbd - and set its blobInfo.isDirty to true ???
+                    imageInfo.blobInfo.isDirty = true;
+                    this._removedImagesInfo.set(imageFilenameToRemove, imageInfo);
+                }
+            }
+    
+            let imagesNames = overlayRect.getImagesNames();
+            
+            if(COL.util.isObjectInvalid(imagesNames)) {
                 // sanity check
-                // an image that is about to be removed must have been loaded first, so it must have a defined blobInfo
-                // (invalid blobInfo can only happen if the image has not been loaded yet)
-                // throw new Error('image to be removed has invalid blobInfo');
-
-                // Ideally, we would just throw,
-                // but in case of corrption, this prevents layerJsonFilename from being updated, and recovering
-                // so be more lineant and just issue an error message?
-                let msgStr = 'image to be removed: ' + imageFilenameToRemove + ' has invalid blobInfo';
-                console.error(msgStr); 
+                throw new Error('imagesNames is invalid');
             }
-            else if(imageInfo.blobInfo.isDirty == false) {
-                // the image to be removed is synced with the back-end, i.e. we need to add it to the removed list)
-                // tbd - and set its blobInfo.isDirty to true ???
-                imageInfo.blobInfo.isDirty = true;
-                this._removedImagesInfo.set(imageFilenameToRemove, imageInfo);
-            }
-        }
-
-        let imagesNames = overlayRect.getImagesNames();
-        
-        if(COL.util.isObjectInvalid(imagesNames)) {
-            // sanity check
-            throw new Error('imagesNames is invalid');
-        }
-
-        if(imagesNames.size() > 0) {
-            // Remove the selected image from imagesNames
-            // tbd - should/where-do we remove from layer._imagesInfo ???
-            await overlayRect.deleteImageFromOverlayRect( this, imageFilenameToRemove );
-            await this.showSelectedOverlayRect();
-        }
-        else {
-            // Before assigning new value (unsigned) to overlayRect, check if overlayRect is the selectedOverlayRect.
-            let isSelectedOverlayRect = this.isSelectedOverlayRect(overlayRect);
-            if(isSelectedOverlayRect) {
-                // overlayRect is the selectedOverlayRect. Set the selectedOverlayRect to undefined
-                await this.setSelectedOverlayRect( undefined );
+    
+            if(imagesNames.size() > 0) {
+                // Remove the selected image from imagesNames
+                // tbd - should/where-do we remove from layer._imagesInfo ???
+                await overlayRect.deleteImageFromOverlayRect( this, imageFilenameToRemove );
                 await this.showSelectedOverlayRect();
-                let planView = this.getPlanView();
-                planView.clearIntersectionOverlayRectInfo();
             }
-
-            // Remove the meshObject of the overlayRect from the meshGroup
-            this.removeFromOverlayMeshGroup(meshObject);
-        }
-
-        // remove the image filename from the list of _cachedImages
-        this._cachedImages.remove(imageFilenameToRemove);
-        
-        // mark as not-synced after deleting an image. 
-        this.setSyncWithWebServerStatus(false);
-
-        // sync to the webserver after deleting an image. 
-        let syncStatus = await this.syncBlobsWithWebServer();
-        if(!syncStatus) {
-            throw new Error('Error from syncBlobsWithWebServer while deleting an image');
+            else {
+                // Before assigning new value (unsigned) to overlayRect, check if overlayRect is the selectedOverlayRect.
+                let isSelectedOverlayRect = this.isSelectedOverlayRect(overlayRect);
+                if(isSelectedOverlayRect) {
+                    // overlayRect is the selectedOverlayRect. Set the selectedOverlayRect to undefined
+                    await this.setSelectedOverlayRect( undefined );
+                    await this.showSelectedOverlayRect();
+                    let planView = this.getPlanView();
+                    planView.clearIntersectionOverlayRectInfo();
+                }
+    
+                // Remove the meshObject of the overlayRect from the meshGroup
+                this.removeFromOverlayMeshGroup(meshObject);
+            }
+    
+            // remove the image filename from the list of _cachedImages
+            this._cachedImages.remove(imageFilenameToRemove);
+            
+            // mark as not-synced after deleting an image. 
+            this.setSyncWithWebServerStatus(false);
+    
+            // sync to the webserver after deleting an image. 
+            let syncStatus = await this.syncBlobsWithWebServer();
+            if(!syncStatus) {
+                throw new Error('Error from syncBlobsWithWebServer while deleting an image');
+            }
         }
     }
 
@@ -1917,7 +1916,7 @@ class Layer {
         // console.log('formData', formData);
         
         let headersData = {
-            'X-CSRF-Token': COL.model.csrf_token
+            'X-CSRF-Token': COL.util.getCSRFToken()
         };
 
         let fetchData = { 
@@ -1961,10 +1960,6 @@ class Layer {
         //   with the back-end
         //   also, overlayRects that were merged to another overlayRect and were removed
         //   are removed from the layer.json file, so indicate isDirty_mergedWithOverlayRect ??
-        //   tbd - but isDirty_mergedWithOverlayRect is also indicated when syncing the .mtl file
-        //   and we can't have the same flag updated from 2 places ??? maybe add another flag
-        //   flag1 - indicate the overlayRect that other overlayRects were merged to
-        //   flag2 - indicate the other overlayRects that were merged and removed ???
         
         let overlayRectIsDirty2 = {
             isDirty_newOverlayRect: false,
@@ -1985,7 +1980,6 @@ class Layer {
 
     updateSyncedInfo2 () {
         // /////////////////////////////////////////////////////////////////////
-        // overlay.mtl was synced successfully. Do the following:
         // Loop over all overlayRects.
         // for those that are fully synced update overlayRect._syncedImageFilenames
         // /////////////////////////////////////////////////////////////////////
@@ -2054,7 +2048,6 @@ class Layer {
             this.updateSyncedInfo1();
             this.updateSyncedInfo2();
         }
-        
     }
     
     async syncBlobsWithWebServer () {
@@ -2292,7 +2285,7 @@ class Layer {
                 formData.append('json_data_as_str', jsonDataAsStr);
 
                 let headersData = {
-                    'X-CSRF-Token': COL.model.csrf_token
+                    'X-CSRF-Token': COL.util.getCSRFToken()
                 };
                 
                 let fetchData = { 
@@ -2644,7 +2637,7 @@ class Layer {
             // Reconcile (remove) added images that are not synced with the back-end
             // (entries in this._imagesInfo with "isDirty == true")
             // loop over the imagesInfo.
-            // For imageInfo with "isDirty == true" undo the change, e.g. remove the image from the .mtl file
+            // For imageInfo with "isDirty == true" undo the change
             // //////////////////////////////////////////////////////////////////////////
             
             let imagesInfo = this.getImagesInfo();
@@ -2679,7 +2672,7 @@ class Layer {
             // Reconcile (add) removed images that are not synced with the back-end
             // (entries in this._removedImagesInfo with "isDirty == true")
             // loop over the removedImagesInfo.
-            // For imageInfo with "isDirty == true" undo the change, e.g. add the image back to the .mtl file
+            // For imageInfo with "isDirty == true" undo the change
             // //////////////////////////////////////////////////////////////////////////
 
             let removedImagesInfoSizeOrig = removedImagesInfo.size();
@@ -2998,7 +2991,7 @@ class Layer {
     }
 
     static GetSiteIdPlanIdAndFilePath (planInfo) {
-        console.log('BEG GetSiteIdPlanIdAndFilePath'); 
+        // console.log('BEG GetSiteIdPlanIdAndFilePath'); 
 
         let siteId;
         if(planInfo['newSiteId']) {

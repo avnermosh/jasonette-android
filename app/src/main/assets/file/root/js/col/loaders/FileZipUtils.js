@@ -162,20 +162,20 @@ class FileZipUtils {
 
     static getPlanBySiteAndPlanNames = async function (planInfo) {
         
-        console.log('BEG getPlanBySiteAndPlanNames');
+        // console.log('BEG getPlanBySiteAndPlanNames');
         
         // ////////////////////////////////////////////////
         // Query - get_plan_by_user_site_plan
         // ////////////////////////////////////////////////
 
         // http://localhost/api/v1_2/get_plan_by_user_site_plan/modelWith4Images/Main
-        console.log('Query - get_plan_by_user_site_plan'); 
+        // console.log('Query - get_plan_by_user_site_plan'); 
         
         let queryUrl = Model.GetUrlBase() + 'api/v1_2/get_plan_by_user_site_plan/' +
             planInfo.siteName + '/' + 
             planInfo.name;
 
-        console.log('queryUrl', queryUrl);
+        // console.log('queryUrl', queryUrl);
 
         let response = await fetch(queryUrl)
         await COL.errorHandlingUtil.handleErrors(response);
@@ -185,20 +185,20 @@ class FileZipUtils {
     };
 
     static addNewSite = async function (planInfo) {
-        console.log('BEG addNewSite');
+        // console.log('BEG addNewSite');
 
         // ////////////////////////////////////////////////
         // POST - Add new metadata
         // ////////////////////////////////////////////////
 
-        console.log('planInfo', planInfo);
+        // console.log('planInfo', planInfo);
         let jsonData = {site_name: planInfo.siteName};
         
         let jsonDataAsStr = JSON.stringify(jsonData);
         // console.log('jsonDataAsStr', jsonDataAsStr); 
         let headersData = {
             'Content-Type': 'application/json',
-            'X-CSRF-Token': COL.model.csrf_token
+            'X-CSRF-Token': COL.util.getCSRFToken()
         };
         
         let fetchData = { 
@@ -246,7 +246,7 @@ class FileZipUtils {
         // downloadZipFile
         //////////////////////////////////////////////////
 
-        console.log('BEG saveFromWebServerToZipFile_inSteps');
+        // console.log('BEG saveFromWebServerToZipFile_inSteps');
 
         let saveFromWebServerToZipFileStatus = document.getElementById('saveFromWebServerToZipFileStatusId');
         if(COL.util.isObjectInvalid(FileZipUtils.nanobar))
@@ -258,7 +258,7 @@ class FileZipUtils {
             });
         }
 
-        console.log('saveFromWebServerToZipFileStatus', saveFromWebServerToZipFileStatus);
+        // console.log('saveFromWebServerToZipFileStatus', saveFromWebServerToZipFileStatus);
 
         //////////////////////////////////////////////////
         // Get the group name

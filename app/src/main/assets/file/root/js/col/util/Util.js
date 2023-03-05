@@ -85,14 +85,6 @@ COL.util.getFileTypeFromFilename = function (filename) {
             fileType = 'png';
             break;
         }
-        case 'mtl': {
-            fileType = 'mtl';
-            break;
-        }
-        case 'obj': {
-            fileType = 'obj';
-            break;
-        }
         case 'json': {
             fileType = 'json';
             break;

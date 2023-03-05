@@ -136,7 +136,7 @@ class BlobInfo {
         formData.append('json_data_as_str', jsonDataAsStr);
 
         let headersData = {
-            'X-CSRF-Token': COL.model.csrf_token
+            'X-CSRF-Token': COL.util.getCSRFToken()
         };
 
         if (doDeferFileSystemAndDbSync) {
@@ -203,7 +203,7 @@ class BlobInfo {
         formData.append('image', blob, filePathWithFilename);
         
         let headersData = {
-            'X-CSRF-Token': COL.model.csrf_token
+            'X-CSRF-Token': COL.util.getCSRFToken()
         };
 
         if (doDeferFileSystemAndDbSync) {
@@ -263,7 +263,7 @@ class BlobInfo {
         // ////////////////////////////////////////////////
 
         let headersData = {
-            'X-CSRF-Token': COL.model.csrf_token
+            'X-CSRF-Token': COL.util.getCSRFToken()
         };
 
         if (doDeferFileSystemAndDbSync) {
@@ -295,15 +295,13 @@ class BlobInfo {
     }
 
     async syncBlobToWebServer(siteId, planId, filePath3, doDeferFileSystemAndDbSync, operation = 'ADD_OR_UPDATE_BLOB') {
-        console.log('BEG syncBlobToWebServer');
+        // console.log('BEG syncBlobToWebServer');
         
         let filePath = this.filename;
         let syncStatus = false;
         try {
             let fileType = COL.util.getFileTypeFromFilename(this.filename);
             switch(fileType) {
-                case 'mtl':
-                case 'obj':
                 case 'jpg':
                 case 'png':
                 case 'json': {

@@ -36,16 +36,10 @@ COL.loaders.CO_ObjectLoader = {
         // console.log('BEG loadLayerJson_fromUrl');
 
         // objectLoader (ObjectLoader is the loader for json - see https://threejs.org/docs/index.html#api/en/loaders/ObjectLoader)
-        // It is different than objLoader (which is for .obj file)
         let objectLoader = new THREE_ObjectLoader();
         
         // disable cache for planView.json files, so after updating the overlayRects
         // e.g. adding/deleting overlayRect or adding/deleting images from an overlayRect, the new data is reflected.
-        // (this was originally done for OBJLoader, MTLLoader which are instances of Loader, for hard-loading the .obj, .mtl
-        //  and adjusted to ObjectLoader, but the now the objectLoader is only used to parse the data, and the .json data is requested via regular fetch.
-        //  So the 'Cache-Control': 'no-cache, no-store, must-revalidate' settings needs to be added to the headersData in the fetchData 
-        //  for the regular fetch - see below)
-        
         objectLoader.requestHeader = { 'Cache-Control': 'no-cache, no-store, must-revalidate' };
 
         // ////////////////////////////////////////////////////////////////////////////
@@ -59,7 +53,7 @@ COL.loaders.CO_ObjectLoader = {
         // disable cache for planView.json files, so after updating the overlayRects
         // e.g. adding/deleting overlayRect or adding/deleting images from an overlayRect, the new data is reflected.
         let headersData = {
-            'X-CSRF-Token': COL.model.csrf_token,
+            'X-CSRF-Token': COL.util.getCSRFToken(),
             'Cache-Control': 'no-cache, no-store, must-revalidate'
         };
         
@@ -160,14 +154,8 @@ COL.loaders.CO_ObjectLoader = {
         // remove the prefix "./" before the file name if it exists e.g. ./foo.json -> foo.json
         const regex2 = /\.\//gi;
         let filename = filename2.replace(regex2, '');
-        
-        // The function loadingManager.setURLModifier is called for all the files that are related to
-        //  planView.json (i.e. .jpg, etc..)
-        // loadingManager.setURLModifier() is called via "mtlLoader_MaterialCreator.preload()" which calls: createMaterial -> ... ->
-        //   LoadingManager::resolveURL (in three.module.js) ->
-        //   loadingManager.setURLModifier (in this.loadLayerJsonFile_fromZipFile)
-        let fileType = COL.util.getFileTypeFromFilename(filename);
 
+        let fileType = COL.util.getFileTypeFromFilename(filename);
         let blobInfo = undefined;
         switch(fileType) {
             case 'jpg':

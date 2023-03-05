@@ -172,7 +172,7 @@ COL.core.ImageFile = {
             imageTags.dateCreated = filteredTags['DateTimeOriginal'].value[0];
         }
 
-        console.log('imageTags', imageTags); 
+        // console.log('imageTags', imageTags); 
         return imageTags;
     };    
 

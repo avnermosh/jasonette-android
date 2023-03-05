@@ -63,8 +63,6 @@ class Model {
         // context-menu related variables
         this.timeoutID = undefined;
         this.isPlanThumbnailMenuVisible = false;
-
-        this.csrf_token = COL.util.getCSRFToken();
     }
 
     getDoDisplayDemoSite() {
@@ -755,10 +753,10 @@ class Model {
         // ////////////////////////////////////////////////
 
         // http://localhost/api/v1_2/get_site_by_name/modelWith4Images
-        console.log('Query - get_site_by_name'); 
+        // console.log('Query - get_site_by_name'); 
         
         let queryUrl = Model.GetUrlBase() + 'api/v1_2/get_site_by_name/' + siteName;
-        console.log('queryUrl', queryUrl);
+        // console.log('queryUrl', queryUrl);
 
         let response = await fetch(queryUrl);
         await COL.errorHandlingUtil.handleErrors(response);

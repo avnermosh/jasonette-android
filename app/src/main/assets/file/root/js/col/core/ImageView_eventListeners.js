@@ -162,13 +162,13 @@ function onMouseMoveOrTouchMove_imageView(event) {
     }
 }
   
-function onMouseWheel_imageView(event) {
-    // console.log('BEG onMouseWheel_imageView');
+function onWheel_imageView(event) {
+    // console.log('BEG onWheel_imageView');
   
     let selectedLayer = COL.model.getSelectedLayer();
     let imageView = selectedLayer.getImageView();
     let orbitControls = imageView.getControls();
-    orbitControls.handleMouseWheel_imageView(event);
+    orbitControls.handleWheel_imageView(event);
 }
   
 function onKeyDown_imageView(event) {
@@ -180,5 +180,5 @@ function onKeyDown_imageView(event) {
  
   
 export { onMouseDownOrTouchStart_imageView, onMouseMoveOrTouchMove_imageView, 
-    onMouseWheel_imageView, onKeyDown_imageView };
+    onWheel_imageView, onKeyDown_imageView };
     

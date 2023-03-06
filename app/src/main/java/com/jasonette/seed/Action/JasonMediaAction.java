@@ -131,7 +131,7 @@ public class JasonMediaAction {
                     context,
                     //(use your app signature + ".provider" )
                     // "com.example.android.fileprovider",
-                    "com.construction_overlay_internal.android.fileprovider",
+                    "com.construction_overlay.android.fileprovider",
                     f1);
 
             captureIntent.putExtra(MediaStore.EXTRA_OUTPUT, imageUri);
@@ -157,19 +157,19 @@ public class JasonMediaAction {
             // Do we really need to create a file just for this?
             // can't we just somehow specify a initialUriDirectory?
 
-            // the file "f1" was created with uri1: content://com.construction_overlay_internal.android.fileprovider/download/file22880132447064510849.zip
+            // the file "f1" was created with uri1: content://com.construction_overlay.android.fileprovider/download/file22880132447064510849.zip
             // (via the use of Environment.DIRECTORY_DOWNLOADS, in createFile3())
             File f1 = createFile3(type, context);
 
-            // com.construction_overlay_internal.android.fileprovider/download points to dir "Download/" via
+            // com.construction_overlay.android.fileprovider/download points to dir "Download/" via
             // <external-files-path name="download" path="Download/" /> (in file_paths.xml)
             //
-            // the authority "com.construction_overlay_internal.android.fileprovider"
+            // the authority "com.construction_overlay.android.fileprovider"
             // gives permission to reach the FILE_PROVIDER_PATHS
             // in AndroidManifest.xml via android:name="android.support.FILE_PROVIDER_PATHS"
             Uri uri1 = FileProvider.getUriForFile(
                     context,
-                    "com.construction_overlay_internal.android.fileprovider",
+                    "com.construction_overlay.android.fileprovider",
                     f1);
 
             Intent fileIntent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
@@ -689,7 +689,7 @@ public class JasonMediaAction {
                 else
                 {
                     fileName = getFileName(context, uri);
-                    colZipPath = "/data/user/0/com.construction_overlay_internal/" + fileName;
+                    colZipPath = "/data/user/0/com.construction_overlay/" + fileName;
                 }
                 Log.d("Verbose", "fileName: " + fileName);
                 Log.d("Verbose", "colZipPath: " + colZipPath);

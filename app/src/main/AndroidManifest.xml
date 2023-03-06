@@ -34,7 +34,7 @@
 
         <provider
             android:name="androidx.core.content.FileProvider"
-            android:authorities="com.construction_overlay_internal.android.fileprovider"
+            android:authorities="com.construction_overlay.android.fileprovider"
             android:exported="false"
             android:grantUriPermissions="true">
             <meta-data

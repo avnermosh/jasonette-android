@@ -10,9 +10,12 @@
 import { COL } from './COL.js';
 import { Model } from './core/Model.js';
 import { OrbitControlsPlanView } from './orbitControl/OrbitControlsPlanView.js';
+import { OrbitControlsImageView } from './orbitControl/OrbitControlsImageView.js';
 import { OverlayRect } from './core/OverlayRect.js';
 import { onMouseDown_planThumbnailsPane, onWheel_planThumbnailsPane, 
     onTouchStart_planThumbnailsPane } from './core/PlanThumbnailsView_eventListener.js';
+import { Annotation } from './core/Annotation.js';
+import { ImageView } from './core/ImageView.js';
 
 // //////////////////////////////////////////////////////////
 
@@ -21,14 +24,16 @@ class ManageGUI {
     initGui() {
         console.log('BEG initGui');
 
+        COL.manageGUI.paneType = ManageGUI.PANE_TYPE.PLAN_TUMBNAILS;
+
         document.getElementById('planPaneWrapperId').onclick =
-          this.showHideProjectMenu(false);
+          this.toggleProjectMenu(false);
 
         document.getElementById('imageViewPaneId').onclick =
-           this.showHideProjectMenu(false);
+           this.toggleProjectMenu(false);
 
         document.getElementById('overlayRectImageThumbnailsPaneId').onclick =
-           this.showHideProjectMenu(false);
+           this.toggleProjectMenu(false);
 
         document
             .getElementById('hamburgerBtnId')
@@ -77,6 +82,42 @@ class ManageGUI {
         document
             .getElementById('addPhotoInputId')
             .addEventListener('change', COL.manageGUI.addPhoto);
+
+        document
+            .getElementById('toggleAnnotationVerticalIconBarId')
+            .addEventListener('click', COL.manageGUI.toggleAnnotationVerticalIconBar, {capture: false, passive: false}); 
+            
+        document
+            .getElementById('annotationDeleteModeId')
+            .addEventListener('click', COL.manageGUI.toggleAnnotationDeleteMode, {capture: false, passive: false}); 
+        document
+            .getElementById('annotationMoveModeId')
+            .addEventListener('click', COL.manageGUI.toggleAnnotationMoveMode, {capture: false, passive: false}); 
+            
+        document
+            .getElementById('annotationShapeId')
+            .addEventListener('click', COL.manageGUI.manageAnnotationShape, {capture: false, passive: false}); 
+        document
+            .getElementById('annotationRectShapeId')
+            .addEventListener('click', COL.manageGUI.setRectShape, {capture: false, passive: false}); 
+        document
+            .getElementById('annotationCircleShapeId')
+            .addEventListener('click', COL.manageGUI.setCircleShape, {capture: false, passive: false}); 
+
+        document
+            .getElementById('annotationFreeDrawModeId')
+            .addEventListener('click', COL.manageGUI.toggleAnnotationFreeDrawMode, {capture: false, passive: false}); 
+
+        document
+            .getElementById('annotationBrushColorId')
+            .addEventListener('click', COL.manageGUI.toggleAnnotationColorGroup, {capture: false, passive: false}); 
+        document
+            .getElementById('annotationRedBrushColorId')
+            .addEventListener('click', COL.manageGUI.setBrushColorRed, {capture: false, passive: false}); 
+        document
+            .getElementById('annotationBlueBrushColorId')
+            .addEventListener('click', COL.manageGUI.setBrushColorBlue, {capture: false, passive: false}); 
+            
         document
             .getElementById('addPhotoIconId')
             .addEventListener('click', function(){
@@ -96,7 +137,7 @@ class ManageGUI {
             .getElementById('listOptionLogInId')
             .addEventListener('click', COL.manageGUI.login);
 
-        this.showHideProjectMenu(true);
+        this.toggleProjectMenu(true);
     }
 
     // function to hide all panes
@@ -151,19 +192,18 @@ class ManageGUI {
         spinnerEl.setAttribute('data-text', 'Uploading sites to the webserver');
         spinnerJqueryObj.addClass('is-active');
         
-        let toastTitleStr = 'Sync site plans from the zip file to the webserver';
+        let toastTitleStr = 'sync FromZipFileToWebServer - Sync site plans from the zip file to the webserver';
         try {
 
             // /////////////////////////////////////////
             // sync the site to the webserver
             // do
-            // - syncZipSitesWithWebServer2
-            //   - syncZipSiteWithWebServer2
-            //     - syncZipSitePlanWithWebServer2
-            //       - syncZipSitePlanEntryWithWebServer2
-            //       - syncZipSitePlanFilesWithWebServer2
-            //         - syncFilesOfTheCurrentZipFileLayer2(imagesInfo, imageFilenames, syncRetVals)
-            //         - syncFilesOfTheCurrentZipFileLayer2(metaDataFilesInfo, metaDataFilenames, syncRetVals)
+            // - syncZipSitesWithWebServer
+            //   - syncZipSiteWithWebServer
+            //     - syncZipSitePlanWithWebServer
+            //       - syncZipSitePlanFilesWithWebServer
+            //         - syncFilesOfTheCurrentZipFileLayer(imagesInfo, imageFilenames, syncRetVals)
+            //         - syncFilesOfTheCurrentZipFileLayer(metaDataBlobsInfo, metaDataFilenames, syncRetVals)
             // /////////////////////////////////////////
 
             let selectedLayer = COL.model.getSelectedLayer();
@@ -173,7 +213,7 @@ class ManageGUI {
             let selectedLayerNameAfterSync = selectedLayerNameFromZipfile.replace('_zip','');
             // console.log('selectedLayerNameAfterSync', selectedLayerNameAfterSync);
 
-            let retval1 = await COL.model.fileZip.syncZipSitesWithWebServer2();
+            let retval1 = await COL.model.fileZip.syncZipSitesWithWebServer();
 
             // take1 - load view_sites
             // // Reload the view_sites page to update '#sitesId option' with the correct siteId, planId after syncing the zipfile layers
@@ -307,7 +347,7 @@ class ManageGUI {
         console.log('BEG addOverlayRect');
 
         let selectedLayer = COL.model.getSelectedLayer();
-        let planView = selectedLayer.getPlanView();
+        let planView = COL.getPlanView();
         let orbitControls = planView.getOrbitControls();
         orbitControls.setState(OrbitControlsPlanView.STATE.EDIT_MODE_ADD_OVERLAY_RECT);
     }
@@ -341,7 +381,204 @@ class ManageGUI {
         }
     }
 
+    toggleAnnotationVerticalIconBar() {
+        // console.log('BEG toggleAnnotationVerticalIconBar');
+
+        COL.manageGUI.toggleElementDisplay('verticalIconBarId', 'flex');
+        const toggleAnnotationVerticalIconBarEl = document.getElementById('toggleAnnotationVerticalIconBarId');
+        toggleAnnotationVerticalIconBarEl.classList.toggle('bi-caret-up');
+        toggleAnnotationVerticalIconBarEl.classList.toggle('bi-caret-down');
+    }
+
+    toggleAnnotationColorGroup() {
+        // console.log('BEG toggleAnnotationColorGroup');
+        COL.manageGUI.toggleElementDisplay('annotationColorIconBarId', 'flex');
+    }
+
+    toggleAnnotationDeleteMode() {
+        // console.log('BEG toggleAnnotationDeleteMode');
+        let isAnnotationDeleteModeEmphasized = COL.manageGUI.toggleEmphasizeElement('annotationDeleteModeId');
+        let imageView = COL.model.getImageView();
+        let orbitControls = imageView.getOrbitControls();
+        if(isAnnotationDeleteModeEmphasized){
+            orbitControls.setState( OrbitControlsImageView.STATE.EDIT_MODE_DELETE_ANNOTATION );
+        }
+        else{
+            orbitControls.setState( OrbitControlsImageView.STATE.NONE );
+        }
+    }
+
+    toggleAnnotationMoveMode() {
+        // console.log('BEG toggleAnnotationMoveMode');
+        let isAnnotationMoveModeEmphasized = COL.manageGUI.toggleEmphasizeElement('annotationMoveModeId');
+        let imageView = COL.model.getImageView();
+        let orbitControls = imageView.getOrbitControls();
+        if(isAnnotationMoveModeEmphasized){
+            orbitControls.setState( OrbitControlsImageView.STATE.EDIT_MODE_MOVE_ANNOTATION );
+        }
+        else{
+            orbitControls.setState( OrbitControlsImageView.STATE.NONE );
+        }
+    }
     
+    toggleAnnotationFreeDrawMode() {
+        // console.log('BEG toggleAnnotationFreeDrawMode');
+        let isAnnotationFreeDrawModeEmphasized = COL.manageGUI.toggleEmphasizeElement('annotationFreeDrawModeId');
+        let imageView = COL.model.getImageView();
+        let orbitControls = imageView.getOrbitControls();
+
+        if(isAnnotationFreeDrawModeEmphasized){
+            orbitControls.setState( OrbitControlsImageView.STATE.EDIT_MODE_ADD_FREE_DRAW_ANNOTATION );
+        }
+        else{
+            orbitControls.setState( OrbitControlsImageView.STATE.NONE );
+        }
+        // console.log('COL.model.fabricCanvas.isDrawingMode after: ', COL.model.fabricCanvas.isDrawingMode);
+    }
+
+    manageAnnotationShape() {
+        // console.log('BEG manageAnnotationShape');
+
+        let imageView = COL.model.getImageView();
+        let orbitControls = imageView.getOrbitControls();
+
+        // - change the orbit state to NONE
+        orbitControls.setState( OrbitControlsImageView.STATE.NONE );
+
+        // toggle emphasize the annotationShapeId
+        let isAnnotationShapeEmphasized = COL.manageGUI.toggleEmphasizeElement('annotationShapeId');
+
+        // Show/hide the shapes-horizontal-icon-bar depending on isAnnotationShapeEmphasized.
+        COL.manageGUI.setElementDisplay('annotationShapeIconBarId', isAnnotationShapeEmphasized, 'flex');
+    }
+    
+    emphasizeElement(elementId, doEmphasize) {
+        // console.log('BEG emphasizeElement');
+
+        const elementEl = document.getElementById(elementId);
+        if (doEmphasize) {
+            elementEl.classList.add('emphasizeElement');
+            elementEl.classList.remove('deEmphasizeElement');
+        }
+        else {
+            elementEl.classList.add('deEmphasizeElement');
+            elementEl.classList.remove('emphasizeElement');
+        }
+    }
+
+    toggleEmphasizeElement(elementId) {
+        // console.log('BEG toggleEmphasizeElement');
+
+        const elementEl = document.getElementById(elementId);
+        let isEmphasized = elementEl.classList.contains('emphasizeElement');
+
+        // toggle the emphasized element
+        let doEmphasize = !isEmphasized;
+        COL.manageGUI.emphasizeElement(elementId, doEmphasize);
+
+        return doEmphasize;
+    }
+
+    setElementDisplay(elementId, doDisplayElement, displayType) {
+        const elementEl = document.getElementById(elementId);
+        if (doDisplayElement) {
+            elementEl.style.display = displayType;
+        }
+        else {
+            elementEl.style.display = '';
+        }
+    }
+    
+    toggleElementDisplay(elementId, displayType) {
+        // console.log('BEG toggleElementDisplay');
+
+        const elementEl = document.getElementById(elementId);
+        let isElementDisplayed = elementEl.style.display == '' ? false : true;
+        // toggle the state
+        let doDisplayElement = !isElementDisplayed;
+        COL.manageGUI.setElementDisplay(elementId, doDisplayElement, displayType);
+    }
+    
+    setRectShape(event) {
+        // console.log('BEG setRectShape.');
+        COL.manageGUI.setShape(Annotation.SHAPE.RECT);
+
+        let imageView = COL.model.getImageView();
+        let orbitControls = imageView.getOrbitControls();
+        orbitControls.setState( OrbitControlsImageView.STATE.EDIT_MODE_ADD_SHAPE_ANNOTATION );
+    }
+
+    setCircleShape(event) {
+        // console.log('BEG setCircleShape.');
+        
+        // COL.manageGUI.setShape(Annotation.SHAPE.CIRCLE);
+        COL.manageGUI.setShape(Annotation.SHAPE.ELLIPSE);
+
+        let imageView = COL.model.getImageView();
+        let orbitControls = imageView.getOrbitControls();
+        orbitControls.setState( OrbitControlsImageView.STATE.EDIT_MODE_ADD_SHAPE_ANNOTATION );
+    }
+
+    setShape(shape) {
+        // console.log('BEG setShape.');
+
+        const annotationShapeGroupEl = document.getElementById('annotationShapeId');
+        switch (shape) {
+            case Annotation.SHAPE.NONE:
+                annotationShapeGroupEl.classList.add('bi-circle-square');
+                annotationShapeGroupEl.classList.remove('bi-square');
+                annotationShapeGroupEl.classList.remove('bi-circle');
+                COL.manageGUI.emphasizeElement('annotationShapeId', false);
+                break;
+            case Annotation.SHAPE.RECT:
+                annotationShapeGroupEl.classList.remove('bi-circle-square');
+                annotationShapeGroupEl.classList.add('bi-square');
+                annotationShapeGroupEl.classList.remove('bi-circle');
+                COL.manageGUI.emphasizeElement('annotationShapeId', true);
+                COL.manageGUI.setElementDisplay('annotationShapeIconBarId', false, 'flex');
+                break;
+            case Annotation.SHAPE.CIRCLE:
+            case Annotation.SHAPE.ELLIPSE:
+                annotationShapeGroupEl.classList.remove('bi-circle-square');
+                annotationShapeGroupEl.classList.remove('bi-square');
+                annotationShapeGroupEl.classList.add('bi-circle');
+                COL.manageGUI.emphasizeElement('annotationShapeId', true);
+                COL.manageGUI.setElementDisplay('annotationShapeIconBarId', false, 'flex');
+                break;
+            default:
+                throw new Error('Annotation shape is not supported: ' + shape);
+        }
+
+        Annotation.SetShape(shape);
+    }
+
+    setBrushColorRed(event) {
+        // console.log('BEG setBrushColorRed.');
+        COL.manageGUI.setAnnotationBrushColor('red');
+    }
+
+    setBrushColorBlue(event) {
+        // console.log('BEG setBrushColorBlue.');
+        COL.manageGUI.setAnnotationBrushColor('blue');
+    }
+
+    setAnnotationBrushColor(color) {
+        // console.log('BEG setAnnotationBrushColor.');
+        const annotationBrushColorEl = document.getElementById('annotationBrushColorId');
+        annotationBrushColorEl.style.color = color;
+        Annotation.setAnnotationBrushColor(color);
+    }
+
+    async addAnnotationShape1(event, shape) {
+        // console.log('BEG addAnnotationShape1');
+
+        // prevent from trickling the event, when touching and dragging, which causes a side effect of refreshing the page
+        event.preventDefault();
+
+        let imageView = COL.model.getImageView();
+        await imageView.addAnnotationShape2(shape);
+    }
+
     showPlanView(elementId) {
         let selectedLayer = COL.model.getSelectedLayer();
         // console.log('selectedLayer.name', selectedLayer.name);
@@ -362,7 +599,7 @@ class ManageGUI {
             document.querySelector('#planPaneWrapperId').style.display = 'block';
             document.querySelector('#planThumbnailsPaneId').style.display = 'block';
 
-            COL.manageGUI.showHideProjectMenu(false);
+            COL.manageGUI.toggleProjectMenu(false);
             document.querySelector('#hamburgerBtnId').style.display = 'block';
         }
         else {
@@ -374,6 +611,10 @@ class ManageGUI {
             // Update the SyncWithWebServerStatus according to the status of the layer.
             COL.util.setSyncWithWebServerStatus(selectedLayer.getSyncWithWebServerStatus());
         }
+    }
+
+    getPaneType() {
+        return COL.manageGUI.paneType;
     }
 
     async setPane(obj) {
@@ -393,7 +634,8 @@ class ManageGUI {
                 isPlanImg = true;
             }
             else if (obj.tagName == 'IMG') {
-                // clicked on element with tag 'img'
+                // clicked on element with tag 'img' (note: the tag is an html feature and is unrelated
+                // to the filename, i.e. the filename can be called something other than IMG_xxx).
                 isImgTag = true;
             }
             elementId = obj.id;
@@ -414,6 +656,7 @@ class ManageGUI {
             // Show the planView pane
             COL.manageGUI.showPlanView(elementId);
             COL.clickedElements.push(elementId);
+            COL.manageGUI.paneType = ManageGUI.PANE_TYPE.SELECTED_PLAN;
         }
         else if (isImgTag) {
             // Show the imageView pane
@@ -425,8 +668,15 @@ class ManageGUI {
             document.querySelector('#imageViewBackBtnId').style.display = 'block';
             document.querySelector('#imageViewPaneId').style.display = 'block';
 
+            let imageView = COL.model.getImageView();
+            imageView.enableControls(true);
+            // entering imageView - start clean: clear the pointerEventCache array.
+            // to start with 0 pointerEvents
+            ImageView.pointerEventCache = [];
+
             // push an undefined value, just so it can be popped out later
             COL.clickedElements.push(elementId);
+            COL.manageGUI.paneType = ManageGUI.PANE_TYPE.SELECTED_IMAGE;
         }
         else {
             // Handle by id
@@ -435,6 +685,8 @@ class ManageGUI {
             }
 
             const items = document.getElementsByClassName('list-group-item active');
+            let selectedLayer = COL.model.getSelectedLayer();
+
             switch (elementId) {
                 case 'hamburgerBtnId':
                     document.querySelector('#hamburgerBtnId').style.display = 'block';
@@ -443,23 +695,24 @@ class ManageGUI {
                         // Show the planThumbnails pane
                         // the "plans" option is selected in the projectMenu
                         COL.manageGUI.showPlanThumbnails();
+                        COL.manageGUI.paneType = ManageGUI.PANE_TYPE.PLAN_TUMBNAILS;
                     }
                     else{
                         // another option in the hamburger menu was chosen that is not 'Plans' (e.g. 'Photos'). Don't showPlanThumbnails
                     }
 
-                    COL.manageGUI.showHideProjectMenu(true);
+                    COL.manageGUI.toggleProjectMenu(true);
                     break;
 
                 case 'planViewBackBtnId':
                     // Show the planThumbnails pane
                     COL.manageGUI.showPlanThumbnails();
+                    COL.manageGUI.paneType = ManageGUI.PANE_TYPE.PLAN_TUMBNAILS;
                     break;
 
                 case 'imagesBackBtnId':
                     // Show the planView pane
                     const lastPlanViewId = COL.clickedElements.pop();
-                    let selectedLayer = COL.model.getSelectedLayer();
                     let selectedOverlayRect = selectedLayer.getSelectedOverlayRect();
                     if (selectedOverlayRect.isMenuVisible) {
                         selectedOverlayRect.clearMenuThumbnailImage();
@@ -467,6 +720,7 @@ class ManageGUI {
         
                     // console.log('lastPlanViewId', lastPlanViewId);
                     COL.manageGUI.showPlanView(lastPlanViewId);
+                    COL.manageGUI.paneType = ManageGUI.PANE_TYPE.SELECTED_PLAN;
                     break;
 
                 case 'overlayRectImageThumbnailsPaneId':
@@ -476,6 +730,7 @@ class ManageGUI {
                     document.querySelector('#overlayRectImageThumbnailsPaneId').style.display = 'block';
                     document.querySelector('#addPhotoIconId').style.display = 'block';
                     document.getElementById(elementId).style.display = 'block';
+                    COL.manageGUI.paneType = ManageGUI.PANE_TYPE.IMAGE_TUMBNAILS;
                     break;
 
                 case 'imageViewBackBtnId':
@@ -484,16 +739,21 @@ class ManageGUI {
                     document.querySelector('#overlayRectImageThumbnailsPaneWrapperId').style.display = 'block';
                     document.querySelector('#overlayRectImageThumbnailsPaneId').style.display = 'block';
                     document.querySelector('#addPhotoIconId').style.display = 'block';
+                    let imageView = COL.model.getImageView();
+                    imageView.enableControls(false);
+                    COL.manageGUI.paneType = ManageGUI.PANE_TYPE.IMAGE_TUMBNAILS;
                     COL.clickedElements.pop();
+
                     break;
 
                 case 'list-option-plans':
                     document.querySelector('#hamburgerBtnId').style.display = 'block';
                     document.querySelector('#planPaneWrapperId').style.display = 'block';
                     document.querySelector('#planThumbnailsPaneId').style.display = 'block';
+                    COL.manageGUI.paneType = ManageGUI.PANE_TYPE.PLAN_TUMBNAILS;
 
                     // toggle the ProjectMenu
-                    COL.manageGUI.showHideProjectMenu(
+                    COL.manageGUI.toggleProjectMenu(
                         !COL.manageGUI.isProjectMenuOn()
                     );
                     break;
@@ -503,9 +763,7 @@ class ManageGUI {
                 case 'list-option-settings':
                     document.querySelector('#hamburgerBtnId').style.display = 'block';
                     // toggle the ProjectMenu
-                    COL.manageGUI.showHideProjectMenu(
-                        !COL.manageGUI.isProjectMenuOn()
-                    );
+                    COL.manageGUI.toggleProjectMenu(!COL.manageGUI.isProjectMenuOn());
                     break;
             } // end of switch
         }
@@ -556,8 +814,6 @@ class ManageGUI {
                     }
                     // create the layer and load the floorPlanImage
                     let layer = await COL.colJS.loadLayer(sitePlanName, optionValueAsDict.zipFileName);
-                    let floorPlanImageFilename = layer.getFloorPlanImageFilename();
-                    let blobUrl = await layer.getImageBlobUrl(floorPlanImageFilename);
 
                     const liEl = document.createElement('li');
                     const figureEl = document.createElement('figure');
@@ -586,7 +842,9 @@ class ManageGUI {
                     let planThumbnailEl =  document.createElement('img');
                     planThumbnailEl.setAttribute('id', layer.name);
                 
-                    planThumbnailEl.setAttribute('src', blobUrl);
+                    let floorPlanImageFilename = layer.getFloorPlanImageFilename();
+                    let [imageBlobUrl, imageAnnotationBlobUrl] = await layer.getImageBlobUrl_andImageAnnotationBlobUrl(floorPlanImageFilename);
+                    planThumbnailEl.setAttribute('src', imageBlobUrl);
                     planThumbnailEl.setAttribute('class','plan-image');
         
                     if (COL.util.isTouchDevice()) {
@@ -704,8 +962,8 @@ class ManageGUI {
         return retval;
     }
 
-    showHideProjectMenu(doShowProjectMenu) {
-        console.log('BEG showHideProjectMenu');
+    toggleProjectMenu(doShowProjectMenu) {
+        // console.log('BEG toggleProjectMenu');
         
         // show / hide the projectMenu
         const projectMenuEl = document.getElementById('project-menu-id');
@@ -734,5 +992,17 @@ class ManageGUI {
         }
     }
 }
+
+// /////////////////////////////////
+// BEG Static class variables
+// /////////////////////////////////
+
+ManageGUI.PANE_TYPE = {
+    NONE: -1,
+    PLAN_TUMBNAILS: 0,
+    SELECTED_PLAN: 1,
+    IMAGE_TUMBNAILS: 2,
+    SELECTED_IMAGE: 3
+};
 
 export { ManageGUI };

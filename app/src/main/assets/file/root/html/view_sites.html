@@ -1,4 +1,3 @@
-
 {% set variable1 = "layout.html" %}
 
 <!-- https://stackoverflow.com/questions/5380984/any-way-to-make-extends-conditional-django -->
@@ -41,7 +40,7 @@
             <button id="imageViewBackBtnId" class="btn backBtnClass imageViewBackBtnClass button-div" type="button">
                 <i class="bi bi-arrow-left text-primary" aria-label="Back"></i>
             </button>
-            
+
             <button id="imagesBackBtnId" class="btn backBtnClass imagesBackBtnClass button-div" type="button">
                 <i class="bi bi-arrow-left text-primary" aria-label="Back"></i>
             </button>
@@ -75,12 +74,12 @@
         <div id="planViewPaneId" class="planViewPaneClass pane-div">
 
             <canvas id="planView3dCanvasId" class="canvasPlanViewClass"></canvas>
-            
+
             <ul id="planViewMenuId" class="context-menu">
-                <li data-action="moveOverlayRect">Move OverlayRect</li>
-                <li data-action="deleteOverlayRect">Delete OverlayRect</li>
-                <li data-action="mergeOverlayRectStart">Merge OverlayRect - start</li>
-                <li data-action="mergeOverlayRectEnd">Merge OverlayRect - end</li>
+                <li id="moveOverlayRectId" data-action="moveOverlayRect">Move OverlayRect</li>
+                <li id="deleteOverlayRectId" data-action="deleteOverlayRect">Delete OverlayRect</li>
+                <li id="mergeOverlayRectStartId" data-action="mergeOverlayRectStart">Merge OverlayRect - start</li>
+                <li id="mergeOverlayRectEndId" data-action="mergeOverlayRectEnd">Merge OverlayRect - end</li>
             </ul>
 
             <!-- keep the footer fixed at the bottom of the page even for long scrollable content -->
@@ -104,10 +103,10 @@
     <div id="overlayRectImageThumbnailsPaneWrapperId" class="overlayRectImageThumbnailsPaneWrapperClass pane-div">
         <div id="overlayRectImageThumbnailsPaneId" class="overlayRectImageThumbnailsPaneClass pane-div">
             <ol id="overlayrect-thumbnail-images-id" class="overlayrect-thumbnail-images"></ol>
-    
+
             <footer id="overlayRectImageThumbnailsPaneId-footer-id" class="fixed-bottom footer-class overlayRectImageThumbnailsPane-footer-class">
-                <div class="addPhotoBtnClass" type="button">
-                    <i id="addPhotoIconId" class="bi bi-plus-lg"></i>
+                <div id="addPhotoBtnId" class="iconBtnClass" type="button">
+                    <i id="addPhotoIconId" class="bi bi-plus-lg iconClass"></i>
                     <input id="addPhotoInputId" type="file" />
                 </div>
             </footer>
@@ -117,11 +116,65 @@
             <li id="splitImageFromOverlayRectId" data-action="splitImageFromOverlayRect">Split Image from OverlayRect</li>
         </ul>
     </div>
+
+    <div id="imageViewPaneId" class="imageViewPaneClass pane-div">
+        <!-- selectedImage3dCanvasId is the canvas for the threejs -->
+        <canvas id="selectedImage3dCanvasId" class="canvasImageViewClass"></canvas>
+        <!-- canvasId1 is the canvas for fabricjs. canvasId1 is also a THREE_CanvasTexture element for the surface (sprite for non360 image, or mesh for 360 image) in threejs  -->
+        <canvas id="canvasId1"></canvas>
+        <div id="div2Id">
+            <h3>Canvas2</h3>
+            <!-- canvas2Id is a general canvas that we use to draw on both layers of fabricjs (upperCanvas and the cached upperCanvas). 
+                It is used while creating a live path   -->
+            <canvas id="canvas2Id"></canvas>
+        </div>
     
-    <div id="imageViewPaneId" class="imageViewPaneClass pane-div"> 
-        <canvas id="selectedImage3dCanvasId" class="canvasPlanViewClass"></canvas>
         <div id="imageTextInfoId" class="imageTextInfoClass"> </div>
-        <footer id="imageViewPaneFooterId" class="fixed-bottom footer-class imageViewPaneFooter-class">
+                
+        <footer id="imageViewPaneFooterId" class="fixed-bottom footer-class">
+            <div id="verticalIconBarWrapperId">
+                <i id="toggleAnnotationVerticalIconBarId" class="bi bi-caret-up iconClass" type="button"></i>
+                <div id="verticalIconBarId" class="vertical-icon-bar">
+
+                    <div class="setAnnotationDeleteModeClass">
+                        <i id="annotationDeleteModeId" class="bi bi-trash iconClass" type="button"></i>
+                    </div>
+                    
+                    <div class="setAnnotationMoveModeClass">
+                        <i id="annotationMoveModeId" class="bi bi-arrows-move iconClass" type="button"></i>
+                    </div>
+
+                    <div class="setShapeGroupClass">
+                        <i id="annotationShapeId" class="bi bi-circle-square iconClass" type="button"></i>
+                        <div id="annotationShapeIconBarId" class="horizontal-icon-bar">
+                            <div class="iconBtnClass" type="button">
+                                <i id="annotationRectShapeId" class="bi bi-square iconClass"></i>
+                            </div>
+                            <div class="iconBtnClass" type="button">
+                                <i id="annotationCircleShapeId" class="bi bi-circle iconClass"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="setBrushColorGroupClass">
+                        <i id="annotationBrushColorId" class="bi bi-circle-fill iconClass" type="button"></i>
+                        <div id="annotationColorIconBarId" class="horizontal-icon-bar">
+                            <div class="iconBtnClass" type="button">
+                                <i id="annotationRedBrushColorId" class="bi bi-circle-fill red-circle iconClass"></i>
+                            </div>
+                            <div class="iconBtnClass" type="button">
+                                <i id="annotationBlueBrushColorId" class="bi bi-circle-fill blue-circle iconClass"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="setAnnotationFreeDrawModeClass">
+                        <i id="annotationFreeDrawModeId" class="bi bi-pencil iconClass" type="button"></i>
+                    </div>
+                    
+                </div>
+            </div>
+
             <p><span id="dateCreatedId" class="dateCreatedClass">xxxx</span></p>
         </footer>
     </div>
@@ -166,4 +219,3 @@
 <script type="module" src="/V1/js/col/main.js"></script>
 {% endblock %}
 <!-- block content1 -->
-

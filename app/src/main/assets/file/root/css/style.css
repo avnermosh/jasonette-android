@@ -566,6 +566,27 @@ e.g. zipFile related buttons, editOverlay related buttons, planview-settings-mod
   z-index: 10;
 }
 
+.canvasImageViewClass {
+  animation: none;
+  height: 80%;
+  background-color: red;
+  display: block;
+  z-index: 10;
+}
+
+.canvas-container {
+  display: none;
+}
+
+#div2Id {
+  display: none;
+}
+
+.upper-canvas {
+  display: none;
+  z-index: 20;
+}
+
 .floorPlanWhiteboardClass {
   background: #69dbce;
   opacity: 0.5;
@@ -592,9 +613,12 @@ e.g. zipFile related buttons, editOverlay related buttons, planview-settings-mod
 }
 
 .showFullSize {
-  position: absolute;
+  /* position: absolute;
   width: 100%;
-  height: 100%;
+  height: 100%; */
+  position: relative;
+  width: 50%;
+  height: 50%;
   top: 0%;
   left: 0%;
 }
@@ -679,10 +703,10 @@ e.g. zipFile related buttons, editOverlay related buttons, planview-settings-mod
     z-index: 1;
 }
 
-/* height/width: 100% is needed or elese the selectedImage is not seen ? */
+/* height/width: 100% is needed or else the selectedImage is not seen ? */
 #imageViewPaneId {
-  height: 100%;
-  width: 100%;
+  /* height: 100%; */
+  /* width: 100%; */
 }
 
 #siteId {

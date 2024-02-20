@@ -9,14 +9,14 @@ import { Layer } from './Layer.js';
 import { OverlayRect } from './OverlayRect.js';
 
 export function onContextMenu_thumbnailImage( event ) {
-    console.log('BEG onContextMenu_thumbnailImage');
+    // console.log('BEG onContextMenu_thumbnailImage');
     // prevent the default contextmenu, e.g. in chrome on long-touch, on image thumbnail 
     // that brings the options to preveiew the image, share the image via whatsapp, etc..
     event.preventDefault();
 }
 
 export async function onMouseDownOrTouchStart_thumbnailImage(event) {
-    console.log('BEG onMouseDownOrTouchStart_thumbnailImage');
+    // console.log('BEG onMouseDownOrTouchStart_thumbnailImage');
 
     let selectedLayer = COL.model.getSelectedLayer();
     if (!selectedLayer) {
@@ -52,14 +52,14 @@ export async function onMouseDownOrTouchStart_thumbnailImage(event) {
 
     let selectedOverlayRect = selectedLayer.getSelectedOverlayRect();
     let imageName=elementId;
-    let retVal = selectedOverlayRect._imagesNames.getKeyValAndIndexByKey(imageName);
+    let retVal = selectedOverlayRect.imagesNames.getKeyValAndIndexByKey(imageName);
     selectedOverlayRect.setSelectedImage(retVal.index);
 
     // thumbnail image was clicked. Start the timer
     selectedOverlayRect.delayedMenuThumbnailImage(event);
 
     let overlayRectState = selectedOverlayRect.getState();
-    console.log('overlayRectState1', selectedOverlayRect.getState());
+    // console.log('overlayRectState1', selectedOverlayRect.getStateAsStr());
 
     switch(overlayRectState) {
         case OverlayRect.STATE.NONE: 
@@ -86,7 +86,7 @@ export async function onMouseDownOrTouchStart_thumbnailImage(event) {
 }
 
 export async function onMouseUpOrTouchEnd_thumbnailImage(event) {
-    console.log('BEG onMouseUpOrTouchEnd_thumbnailImage');
+    // console.log('BEG onMouseUpOrTouchEnd_thumbnailImage');
 
     let selectedLayer = COL.model.getSelectedLayer();
     if (!selectedLayer) {
@@ -138,7 +138,7 @@ export async function onMouseUpOrTouchEnd_thumbnailImage(event) {
 
 
 async function handleMouseUp_orTouchEnd_thumbnailImage() {
-    console.log('BEG handleMouseUp_orTouchEnd_thumbnailImage');
+    // console.log('BEG handleMouseUp_orTouchEnd_thumbnailImage');
 
     let selectedLayer = COL.model.getSelectedLayer();
     if (!selectedLayer) {
@@ -148,11 +148,11 @@ async function handleMouseUp_orTouchEnd_thumbnailImage() {
 
     let selectedOverlayRect = selectedLayer.getSelectedOverlayRect();
     let overlayRectState = selectedOverlayRect.getState();
-    console.log('overlayRectState2', selectedOverlayRect.getState());
+    // console.log('overlayRectState2', selectedOverlayRect.getStateAsStr());
 
     // clear the timeout for the context-menu
     // (mouseup cancels the delayed timer, to prevent the menu from being displayed if mousedown was not pressed long enough)
-    console.log('selectedOverlayRect.timeoutID1', selectedOverlayRect.timeoutID);
+    // console.log('selectedOverlayRect.timeoutID1', selectedOverlayRect.timeoutID);
     window.clearTimeout(selectedOverlayRect.timeoutID);
     if(overlayRectState !== OverlayRect.STATE.CONTEXT_MENU) {
         if(selectedOverlayRect.isMenuVisible) {
@@ -184,6 +184,5 @@ async function handleMouseUp_orTouchEnd_thumbnailImage() {
             throw new Error(msgStr);
     }
 
-    console.log('overlayRectState3', selectedOverlayRect.getState());
-
+    // console.log('overlayRectState3', selectedOverlayRect.getStateAsStr());
 }

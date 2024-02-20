@@ -406,21 +406,7 @@ figure {
     display: inline-block;
 }
 
-.openZipFileBtnClass {
-    float: right;
-    display: inline-flex;
-    align-items: center;
-    border-style: outset;
-  }
-
-.addOverlayRect-class {
-    float: right;
-    display: inline-flex;
-    align-items: center;
-    border-style: outset;
-  }
-
-  .syncFromZipFileToWebServerBtn-class {
+#addPhotoBtnId, .addOverlayRect-class, .openZipFileBtnClass, .syncFromZipFileToWebServerBtn-class {
     float: right;
     display: inline-flex;
     align-items: center;
@@ -598,14 +584,85 @@ figure {
 // END selected plan - context-menu
 // --------------------------------------------------- */
 
-.addPhotoBtnClass {
+/* wrapper around the icon-to-toggle-the-verticalIconBar, and the verticalIconBar itself*/
+#verticalIconBarWrapperId{
+  float:right;
+  display: flex;
+  position: relative;
+  flex-direction: column-reverse;
+  height: 100%;
+}
+
+/* the icon to toggle the verticalIconBar*/
+#toggleAnnotationVerticalIconBarId{
+  float:right;
+  display: flex;
+  position: relative;
+  flex-direction: column;
+}
+
+/* the verticalIconBar itself*/
+.vertical-icon-bar {
+    position: relative;
+    bottom: 0;
+    right: 0;
+    float: right;
+    display: none;
+    flex-direction: column-reverse;
+    z-index: 1000;
+    width: 50px;
+    transform: translateY(0%);
+}
+
+.horizontal-icon-bar {
+  /* position: fixed; */
+  position: absolute;
+  left: 0;
+  float: right;
+  display: none;
+  flex-direction: row;
+  transform: translateX(-100%);
+}
+
+#annotationBrushColorId {
+  color: blue;
+}
+
+.emphasizeElement {
+  background-color: aquamarine
+}
+
+.deEmphasizeElement {
+  background-color: '';  
+}
+
+.red-circle {
+  float: right;
+  fill: red;
+  color: red;
+}
+
+.blue-circle {
+  float: right;
+  fill: blue;
+  color: blue;
+}
+
+.iconBtnClass{
     z-index: 11;
     float: right;
-    display: inline-flex;
+    display: block;
     align-items: center;
     border-style: outset;
-  }
+}
 
+.iconClass{
+  font-size: 2rem;
+}
+
+.setShapeGroupClass, .setBrushColorGroupClass, .setAnnotationFreeDrawModeClass{
+  display: flex;
+}
 
 /* show the input buttons as icons, i.e. without the input "Choose file" */
 #addPhotoInputId, #openZipFileInputId{

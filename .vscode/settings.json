@@ -4,7 +4,7 @@
   "eslint.format.enable": true,
   "eslint.alwaysShowStatus": true,
   "editor.codeActionsOnSave": {
-    "source.fixAll.eslint": true
+    "source.fixAll.eslint": "explicit"
   },
   // eslint.validate tells the ESLint extension which languages it should check.
   "eslint.validate": ["javascript"],

@@ -17,6 +17,19 @@ import { OrbitControlsPlanView } from '../orbitControl/OrbitControlsPlanView.js'
 import { OverlayRect } from './OverlayRect.js';
 import { PlanView } from './PlanView.js';
 
+async function onResize_planView(event) {
+    // console.log('BEG planView window resize');
+
+    let planView = COL.getPlanView();
+    // the size of the planViewPane stays the same, even though the size of the full window changed (this may require to scroll)
+    // if doRescale == true, resize the plan view in the planViewPane to cover the full image. Otherwise leave the view as is.
+
+    let doRescale = false;
+    planView.set_camera_canvas_renderer_and_viewport1(doRescale);
+    // tbd - resize the planViewPane itself, relative to the new size of the window, e.g.
+    //   if the window is shrunk horizontally to 1/2 the original size, make the width of the planViewPane 1/2 as well, while keeping the same plan view
+}    
+
 async function onMouseDownOrTouchStart_planView(event) {
     // console.log('BEG onMouseDownOrTouchStart_planView');
 
@@ -29,7 +42,7 @@ async function onMouseDownOrTouchStart_planView(event) {
     event.preventDefault();
 
     let containerPlanView = document.getElementById('planView3dCanvasId');
-    let planView = selectedLayer.getPlanView();
+    let planView = COL.getPlanView();
 
     if (COL.util.isTouchDevice()) {
         containerPlanView.removeEventListener('touchstart', onMouseDownOrTouchStart_planView, {
@@ -46,7 +59,6 @@ async function onMouseDownOrTouchStart_planView(event) {
             capture: false,
             passive: false,
         });
-        planView.setMouseOrTouchCoords(event.touches[0]);
     }
     else{
         containerPlanView.removeEventListener('mousedown', onMouseDownOrTouchStart_planView, {
@@ -63,8 +75,10 @@ async function onMouseDownOrTouchStart_planView(event) {
             capture: false,
             passive: false,
         });
-        planView.setMouseOrTouchCoords(event);
     }
+
+    let point2d = COL.util.getPointFromMouseEventAndTouchEvent(event);
+    planView.mouse = planView.screenPointCoordToNormalizedCoord(point2d);
 
     await handleMouseDown_orOneFingerTouchStart_planView(event);
 }
@@ -78,20 +92,22 @@ function onMouseMoveOrTouchMove_planView(event) {
         return;
     }
 
-    let planView = selectedLayer.getPlanView();
+    let planView = COL.getPlanView();
+    let point2d = COL.util.getPointFromMouseEventAndTouchEvent(event);
+
     if (COL.util.isTouchDevice()) {
         // Prevent from applying the _default_, _generic_ browser scroll to the planViewPane
         // (in such case, refresh symbol icon appears at the center-top of the page)
         // Instead, the planViewPane is _panned_ with custom logic
         event.preventDefault();
 
-        if(!selectedLayer.getEditOverlayRectFlag()) {
-            planView.setMouseOrTouchCoords(event.touches[0]);
+        planView.mouse = planView.screenPointCoordToNormalizedCoord(point2d);
         
+        if(!selectedLayer.getEditOverlayRectFlag()) {
             switch (event.touches.length) {
                 case 1:
                     // single-finger-pinch(zoom,dolly) touch
-                    handleMouseMove_orOneFingerTouchMove_planView(event);
+                    handleMouseMove_orOneFingerTouchMove_planView(point2d);
                     break;
         
                 case 2:
@@ -107,13 +123,13 @@ function onMouseMoveOrTouchMove_planView(event) {
             }
         }
         else{
-            planView.setMouseOrTouchCoords(event.touches[0]);
-            handleMouseMove_orOneFingerTouchMove_planView(event);    
+            let point2d = COL.util.getPointFromMouseEventAndTouchEvent(event);
+            handleMouseMove_orOneFingerTouchMove_planView(point2d);
         }
     }
     else{
-        planView.setMouseOrTouchCoords(event);
-        handleMouseMove_orOneFingerTouchMove_planView(event);
+        planView.mouse = planView.screenPointCoordToNormalizedCoord(point2d);
+        handleMouseMove_orOneFingerTouchMove_planView(point2d);
     }
 }
 
@@ -183,7 +199,7 @@ async function onMouseUpOrTouchEnd_planView(event) {
         await handleMouseUp_orTouchEnd_planView();
     }
 
-    // console.log('orbitControlsState4:', orbitControls.getState());
+    // console.log('orbitControlsState4:', orbitControls.getStateAsStr());
 }
 
 function onWheel_planView(event) {
@@ -191,8 +207,7 @@ function onWheel_planView(event) {
 
     // event.preventDefault();
 
-    let selectedLayer = COL.model.getSelectedLayer();
-    let planView = selectedLayer.getPlanView();
+    let planView = COL.getPlanView();
     let orbitControls = planView.getOrbitControls();
     handleWheel_planView(event);
 }
@@ -205,7 +220,7 @@ function onKeyDown_planView(event) {
         // Layer is not yet defined
         return;
     }
-    let planView = selectedLayer.getPlanView();
+    let planView = COL.getPlanView();
     let orbitControls = planView.getOrbitControls();
 
     if(selectedLayer.getEditOverlayRectFlag()) {
@@ -228,8 +243,8 @@ function onKeyUp_planView(event) {
 // // if the problem of double-touching the border resizes the entire window, happens again (on iOS devices, e.g. iPad)
 // // use this function with event.preventDefault()
 
-// function onTouchStart_planPaneWrapper( event ) {
-//     console.log('Beg onTouchStart_planPaneWrapper');
+// function onTouchStartplanPaneWrapper( event ) {
+//     console.log('Beg onTouchStartplanPaneWrapper');
 
 //     if(event.currentTarget == event.target)
 //     {
@@ -260,7 +275,7 @@ async function handleMouseDown_orOneFingerTouchStart_planView(event) {
         // Layer is not yet defined
         return;
     }
-    let planView = selectedLayer.getPlanView();
+    let planView = COL.getPlanView();
     let orbitControls = planView.getOrbitControls();
 
     // take time - this will impact the behavior (e.g. if in moveMode) depending on the duration of the click
@@ -271,13 +286,13 @@ async function handleMouseDown_orOneFingerTouchStart_planView(event) {
     let selectedOverlayRect = selectedLayer.getSelectedOverlayRect();
 
     let orbitControlsState = orbitControls.getState();
-
+    
     // TBD - possible future option - add delayedMenu for context-menu, also when clicking in dead area 
     // (i.e. not on overlayRect), for planView related operations, e.g.
     // taking a snapshot of the Scene3D pane. Possible future feature
 
     if (COL.util.isObjectValid(selectedOverlayRect)) {
-        if(selectedOverlayRect.getState()== OverlayRect.STATE.MOVE_OVERLAY_RECT) {
+        if(selectedOverlayRect.getState() == OverlayRect.STATE.MOVE_OVERLAY_RECT) {
             orbitControls.setState(OrbitControlsPlanView.STATE.EDIT_MODE_MOVE_OVERLAY_RECT);
         }
         else {
@@ -286,18 +301,16 @@ async function handleMouseDown_orOneFingerTouchStart_planView(event) {
         }
     }
 
-    let point2d = COL.util.getPointFromEvent(event);
+    let point2d = COL.util.getPointFromMouseEventAndTouchEvent(event);
     // console.log('event.type', event.type);
     if (((event instanceof MouseEvent) && (event.button == OrbitControlsPlanView.mouseButtons.LEFT)) || 
          event instanceof TouchEvent)  {
         // mouseCoords and screenCoordNormalized are the same thing
         // they refer to the location inside the window-screen (not the entire GUI window)
-        orbitControls.panPointStart.set(point2d.x, point2d.y);
-        orbitControls.panPointEnd.copy(orbitControls.panPointStart);
-        orbitControls.panPointCurrent.copy(orbitControls.panPointStart);
+        orbitControls.initPan(point2d);
     }
 
-    // console.log('orbitControlsState1:', orbitControls.getState());    
+    // console.log('orbitControlsState1:', orbitControls.getStateAsStr());    
 
     switch(orbitControlsState) {
         case OrbitControlsPlanView.STATE.NONE: 
@@ -342,14 +355,14 @@ async function handleMouseDown_orOneFingerTouchStart_planView(event) {
             break;
 
         default:
-            let msgStr = 'orbitControls state is not supported: ' + orbitControls.getState();
+            let msgStr = 'orbitControls state is not supported: ' + orbitControls.getStateAsStr();
             throw new Error(msgStr);
     }
 }
 
 
 async function handleMouseDown_orOneFingerTouchStart0_planViewInEditMode() {
-    console.log('BEG handleMouseDown_orOneFingerTouchStart0_planViewInEditMode');
+    console.log('BEG handle MouseDown_orOneFingerTouchStart0_planViewInEditMode');
 
     let selectedLayer = COL.model.getSelectedLayer();
     if (!selectedLayer) {
@@ -357,12 +370,12 @@ async function handleMouseDown_orOneFingerTouchStart0_planViewInEditMode() {
         return;
     }
 
-    let planView = selectedLayer.getPlanView();
+    let planView = COL.getPlanView();
     let orbitControls = planView.getOrbitControls();
 
     if (!selectedLayer.getEditOverlayRectFlag()) {
         // sanity check
-        throw new Error('Should not reach here. handleMouseDown_orOneFingerTouchStart0_planViewInEditModeplanVieweInEditMode should only be called in editMode');
+        throw new Error('Should not reach here. handle MouseDown_orOneFingerTouchStart0_planViewInEditModeplanVieweInEditMode should only be called in editMode');
     }
     // findIntersections on mouse down prevents from side effects
     // e.g. the following useCase:
@@ -375,17 +388,17 @@ async function handleMouseDown_orOneFingerTouchStart0_planViewInEditMode() {
     await planView.findIntersections();
     let intersectedStructureInfo = planView.getIntersectionStructureInfo();
     let intersectedOverlayRectInfo = planView.getIntersectionOverlayRectInfo();
-    orbitControls._selectedStructureObj = COL.util.getNestedObject( intersectedStructureInfo, ['currentIntersection', 'object']);
+    orbitControls.selectedStructureObj = COL.util.getNestedObject( intersectedStructureInfo, ['currentIntersection', 'object']);
     // the following 2 objects are different -
     // - selectedLayer.getSelectedOverlayRect(), - this is the selected overlayRect
     // - COL.util.getNestedObject(intersectedOverlayRectInfo, ['currentIntersection', 'object']) -
     //     this is the intersection with overlayRect, which may be undefined if clicking on a place in the plan where there is no overlayRect
     let editedOverlayMeshObj = COL.util.getNestedObject( intersectedOverlayRectInfo, ['currentIntersection', 'object'] );
-    if (COL.util.isObjectValid(orbitControls._selectedStructureObj)) {
+    if (COL.util.isObjectValid(orbitControls.selectedStructureObj)) {
         if (COL.util.isObjectValid(editedOverlayMeshObj)) {
-            orbitControls._intersection = COL.util.getNestedObject( intersectedStructureInfo, ['currentIntersection'] );
-            orbitControls._selectedStructureObj = orbitControls._intersection.object;
-            orbitControls._editedOverlayMeshObjInitialPosition.copy( editedOverlayMeshObj.position );
+            orbitControls.intersection = COL.util.getNestedObject( intersectedStructureInfo, ['currentIntersection'] );
+            orbitControls.selectedStructureObj = orbitControls.intersection.object;
+            orbitControls.editedOverlayMeshObjInitialPosition.copy( editedOverlayMeshObj.position );
             orbitControls.domElement.style.cursor = 'move';
         }
     }
@@ -399,11 +412,11 @@ async function handleMouseUp_orTouchEnd_planView() {
         // Layer is not yet defined
         return;
     }
-    let planView = selectedLayer.getPlanView();
+    let planView = COL.getPlanView();
     let orbitControls = planView.getOrbitControls();
 
     let orbitControlsState = orbitControls.getState();
-    // console.log('orbitControlsState3:', orbitControls.getState());    
+    // console.log('orbitControlsState3:', orbitControls.getStateAsStr());    
 
     // clear the timeout for the context-menu
     // (mouseup cancels the delayed timer, to prevent the menu from being displayed if mousedown was not pressed long enough)
@@ -442,7 +455,7 @@ async function handleMouseUp_orTouchEnd_planView() {
             // sync to the webserver after moving an overlayRect. 
             let syncStatus = await selectedLayer.syncBlobsWithWebServer();
             if(!syncStatus) {
-                throw new Error('Error from _syncWithBackendBtn from within handleMouseUp_orTouchEnd_planView');
+                throw new Error('Error from sync BlobsWithWebServer after moving overlayRect');
             }
 
             break;
@@ -492,20 +505,20 @@ async function handleMouseUp_orTouchEnd_planView() {
             break;
 
         default:
-            let msgStr = 'orbitControls state is not supported: ' + orbitControls.getState();
+            let msgStr = 'orbitControls state is not supported: ' + orbitControls.getStateAsStr();
             throw new Error(msgStr);
     }
 }
 
 
 
-function handleMouseMove_orOneFingerTouchMove_planView(event) {
+function handleMouseMove_orOneFingerTouchMove_planView(point2d) {
     // console.log('BEG handleMouseMove_orOneFingerTouchMove_planView');
     let selectedLayer = COL.model.getSelectedLayer();
-    let planView = selectedLayer.getPlanView();
+    let planView = COL.getPlanView();
     let orbitControls = planView.getOrbitControls();
     let orbitControlsState = orbitControls.getState();
-    // console.log('orbitControlsState5:', orbitControls.getState());    
+    // console.log('orbitControlsState5:', orbitControls.getStateAsStr());    
 
     switch(orbitControlsState) {
         case OrbitControlsPlanView.STATE.EDIT_MODE_MOVE_OVERLAY_RECT:
@@ -514,8 +527,8 @@ function handleMouseMove_orOneFingerTouchMove_planView(event) {
             if (COL.util.isObjectValid(selectedOverlayRect) && 
             (selectedOverlayRect.getState() == OverlayRect.STATE.MOVE_OVERLAY_RECT ||
              selectedOverlayRect.getState() == OverlayRect.STATE.MOVED_OVERLAY_RECT) ) {
-            // The user is in move mode, and the selectedOverlayRect actually moved (we are in onMouseMove)
-            // Set the editMode to STATE.MOVED_OVERLAY_RECT
+                // The user is in move mode, and the selectedOverlayRect actually moved (we are in onMouseMove)
+                // Set the editMode to STATE.MOVED_OVERLAY_RECT
 
                 selectedOverlayRect.setState(OverlayRect.STATE.MOVED_OVERLAY_RECT);
         
@@ -526,7 +539,6 @@ function handleMouseMove_orOneFingerTouchMove_planView(event) {
 
         case OrbitControlsPlanView.STATE.DOLLY_PAN: 
         {
-            let point2d = COL.util.getPointFromEvent(event);
             panPlanPane(point2d);
             break;
         }
@@ -537,7 +549,7 @@ function handleMouseMove_orOneFingerTouchMove_planView(event) {
         {
             // BEG check if moved-enough
             let panPointDelta = new THREE_Vector2();
-            let point2d = COL.util.getPointFromEvent(event);
+            let point2d = COL.util.getPointFromMouseEventAndTouchEvent(event);
             panPointDelta.subVectors ( point2d, orbitControls.panPointStart );
             let panPointDeltaThresh = 10;
             if(panPointDelta.length() > panPointDeltaThresh){
@@ -565,30 +577,29 @@ function handleMouseMove_orOneFingerTouchMove_planView(event) {
             break;
 
         default:
-            let msgStr = 'orbitControls state is not supported: ' + orbitControls.getState();
+            let msgStr = 'orbitControls state is not supported: ' + orbitControls.getStateAsStr();
             throw new Error(msgStr);
     }
 }
 
-
 async function handleMouseMove_orOneFingerTouchMove0_planViewInEditMode() {
-    // console.log('BEG handleMouseMove_orOneFingerTouchMove0_planViewInEditMode');
+    // console.log('BEG handle MouseMove_orOneFingerTouchMove0_planViewInEditMode');
     let selectedLayer = COL.model.getSelectedLayer();
     if (!selectedLayer) {
     // Layer is not yet defined
         return;
     }
-    let planView = selectedLayer.getPlanView();
+    let planView = COL.getPlanView();
     let orbitControls = planView.getOrbitControls();
 
-    orbitControls._mouse = planView.getMouseCoords();
+    orbitControls.mouse = planView.getMouse();
     orbitControls.camera = planView.getCameraPlanView();
 
-    orbitControls._raycaster.setFromCamera(orbitControls._mouse, orbitControls.camera);
+    orbitControls.raycaster.setFromCamera(orbitControls.mouse, orbitControls.camera);
 
     let intersectedOverlayRectInfo = planView.getIntersectionOverlayRectInfo();
     let editedOverlayMeshObj = COL.util.getNestedObject( intersectedOverlayRectInfo, ['currentIntersection', 'object'] );
-    if (COL.util.isObjectValid(orbitControls._selectedStructureObj)) {
+    if (COL.util.isObjectValid(orbitControls.selectedStructureObj)) {
         if (COL.util.isObjectValid(editedOverlayMeshObj)) {
             // ///////////////////////////////////////////////////////
             // An overlayRect is selected
@@ -597,10 +608,10 @@ async function handleMouseMove_orOneFingerTouchMove0_planViewInEditMode() {
             // of the overlayRect
             // ///////////////////////////////////////////////////////
 
-            var intersects2 = orbitControls._raycaster.intersectObjects([orbitControls._selectedStructureObj]);
+            var intersects2 = orbitControls.raycaster.intersectObjects([orbitControls.selectedStructureObj]);
                 
             if (intersects2.length > 0) {
-                orbitControls._intersection = intersects2[0];
+                orbitControls.intersection = intersects2[0];
                 orbitControls.translateOverlayRect2();
             }
             orbitControls.dispatchEvent({ type: 'drag', object: editedOverlayMeshObj });
@@ -617,33 +628,33 @@ async function handleMouseMove_orOneFingerTouchMove0_planViewInEditMode() {
             // 'drag' == icon in the shape of "???"
             // ///////////////////////////////////////////////////////
 
-            orbitControls._raycaster.setFromCamera(orbitControls._mouse, orbitControls.camera);
+            orbitControls.raycaster.setFromCamera(orbitControls.mouse, orbitControls.camera);
 
             let overlayMeshGroup = selectedLayer.getOverlayMeshGroup();
-            let intersects = orbitControls._raycaster.intersectObjects(overlayMeshGroup.children,true);
+            let intersects = orbitControls.raycaster.intersectObjects(overlayMeshGroup.children,true);
 
             if (intersects.length > 0) {
                 var overlayRect1 = intersects[0].object;
 
-                if (orbitControls._hoveredOverlayRect !== overlayRect1) {
+                if (orbitControls.hoveredOverlayRect !== overlayRect1) {
                     orbitControls.dispatchEvent({ type: 'hoveron', object: overlayRect1 });
 
                     orbitControls.domElement.style.cursor = 'pointer';
-                    orbitControls._hoveredOverlayRect = overlayRect1;
+                    orbitControls.hoveredOverlayRect = overlayRect1;
                 }
             }
             else {
-                if (orbitControls._hoveredOverlayRect !== null) {
-                    // No intersection with overlayRect is found, and the orbitControls._hoveredOverlayRect
+                if (orbitControls.hoveredOverlayRect !== null) {
+                    // No intersection with overlayRect is found, and the orbitControls.hoveredOverlayRect
                     // (from previous interaction) is not null. Set the pointer to "auto"
 
                     orbitControls.dispatchEvent({
                         type: 'hoveroff',
-                        object: orbitControls._hoveredOverlayRect,
+                        object: orbitControls.hoveredOverlayRect,
                     });
 
                     orbitControls.domElement.style.cursor = 'auto';
-                    orbitControls._hoveredOverlayRect = null;
+                    orbitControls.hoveredOverlayRect = null;
                 }
             }
         }
@@ -652,8 +663,7 @@ async function handleMouseMove_orOneFingerTouchMove0_planViewInEditMode() {
 
 function panPlanPane(point2d_inScreenCoord) {
     // console.log('BEG panPlanPane');
-    let selectedLayer = COL.model.getSelectedLayer();
-    let planView = selectedLayer.getPlanView();
+    let planView = COL.getPlanView();
     let orbitControls = planView.getOrbitControls();
 
     orbitControls.panPointEnd.set(point2d_inScreenCoord.x, point2d_inScreenCoord.y);
@@ -668,9 +678,9 @@ function handleTwoFingerTouchMove_planView(event) {
     // console.log( 'BEG handleTwoFingerTouchMove_planView' );
 
     let selectedLayer = COL.model.getSelectedLayer();
-    let planView = selectedLayer.getPlanView();
+    let planView = COL.getPlanView();
     let orbitControls = planView.getOrbitControls();
-    // console.log('orbitControlsState7:', orbitControls.getState());    
+    // console.log('orbitControlsState7:', orbitControls.getStateAsStr());    
 
     {
         // on 2-finger touch, we want to
@@ -729,16 +739,16 @@ function handleTwoFingerTouchMove_planView(event) {
                     // console.log('PlanView.doDrawTwoFingerTouchCenterPoint', PlanView.doDrawTwoFingerTouchCenterPoint);
                     if (PlanView.doDrawTwoFingerTouchCenterPoint) {
                     // highlight the centerPoint between the two-finger touch
-                        planView._centerPoint_twoFingerTouch.position.copy(
+                        planView.centerPoint_twoFingerTouch.position.copy(
                             centerPoint3d_inWorldCoord_end
                         );
-                        planView._centerPoint_twoFingerTouch.position.setY(COL.y0);
+                        planView.centerPoint_twoFingerTouch.position.setY(COL.y0);
                     }
                 }
                 break;
     
             default:
-                let msgStr = 'orbitControls state is not supported: ' + orbitControls.getState();
+                let msgStr = 'orbitControls state is not supported: ' + orbitControls.getStateAsStr();
                 throw new Error(msgStr);
         }
     }
@@ -790,8 +800,7 @@ function handleTwoFingerTouchMove_planView(event) {
 function handleWheel_planView(event) {
     console.log('BEG handleWheel_planView');
 
-    let selectedLayer = COL.model.getSelectedLayer();
-    let planView = selectedLayer.getPlanView();
+    let planView = COL.getPlanView();
     let orbitControls = planView.getOrbitControls();
 
     if (orbitControls.state !== OrbitControlsPlanView.STATE.NONE) {
@@ -812,4 +821,4 @@ function handleWheel_planView(event) {
 
 
 export { onMouseDownOrTouchStart_planView, onWheel_planView, onMouseUpOrTouchEnd_planView,
-    onKeyDown_planView, onKeyUp_planView };
+    onKeyDown_planView, onKeyUp_planView, onResize_planView };

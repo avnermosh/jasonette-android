@@ -29,7 +29,7 @@
                     <td> {{ site.group_name }} </td>
                     <td> {{ site.site_name }} </td>
                     <td>
-                        {% if (current_user.role == "admin") %}
+                        {% if (current_user.role == "admin") or (current_user.role == "group_owner") %}
                         <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#confirmDeleteSiteModal{{site.id}}">
                             Delete Site1
                         </button>
@@ -45,7 +45,7 @@
     </div>
     <div  id="admin-view-sites-buttons-id">
         <a id="view_sites_button_id" class="btn btn-sm btn-success" href="{{ url_for('api.view_sites') }}">View Sites</a>
-        {% if (current_user.role == "admin") %}
+        {% if (current_user.role == "admin") or (current_user.role == "group_owner") %}
         <a id="add_new_site_button_id" class="btn btn-sm btn-success" href="{{ url_for('api.admin_add_site') }}">Add New Site</a>
         {% endif %}
     </div>

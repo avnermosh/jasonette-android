@@ -19,7 +19,7 @@ class ZipFileInfo {
         this.zipFileUrl = zipFileUrl;
         this.files = files;
 
-        this._sitesInfo = new COL.util.AssociativeArray();
+        this.sitesInfo = new COL.util.AssociativeArray();
 
         this.sitesFilesInfo = {};
         this.sitesFilesInfo["sites"] = {};
@@ -35,11 +35,11 @@ class ZipFileInfo {
     };
     
     getSitesInfo = function () {
-        return this._sitesInfo;
+        return this.sitesInfo;
     };
 
     setSitesInfo = function (sitesInfo) {
-        this._sitesInfo = sitesInfo;
+        this.sitesInfo = sitesInfo;
     };
     
     getPlanInfoBySiteIdAndPlanId = function (siteId, planId) {
@@ -47,7 +47,7 @@ class ZipFileInfo {
         let planInfo = undefined;
         let foundPlanInfo = false;
 
-        let iter = this._sitesInfo.iterator();
+        let iter = this.sitesInfo.iterator();
         while (iter.hasNext()) {
             let siteInfo = iter.next();
 

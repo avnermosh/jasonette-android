@@ -6,6 +6,7 @@
 // =========================================================
 
 'use strict';
+import { ImageView } from './ImageView.js';
 
 // //////////////////////////////////////////////////////////////
 //
@@ -13,7 +14,10 @@
 //
 // //////////////////////////////////////////////////////////////
 
-import {WebGLRenderer as THREE_WebGLRenderer,
+import {
+    WebGLRenderer as THREE_WebGLRenderer,
+    Vector2 as THREE_Vector2,
+    Color,
 } from '../../static/three.js/three.js-r135/build/three.module.js';
 
 //        WebGLRenderer as THREE_WebGL1Renderer,
@@ -27,6 +31,7 @@ import './Core.js';
 import { Layer } from './Layer.js';
 import { SceneBar } from '../gui/SceneBar.js';
 import { BrowserDetect } from '../util/browser_detect.js';
+import { ImageInfo } from './ImageInfo.js';
 
 /**
  * @file Defines the Model class
@@ -41,17 +46,24 @@ import { BrowserDetect } from '../util/browser_detect.js';
 class Model {
 
     constructor(){
-        this.minSoftwareVersion = '1.0.0';
+        this.minSoftwareVersion = '1.3.0';
         this.dbVersion = '1.0.0';
         this.fileZip = undefined;
-        this._layers = new COL.util.AssociativeArray();
-        this._selectedLayer = null;
-        this._zipFilesInfo = new COL.util.AssociativeArray();
-        this._selectedZipFileInfo = undefined;
+        this.layers = new COL.util.AssociativeArray();
+        this.selectedLayer = null;
+        this.zipFilesInfo = new COL.util.AssociativeArray();
+        this.selectedZipFileInfo = undefined;
         this.sceneBar = undefined;
         this.isUserLoggedIn = false;
-        this._rendererPlanView2 = undefined;
-        this._rendererImageViewPane = undefined;
+
+        // ////////////////////////////////////
+        // https://stackoverflow.com/questions/21548247/clean-up-threejs-webgl-contexts
+        // set the rendererPlanView2 as a member of Model, so that it
+        // does not get disposed when disposing Layer::planView.
+        // ////////////////////////////////////
+        
+        this.rendererPlanView2 = undefined;
+        this.rendererImageView = undefined;
         this.planThumbnailsPaneScrollPosition = {scrollTop: 0, scrollLeft: 0};
         this.isSyncedWithWebServer = undefined;
 
@@ -63,6 +75,59 @@ class Model {
         // context-menu related variables
         this.timeoutID = undefined;
         this.isPlanThumbnailMenuVisible = false;
+
+        // https://stackoverflow.com/questions/60350747/fabric-js-patterns-how-create-pattern-for-canvas-background-from-rects-without
+        // fabric.devicePixelRatio = Math.max(Math.floor(fabric.devicePixelRatio), 1);
+        fabric.devicePixelRatio = 1;
+
+        // the width/height of the canvas is updated when loading the image
+        // (no need to set it up at this stage of fabricCanvas construction)
+        this.fabricCanvas = new fabric.Canvas('canvasId1', {
+            // list of color names
+            // http://fabricjs.com/docs/fabric.js.html#line6347
+            backgroundColor: 'cadetblue',
+            isDrawingMode: false,
+            // PointerEvent is used instead of MouseEvent, and TouchEvent.
+            enablePointerEvents: true
+        });
+        
+        this.fabricCanvas.freeDrawingBrush = new fabric.PencilBrush(this.fabricCanvas);
+
+        this.fabricCanvas.freeDrawingBrush.decimate = 100;
+        this.fabricCanvas.freeDrawingBrush.width = 10;
+        this.fabricCanvas.freeDrawingBrush.color = '#407e91';
+
+        this.imageView = undefined;
+                  
+        this.fabricCanvas.on('after:render', function() {
+            // console.log('BEG fabricCanvas.on after:render');
+            let imageView = COL.model.getImageView();
+            if(COL.util.isObjectValid(imageView)) {
+                if(COL.util.isObjectValid(imageView.surface)) {
+                    imageView.surface.material.map.needsUpdate = true;
+                }
+            }
+        });
+
+        fabric.Object.prototype.objectCaching = true;
+
+        this.fabricCanvas.on('path:created', async function(opt) {
+            // console.log('BEG path:created');
+
+            let imageView = COL.model.getImageView();
+            if(COL.util.isObjectValid(imageView)) {
+                if(COL.util.isObjectValid(imageView.surface)) {
+                    imageView.surface.material.map.needsUpdate = true;
+                }
+            }
+
+            COL.model.fabricCanvas.renderAll();
+            ImageView.Render2();
+            // sync the updated imageInfo to the webServer after creating a path.
+            let selectedLayer = COL.model.getSelectedLayer();
+            let imageInfo = ImageInfo.getSelectedImageInfo(selectedLayer);
+            await imageInfo.updateAnnotationBlob();
+        });
     }
 
     getDoDisplayDemoSite() {
@@ -73,6 +138,10 @@ class Model {
         this.doDisplayDemoSite = doDisplayDemoSite;
     }
 
+    getFabricCanvas() {
+        return this.fabricCanvas;
+    }
+    
     getimageViewPaneSize2() {
         // console.log('BEG getimageViewPaneSize2');
         let imageViewPaneEl = $('#imageViewPaneId');
@@ -83,40 +152,37 @@ class Model {
     }
 
     setRendererImageViewPane () {
-
         let selectedImage3dCanvasEl = document.getElementById('selectedImage3dCanvasId');
-
         if(COL.doUseWebGL2) {
-            this._rendererImageViewPane = new THREE_WebGLRenderer({
+            this.rendererImageView = new THREE_WebGLRenderer({
                 preserveDrawingBuffer: false,
                 alpha: true,
                 canvas: selectedImage3dCanvasEl});
         }
         else {
             // force webGL1
-            this._rendererImageViewPane = new THREE_WebGL1Renderer({
+            this.rendererImageView = new THREE_WebGL1Renderer({
                 preserveDrawingBuffer: false,
                 alpha: true,
                 canvas: selectedImage3dCanvasEl});
         }
-
         
-        let _rendererImageViewPane_isWebGL2 = this._rendererImageViewPane.capabilities.isWebGL2;
-        console.log('_rendererImageViewPane_isWebGL2', _rendererImageViewPane_isWebGL2);
+        let rendererImageView_isWebGL2 = this.rendererImageView.capabilities.isWebGL2;
+        console.log('rendererImageView_isWebGL2', rendererImageView_isWebGL2);
 
         let factor = 0.5;
         // factor = 0.1;
         factor = 1.0;
         console.log('factor', factor); 
         
-        this._rendererImageViewPane.setPixelRatio(window.devicePixelRatio * factor);
+        this.rendererImageView.setPixelRatio(window.devicePixelRatio * factor);
         let imageViewPaneSize = this.getimageViewPaneSize2();
-        this._rendererImageViewPane.setSize( imageViewPaneSize.width, imageViewPaneSize.height );
+        this.rendererImageView.setSize( imageViewPaneSize.width, imageViewPaneSize.height );
         
         // Webgl canvas background color
-        this._rendererImageViewPane.setClearColor(0XDBDBDB, 1);
+        this.rendererImageView.setClearColor(0XDBDBDB, 1);
 
-        let rendererImageViewPaneJqueryObject = $('#' + this._rendererImageViewPane.domElement.id);
+        let rendererImageViewPaneJqueryObject = $('#' + this.rendererImageView.domElement.id);
         rendererImageViewPaneJqueryObject.addClass('showFullSize');
     }
     
@@ -134,7 +200,7 @@ class Model {
         // - tbd - option to see cross-hair between the 2 fingers
 
         let dataSliderInitialValue = 2;
-        let rowNum = this._milestoneDatesRowNum;
+        let rowNum = this.milestoneDatesRowNum;
         
         // value="Remove1" sets the label inside the button (as opposed to setting it besides the button if used after the element)
         let planViewSettingModalEl = `
@@ -176,9 +242,9 @@ class Model {
         this.createAdvancedSettingModal();
         
         // define the PlanView Settings Modal button
-        this._advancedSettingModalBtnEl = '<a href="#" class="ui-button" data-bs-toggle="modal" data-bs-target="#basicModal" id="advanced-settings-modal-btn">☰</a>';
+        this.advancedSettingModalBtnEl = '<a href="#" class="ui-button" data-bs-toggle="modal" data-bs-target="#basicModal" id="advanced-settings-modal-btn">☰</a>';
 
-        $('#project-menu-id').append(this._advancedSettingModalBtnEl);
+        $('#project-menu-id').append(this.advancedSettingModalBtnEl);
 
         $('#advanced-settings-modal-btn').click(function() {
             console.log('BEG onclick advanced-settings-modal-btn');
@@ -269,7 +335,7 @@ class Model {
         }
 
         console.log('COL.doWorkOnline', COL.doWorkOnline);
-        this._browserDetect = undefined;
+        this.browserDetect = undefined;
         this.detectUserAgent();
         
         this.sceneBar = new SceneBar(COL.component);
@@ -288,29 +354,29 @@ class Model {
 
         // //////////////////////////////////////////////////////////////////////////////
         // Set renderers:
-        // - this._rendererPlanView2
-        // - this._rendererImageViewPane
+        // - this.rendererPlanView2
+        // - this.rendererImageView
         // //////////////////////////////////////////////////////////////////////////////
 
         // https://stackoverflow.com/questions/21548247/clean-up-threejs-webgl-contexts
-        // set the _rendererPlanView2 as a member of Model, so that it does
+        // set the rendererPlanView2 as a member of Model, so that it does
         // not get disposed when disposing Layer::planView.
 
         let canvasPlanViewEl = document.getElementById('planView3dCanvasId');
         if(COL.doUseWebGL2) {
-            this._rendererPlanView2 = new THREE_WebGLRenderer({antialias: true, canvas: canvasPlanViewEl});
+            this.rendererPlanView2 = new THREE_WebGLRenderer({antialias: true, canvas: canvasPlanViewEl});
         }
         else {
             // force webGL1
-            this._rendererPlanView2 = new THREE_WebGL1Renderer({antialias: true, canvas: canvasPlanViewEl});
+            this.rendererPlanView2 = new THREE_WebGL1Renderer({antialias: true, canvas: canvasPlanViewEl});
         }
 
-        let _rendererPlanView2_isWebGL2 = this._rendererPlanView2.capabilities.isWebGL2;
-        console.log('_rendererPlanView2_isWebGL2', _rendererPlanView2_isWebGL2);
+        let rendererPlanView2_isWebGL2 = this.rendererPlanView2.capabilities.isWebGL2;
+        console.log('rendererPlanView2_isWebGL2', rendererPlanView2_isWebGL2);
             
         // Set the background color, and the opacity of the canvas
         // https://threejs.org/docs/#api/en/renderers/WebGLRenderer.setClearColor
-        this._rendererPlanView2.setClearColor (0xffffff, 0.9);
+        this.rendererPlanView2.setClearColor (0xffffff, 0.9);
 
         let planViewPaneEl = document.getElementById('planViewPaneId');
 
@@ -327,6 +393,9 @@ class Model {
     
         this.setRendererImageViewPane();
 
+        this.imageView = new ImageView();
+        this.imageView.initSelectedView();
+
         if(COL.doEnableWhiteboard) {
             // //////////////////////////////////////////////////////////////////////////////
             // Set floorPlanWhiteboard
@@ -337,15 +406,15 @@ class Model {
         }
             
         // //////////////////////////////////////////////////////////////////////////////
-        // Report _rendererPlanView2 webGL capabilities
+        // Report rendererPlanView2 webGL capabilities
         // //////////////////////////////////////////////////////////////////////////////
 
-        let isWebGL2 = this._rendererPlanView2.capabilities.isWebGL2;
+        let isWebGL2 = this.rendererPlanView2.capabilities.isWebGL2;
         console.log('isWebGL2', isWebGL2);
         console.log('Layer.maxNumImageBlobsInMeomry', Layer.maxNumImageBlobsInMeomry);
             
-        // console.log('this._rendererPlanView2.capabilities', this._rendererPlanView2.capabilities);
-        // console.log('this._rendererPlanView2.capabilities.maxTextureSize', this._rendererPlanView2.capabilities.maxTextureSize);
+        // console.log('this.rendererPlanView2.capabilities', this.rendererPlanView2.capabilities);
+        // console.log('this.rendererPlanView2.capabilities.maxTextureSize', this.rendererPlanView2.capabilities.maxTextureSize);
 
         if(!COL.doWorkOnline && COL.util.isObjectValid(window.$agent_jasonette_android)) {
             // tbd - investigate why calling getDataFromIndexedDb()
@@ -371,6 +440,10 @@ class Model {
 
     }
 
+    getImageView () {
+        return this.imageView;
+    }
+
     getSyncWithWebServerStatus() {
         return this.isSyncedWithWebServer;
     }
@@ -381,12 +454,10 @@ class Model {
     }
 
     updateIsSyncedWithWebServer() {
-        console.log('BEG updateIsSyncedWithWebServer');
+        // console.log('BEG updateIsSyncedWithWebServer');
 
         let foundNonSyncedLayer = false;
-        console.log('this._layers.size()', this._layers.size());
-        
-        let iter = this._layers.iterator();
+        let iter = this.layers.iterator();
         while (iter.hasNext()) {
             let layerObj = iter.next();
             if(!layerObj.getSyncWithWebServerStatus()) {
@@ -403,28 +474,28 @@ class Model {
     detectUserAgent () {
         // console.log('BEG detectUserAgent');
         
-        this._browserDetect = new BrowserDetect();
-        this._browserDetect.init();
+        this.browserDetect = new BrowserDetect();
+        this.browserDetect.init();
 
         // e.g. For Pixel3:
         // navigator.userAgent Mozilla/5.0 (Linux; Android 11; Pixel 3 XL) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.185 Mobile Safari/537.36
         // console.log('navigator.userAgent', navigator.userAgent); 
-        // console.log('this._browserDetect.OS', this._browserDetect.OS);
-        console.log('this._browserDetect.browser', this._browserDetect.browser);
-        console.log('this._browserDetect.version', this._browserDetect.version);
+        // console.log('this.browserDetect.OS', this.browserDetect.OS);
+        console.log('this.browserDetect.browser', this.browserDetect.browser);
+        console.log('this.browserDetect.version', this.browserDetect.version);
 
         // raise a toast to show the browser type
         // let toastTitleStr = 'BrowserDetect';
         let msgStr = navigator.userAgent + ', OS: ' +
-            this._browserDetect.OS + ', Browser: ' +
-            this._browserDetect.browser + ', Version: ' +
-            this._browserDetect.version;
+            this.browserDetect.OS + ', Browser: ' +
+            this.browserDetect.browser + ', Version: ' +
+            this.browserDetect.version;
         // toastr.success(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
         console.log('msgStr', msgStr); 
     }
 
     getBrowserDetect () {
-        return this._browserDetect;
+        return this.browserDetect;
     }
 
     detectWebGL () {
@@ -453,11 +524,11 @@ class Model {
     }
 
     getRendererPlanView () {
-        return this._rendererPlanView2;
+        return this.rendererPlanView2;
     }
 
     getRendererImageViewPane () {
-        return this._rendererImageViewPane;
+        return this.rendererImageView;
     }
     
     getSceneBar () {
@@ -511,19 +582,19 @@ class Model {
     }
 
     getZipFilesInfo () {
-        return this._zipFilesInfo;
+        return this.zipFilesInfo;
     }
 
     setZipFilesInfo (zipFileInfo) {
-        this._zipFilesInfo.set(zipFileInfo.zipFileName, zipFileInfo);
+        this.zipFilesInfo.set(zipFileInfo.zipFileName, zipFileInfo);
     }
 
     getSelectedZipFileInfo () {
-        return this._selectedZipFileInfo;
+        return this.selectedZipFileInfo;
     }
 
     setSelectedZipFileInfo (zipFileInfo) {
-        this._selectedZipFileInfo = zipFileInfo;
+        this.selectedZipFileInfo = zipFileInfo;
     }
 
     getMinSoftwareVersion () {
@@ -542,11 +613,11 @@ class Model {
         this.planThumbnailsPaneScrollPosition = planThumbnailsPaneScrollPosition;
     }
 
-    createLayer (planInfo, isLayerFromZipFile=false) {
+    createLayer ({planInfo, isLayerFromZipFile=false}) {
         // console.log('BEG createLayer');
 
         let layerName = Layer.CreateLayerName(planInfo.siteName, planInfo.name);
-        let layer = this._layers.getByKey(layerName);
+        let layer = this.layers.getByKey(layerName);
         if(COL.util.isObjectValid(layer)) {
             // tbd - currently - removing the existing layer - still leaves the existing layer in the sitePlan menu
             //       Remove from the site plan as well? or only after syncing to the webserver ??
@@ -558,7 +629,7 @@ class Model {
             // throw('Layer already exists');
         }
 
-        // console.log('this._layers.size()', this._layers.size()); 
+        // console.log('this.layers.size()', this.layers.size()); 
         layer = new Layer(layerName, planInfo, isLayerFromZipFile);
         layer.initLayer();
         return layer;
@@ -566,7 +637,7 @@ class Model {
 
     getLayerByName (name) {
         // this.printLayersInfo2();
-        return this._layers.getByKey(name);
+        return this.layers.getByKey(name);
     }
 
     getLayerFromLayersList (planInfo) {
@@ -577,7 +648,7 @@ class Model {
         }
         
         let layer = undefined;
-        let iter = this._layers.iterator();
+        let iter = this.layers.iterator();
         while (iter.hasNext()) {
             let keyVal = iter.nextKeyVal();
             let layerKey = keyVal[0];
@@ -587,7 +658,9 @@ class Model {
             // console.log('layerVal', layerVal);
 
             let layerPlanInfo = layerVal.getPlanInfo();
-            if(layerPlanInfo && (layerPlanInfo.siteId == planInfo.siteId) && (layerPlanInfo.id == planInfo.id)) {
+            if(layerPlanInfo && (layerPlanInfo.siteId == planInfo.siteId) && 
+                (layerPlanInfo.id == planInfo.id) &&
+                (layerPlanInfo.name == planInfo.name)) {
                 layer = layerVal;
                 break;
             }
@@ -598,9 +671,9 @@ class Model {
     
     printLayersInfo2 () {
 
-        console.log('_layers.size()', this._layers.size());
+        console.log('layers.size()', this.layers.size());
         
-        let iter = this._layers.iterator();
+        let iter = this.layers.iterator();
         while (iter.hasNext()) {
             let keyVal = iter.nextKeyVal();
             let layerName = keyVal[0];
@@ -614,9 +687,9 @@ class Model {
     }
     
     async loadLayerFromWebServer(planInfo) {
-        let layer = COL.model.createLayer(planInfo);
+        let layer = COL.model.createLayer({planInfo: planInfo});
 
-        // "https://192.168.1.75/avner/img/168/188/geographic_map.structure.layer0.json"
+        // "https://192.168.1.75/avner/img/168/188/geographic_map.layer0.json"
         let planFilename = planInfo.planFilename;
         // console.log('planFilename', planFilename);
 
@@ -630,22 +703,27 @@ class Model {
         // console.log('dataAsJson', dataAsJson);
         // get the generalInfo section from the entire json data
         let generalInfoAsJson = dataAsJson['generalInfo'];
-        let layerSoftwareVersion = COL.util.getNestedObject(generalInfoAsJson, ['softwareVersion']);
+        let layerSoftwareVersion = COL.util.getNestedObject(dataAsJson, ['generalInfo', 'softwareVersion']);
+        if(COL.util.isObjectInvalid(layerSoftwareVersion)) {
+            let msgStr = 'softwareVersion is invalid. planFilename: ' + planFilename;
+            throw new Error(msgStr);
+        }
 
         if(!COL.loaders.utils.validateVersion(layerSoftwareVersion, COL.model.getMinSoftwareVersion(), 'GreaterOrEqual')) {
             let msgStr = 'Version validation failed while loading layer from web server. planFilename: ' + planFilename;
             throw new Error(msgStr);
         }
 
-        if(COL.loaders.utils.isSemVerSmaller(layerSoftwareVersion, COL.getSoftwareVersion())) {
-            // migrate the layer to the new vesion
-            layer.migrateVersion(layerSoftwareVersion, COL.getSoftwareVersion());
-        }
-
         layer.setGeneralInfo(generalInfoAsJson);
 
+        // load the layer from the webserver
         await COL.loaders.CO_ObjectLoader.loadLayerJson_fromWebServer(layer, planInfo.siteId, planInfo.id);
-    
+
+        if(COL.loaders.utils.isSemVerSmaller(layerSoftwareVersion, COL.getSoftwareVersion())) {
+            // migrate the layer to the new vesion
+            layer.migrateVersion(layerSoftwareVersion, COL.getSoftwareVersion(), generalInfoAsJson);
+        }
+
         COL.model.addLayerToList(layer);
 
         return layer;
@@ -661,12 +739,12 @@ class Model {
             return;
         }
 
-        // Add/update layer to _layers            
-        this._layers.set(layer.name, layer);
+        // Add/update layer to layers            
+        this.layers.set(layer.name, layer);
     }
 
     async selectLayerByName (layerName) {
-        let layer = this._layers.getByKey(layerName);
+        let layer = this.layers.getByKey(layerName);
         if(COL.util.isObjectValid(layer)) {
             await this.setSelectedLayer(layer);
         }
@@ -675,15 +753,15 @@ class Model {
     removeLayerByName (name) {
         // console.log('BEG removeLayerByName');
 
-        // console.log('this._layers', this._layers);
-        // this._layers.printKeysAndValues();
+        // console.log('this.layers', this.layers);
+        // this.layers.printKeysAndValues();
         
         let layer = this.getLayerByName(name);
 
         // https://www.tutorialrepublic.com/faq/how-to-determine-if-variable-is-undefined-or-null-in7-javascript.php
         // check for both undefined, null with the "equality operator" "==" (as opposed to the "strict equality operator" "===" )
         if(COL.util.isObjectValid(layer)) {
-            layer = this._layers.remove(layer.name);
+            layer = this.layers.remove(layer.name);
             if (layer) {
 
                 console.log('layer', layer); 
@@ -692,9 +770,9 @@ class Model {
                 layer = null;
                 // delete layer;
             }
-            if (COL.util.isObjectValid(this._selectedLayer) && (this._selectedLayer.name == name)) {
+            if (COL.util.isObjectValid(this.selectedLayer) && (this.selectedLayer.name == name)) {
                 // The removed layer was the selected layer. Clear the selected layer
-                this._selectedLayer = undefined;
+                this.selectedLayer = undefined;
             }
         }
     }
@@ -706,11 +784,11 @@ class Model {
         // Setup the new selectedLayer
         // //////////////////////////////////////////////////////////////////////////////
 
-        this._selectedLayer = layer;
+        this.selectedLayer = layer;
 
-        if(this._selectedLayer.isLayerFromZipFile) {
+        if(this.selectedLayer.isLayerFromZipFile) {
             // update the selectedZipFileInfo
-            let selectedLayerZipFileName = this._selectedLayer.planInfo.zipFileName;
+            let selectedLayerZipFileName = this.selectedLayer.planInfo.zipFileName;
             let zipFileInfo = COL.model.getZipFilesInfo().getByKey(selectedLayerZipFileName);
             COL.model.setSelectedZipFileInfo(zipFileInfo);
         }
@@ -722,28 +800,29 @@ class Model {
 
         }
         else {
-            await this._selectedLayer.updateImageThumbnailsRelatedRenderring();
+            await this.selectedLayer.updateImageThumbnailsRelatedRenderring();
 
             // //////////////////////////////////////////////////////////////////////////////
             // Adjust the camera, canvas, renderer, and viewport1 to the planViewPane
             // //////////////////////////////////////////////////////////////////////////////
 
-            let planView = this._selectedLayer.getPlanView();
+            let planView = COL.getPlanView();
             // Set doRescale so that the camera position is restored from the layer.json file
             let doRescale = false;
             doRescale = true;
             planView.set_camera_canvas_renderer_and_viewport1(doRescale);
-            $(document).trigger('SceneLayerSelected', [this._selectedLayer]);
+            $(document).trigger('SceneLayerSelected', [this.selectedLayer]);
         }
         
+        this.selectedLayer.setPlanViewForSelectedLayer();
     }
 
     getSelectedLayer () {
-        return this._selectedLayer;
+        return this.selectedLayer;
     }
     
     getLayers () {
-        return this._layers;
+        return this.layers;
     }
 
     async getSiteByName(siteName) {
@@ -774,13 +853,16 @@ class Model {
         throw('Not implemented yet');
 
         // https://github.com/mrdoob/three.js/blob/master/examples/webgl_test_memory2.html
-        // renderer -> _rendererPlanView
-        // this._rendererPlanView.forceContextLoss();
-        // this._rendererPlanView.context = null;
-        // this._rendererPlanView.domElement = null;
-        // this._rendererPlanView = null;
-        // this._rendererPlanView.dispose();
-        
+        // let rendererPlanView = COL.model.getRendererPlanView();
+        // rendererPlanView.forceContextLoss();
+        // rendererPlanView.context = null;
+        // rendererPlanView.domElement = null;
+        // rendererPlanView = null;
+        // rendererPlanView.dispose();
+
+        this.imageView.dispose();
+        COL.planView.dispose();
+
         this.name = null;
     }
 
@@ -855,6 +937,5 @@ class Model {
     }
 
 }
-
+  
 export { Model };
-

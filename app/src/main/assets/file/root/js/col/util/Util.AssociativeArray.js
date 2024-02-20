@@ -8,11 +8,11 @@
 // the AssociativeArray is a sorted array (the keys preserve the order of insertion)
 
 import { COL } from '../COL.js';
-import "./Util.js";
+import './Util.js';
 
-//////////////////////////////////////
+// ////////////////////////////////////
 // BEG AssociativeArray related utils
-//////////////////////////////////////
+// ////////////////////////////////////
 
 /**         
  * @example <caption>Usage example:</caption>  
@@ -144,15 +144,14 @@ COL.util.AssociativeArray = function () {
             key: undefined,
             val: undefined,
             index: undefined
-        }
+        };
         
         while (iter.hasNext()) {
             let keyVal = iter.nextKeyVal();
             let key = keyVal[0];
             let val = keyVal[1];
 
-            if(key === otherKey)
-            {
+            if(key === otherKey) {
                 retVal.key = key;
                 retVal.val = val;
                 retVal.index = index;
@@ -173,8 +172,7 @@ COL.util.AssociativeArray = function () {
 
     this.toString = function () {
         let str = 'size: ' + this.size() + '\n';
-        if(this.size() > 0)
-        {
+        if(this.size() > 0) {
             str += '----\n';
         }
         
@@ -189,14 +187,12 @@ COL.util.AssociativeArray = function () {
             let typeof_val = typeof val;
             // console.log('typeof_val', typeof_val);
             
-            if(typeof_val === 'object')
-            {
+            if(typeof_val === 'object') {
                 let val_asJsonStringified = JSON.stringify(val);
                 str += 'val: ' + val_asJsonStringified + '\n' +
                     '----\n';
             }
-            else
-            {
+            else {
                 str += 'val: ' + val + '\n' +
                     '----\n';
             }
@@ -259,13 +255,11 @@ COL.util.AssociativeArray = function () {
     this.shift = function() {
 
         let key = this.getFirstKey();
-        if(key)
-        {
+        if(key) {
             let val = this.remove(key);
             return {key: key, val: val};
         }
-        else
-        {
+        else {
             return undefined;
         }
     };
@@ -308,7 +302,7 @@ COL.util.AssociativeArray = function () {
     this.sortByKey = function(order) {
         keys.sort();
          
-        if(order === "down") {           
+        if(order === 'down') {           
             keys.reverse();        
         }                
     };
@@ -325,8 +319,7 @@ COL.util.AssociativeArray = function () {
             let keyVal = iter.nextKeyVal();
 
             let val = keyVal[1];
-            if(COL.util.isObjectInvalid(val[varName]))
-            {
+            if(COL.util.isObjectInvalid(val[varName])) {
                 console.log('valid variable(s)', val); 
                 let msgStr = `The variable is invalid: ${varName}`;
                 throw new Error(msgStr);
@@ -344,8 +337,7 @@ COL.util.AssociativeArray = function () {
             if(order !== 'up') {
                 return (varA < varB) ? 1 : (varA > varB) ? -1 : 0;
             }
-            else
-            {
+            else {
                 return (varA < varB) ? -1 : (varA > varB) ? 1 : 0;
             }
         });
@@ -398,6 +390,6 @@ COL.util.AssociativeArray = function () {
     
 };
 
-//////////////////////////////////////
+// ////////////////////////////////////
 // END AssociativeArray related utils
-//////////////////////////////////////
+// ////////////////////////////////////

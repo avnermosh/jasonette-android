@@ -10,23 +10,27 @@ import '../util/Util.js';
 
 class BlobInfo {
     constructor({filenameFullPath, blobUrl, isDirty}){
-
-        let pathElements = COL.util.getPathElements(filenameFullPath);
-        let dirname = pathElements['dirname'];
-        let basename = pathElements['basename'];
-        let extension = pathElements['extension'];
-        let fileExtention = COL.util.getFileExtention(filenameFullPath);
-        let filename = basename + '.' + fileExtention;
-        
-        this.filenameFullPath = filenameFullPath;
+        let [dirname, basename, extension, filename] = COL.util.getPathElements(filenameFullPath);
         this.dirname = dirname;
-        this.filename = filename;
+        this.filenameFullPath = filenameFullPath;
+        this.filename = basename + '.' + extension;
         this.blobUrl = blobUrl;
         this.isDirty = isDirty;
     }
 
-    async addUpdateOrDeleteBlobInWebServer(siteId, planId, filePath3, blob, doDeferFileSystemAndDbSync, operation) {
+    toJSON() {
+        return {
+            dirname: this.dirname,
+            filenameFullPath: this.filenameFullPath,
+            filename: this.filename,
+        };
+    }
 
+    setIsDirty(isDirty) {
+        this.isDirty = isDirty;
+    }
+
+    async addUpdateOrDeleteBlobInWebServer(siteId, planId, filePath3, blob, doDeferFileSystemAndDbSync, operation) {
         // console.log('BEG addUpdateOrDeleteBlobInWebServer');
         
         // ////////////////////////////////////////////////
@@ -85,7 +89,7 @@ class BlobInfo {
                 }
                 
                 // Delete the actual image
-                await this.deleteBlobFromWebServer(image_by_id_url, dataAsJson, siteId, planId, filePathWithFilename, doDeferFileSystemAndDbSync);
+                await this.deleteBlobFromWebServer(dataAsJson, siteId, planId, filePathWithFilename, doDeferFileSystemAndDbSync);
                 syncStatus = true;
             }
             else {
@@ -250,7 +254,7 @@ class BlobInfo {
         return;
     }
 
-    async deleteBlobFromWebServer(image_by_id_url, dataAsJson, siteId, planId, filePathWithFilename, doDeferFileSystemAndDbSync) {
+    async deleteBlobFromWebServer(dataAsJson, siteId, planId, filePathWithFilename, doDeferFileSystemAndDbSync) {
         console.log('BEG deleteBlobFromWebServer');
 
         // ////////////////////////////////////////////////
@@ -275,7 +279,7 @@ class BlobInfo {
             let jsonData = {image_id: dataAsJson.image_id};
             let jsonDataAsStr = JSON.stringify(jsonData);
 
-            let image_db_operation = {queryUrl: image_by_id_url,
+            let image_db_operation = {queryUrl: dataAsJson.image_by_id_url,
                 method: 'DELETE',
                 headers: headersData,
                 json_data_as_str2: jsonDataAsStr};
@@ -289,7 +293,7 @@ class BlobInfo {
             };
 
             // delete the metadata from the database, and delete the image file the file system
-            let response = await fetch(image_by_id_url, fetchData);
+            let response = await fetch(dataAsJson.image_by_id_url, fetchData);
             await COL.errorHandlingUtil.handleErrors(response);
         }
     }
@@ -310,6 +314,10 @@ class BlobInfo {
                     // this.blobUrl - e.g. blob:http://192.168.1.74/8fab9563-4edf-4127-a8f6-20cad1cd80de
                     // console.log('this.blobUrl', this.blobUrl);
                     
+                    if(COL.util.isObjectInvalid(this.blobUrl)) {
+                        let msgStr = 'The blobUrl is invalid.';
+                        throw new Error(msgStr);
+                    }
                     let response = await fetch(this.blobUrl);
                     await COL.errorHandlingUtil.handleErrors(response);
 
@@ -332,16 +340,18 @@ class BlobInfo {
             }
         }
         catch(err) {
-            console.error('Error from syncBlobToWebServer. filePath: ', filePath, '. err:', err); 
-            // set syncStatus to false (not throwing so that caller of this function (e.g. syncBlobsWithWebServer)
+            console.error('Error from sync BlobToWebServer. filePath: ', filePath, '. err:', err); 
+            // set syncStatus to false (not throwing so that caller of this function (e.g. sync BlobsWithWebServer)
             // can continue to the end and raise an "error toast")
             syncStatus = false;
         }
 
-        return {
-            filePath: filePath,
-            syncStatus: syncStatus
-        };
+        if(syncStatus == true) {
+            // the syncStatus is good so mark the blob as "in-sync"
+            this.isDirty = false;
+        }
+
+        return [filePath, syncStatus];
     }
 
     isBlobUrlValid() {
@@ -365,7 +375,40 @@ class BlobInfo {
 
         return blobInfoStr;
     }
-    
+
+    static CreateOrUpdateBlobInfo(blobInfo, metaData, filename, isDirty) {
+        let blob = new Blob([metaData]);
+        let blobUrl = URL.createObjectURL(blob);
+        
+        if(COL.util.isObjectInvalid(blobInfo)) {
+            // blobInfo does not exist - create it
+            // isDirty can be false if we just loaded the layer .json from the server, i.e. nothing has changed yet
+            // isDirty can be true if e.g. if overlayRect was added to the layer .json, or if annotation was added to a specific image.
+            blobInfo = new BlobInfo({filenameFullPath: filename, blobUrl: blobUrl, isDirty: isDirty});
+        }
+        else {
+            // blobInfo exists - update the url
+            URL.revokeObjectURL(blobInfo.blobUrl);
+            blobInfo.blobUrl = blobUrl;
+            blobInfo.isDirty = isDirty;
+        }
+        return blobInfo;
+    }
+
+    // Create or update blobInfo
+    // Update metaDataBlobsInfo with a new value of blobInfo
+    // Return the updated blobInfo
+    static UpdateMetaDataBlobsInfo({metaDataBlobsInfo, metaData, filename, isDirty}) {
+        // console.log('BEG updateMetaDataBlobsInfo'); 
+
+        let blobInfo = metaDataBlobsInfo.getByKey(filename);
+        blobInfo = BlobInfo.CreateOrUpdateBlobInfo(blobInfo, metaData, filename, isDirty);
+
+        metaDataBlobsInfo.set(filename, blobInfo);
+
+        return blobInfo;
+    }
+          
 }
 
 export { BlobInfo };

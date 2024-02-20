@@ -12,6 +12,7 @@ import { OverlayRect } from './OverlayRect.js';
 import { BlobInfo } from './BlobInfo.js';
 import { ImageInfo } from './ImageInfo.js';
 import { Layer } from './Layer.js';
+import { ImageTags } from './ImageTags.js';
 
 COL.core.ImageFile = {
     ErrorCodes: {
@@ -79,10 +80,9 @@ COL.core.ImageFile = {
             fileToOpenFilenames.push(imageFilename);
             
             let fileType = COL.util.getFileTypeFromFilename(imageFilename);
-            let imageTags = { filename: imageFilename,
-                imageOrientation: -1 };
+            let imageTags = new ImageTags({filename: imageFilename});
             if(fileType === 'jpg') {
-                imageTags = await COL.core.ImageFile.getImageTags(imageFilename, blob);
+                imageTags = await ImageTags.GetImageTags(imageFilename, blob);
             }
 
             newImageInfo['imageTagsList'].push(imageTags);
@@ -97,84 +97,37 @@ COL.core.ImageFile = {
 
         for (let j = 0; j < imageTagsListLength; j++) {
             let imageTags = newImageInfo['imageTagsList'][j];
-            let filename = fileToOpenFilenames[j];
+            let imageFilename = fileToOpenFilenames[j];
             let fileUrl = fileToOpenUrls[j];
 
-            if(filename === 'image.jpg') {
-                filename = this.createFileNameWithTimestamp();
+            if(imageFilename === 'image.jpg') {
+                // make the imageFilename unique
+                imageFilename = this.createFileNameWithTimestamp();
             }
             
-            // The layer does not have the image in the this._removedImagesInfo list
-            // and not in the this._imagesInfo list
-            // add the image to this._imagesInfo list, and mark it as dirty
-            let isDirty = true;
-            let blobInfo = new BlobInfo({filenameFullPath: filename, blobUrl: fileUrl, isDirty: isDirty});
+            // The layer does not have the image in the this.removedImagesInfo list
+            // and not in the this.imagesInfo list
+            // add the image to this.imagesInfo list, and mark it as dirty
+            let imageBlobInfo = new BlobInfo({filenameFullPath: imageFilename, blobUrl: fileUrl, isDirty: true});
             
-            if(COL.util.isStringInvalid(blobInfo.blobUrl)) {
-                let msgStr = 'filename: ' + filename + 
-                    ' has an invalid blobInfo.blobUrl: ' + blobInfo.blobUrl +
+            if(COL.util.isStringInvalid(imageBlobInfo.blobUrl)) {
+                let msgStr = 'imageFilename: ' + imageFilename + 
+                    ' has an invalid imageBlobInfo.blobUrl: ' + imageBlobInfo.blobUrl +
                     ' ignore the file';
 
                 console.error(msgStr);
                 continue;
             }
 
-            let imageInfo = new ImageInfo({filename: filename, imageTags: imageTags, blobInfo: blobInfo});
+            let imageInfo = new ImageInfo({imageFilename: imageFilename, 
+                // annotationFilename: undefined, 
+                imageTags: imageTags, 
+                imageBlobInfo: imageBlobInfo});
             await selectedLayer.addImageToLayer(selectedOverlayRect, imageInfo);
         }
         
         return true;
     };
-    
-    // exifreader can read tags (e.g. orientation) from jpg files (does not work with png files)
-    this.getImageTags = async function (filename, blob) {
-        // console.log('BEG getImageTags');
-
-        let blobArrayBuffer = await blob.arrayBuffer();
-        const tags = ExifReader.load(blobArrayBuffer);
-        // console.log('tags', tags);
-        
-        // Filter tags by key
-        let selectedTags = ['Orientation',
-            'Image Width',
-            'Image Height',
-            'DateTimeOriginal' ,
-            'DateTime',
-            'date:create',
-            'xxx'];
-        // https://stackoverflow.com/questions/38750705/filter-object-properties-by-key-in-es6
-        let filteredTags =  Object.keys(tags)
-            .filter(key => selectedTags.includes(key))
-            .reduce((obj, key) => {
-                obj[key] = tags[key];
-                return obj;
-            }, {});
-
-        if (typeof filteredTags['Orientation'] === 'undefined') {
-            filteredTags['Orientation'] = -1;
-        }
-        
-        // console.log('filteredTags', filteredTags);
-
-        let imageTags = {};
-        imageTags.filename = filename;
-        if(filteredTags.hasOwnProperty('Orientation')) {
-            // filteredTags[Orientation] {id: 274, value: 1, description: "top-left"}
-            imageTags.imageOrientation = filteredTags['Orientation'].value;
-        }
-        if(filteredTags.hasOwnProperty('Image Width')) {
-            imageTags.imageWidth = filteredTags['Image Width'].value;
-        }
-        if(filteredTags.hasOwnProperty('Image Height')) {
-            imageTags.imageHeight = filteredTags['Image Height'].value;
-        }
-        if(filteredTags.hasOwnProperty('DateTimeOriginal')) {
-            imageTags.dateCreated = filteredTags['DateTimeOriginal'].value[0];
-        }
-
-        // console.log('imageTags', imageTags); 
-        return imageTags;
-    };    
 
     this.createFileNameWithTimestamp = function () {
         // poor man's approach to make the image filename unique if it comes from the camera.

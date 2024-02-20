@@ -37,8 +37,8 @@ var Note = function (noteId,
     var _index = index;
     var _layer = layer;
     var _labelRenderer = labelRenderer;
-    var _scene = imageViewScene;
-    var _camera = camera;
+    var scene = imageViewScene;
+    var camera = camera;
     
     var _selectedNote = null;
     var _hovered = null;
@@ -193,7 +193,7 @@ var Note = function (noteId,
         // The noteCss2DObject position was updated, so the top, left offsets need to be reset
         _domElement.style.top = 0;
         _domElement.style.left = 0;
-        _labelRenderer.render(_scene, _camera);
+        _labelRenderer.render(scene, camera);
 
         // _domElement.addEventListener( 'mousedown', onDocumentMouseDown1, {capture: false, passive: false} );
         _domElement.removeEventListener( 'mousedown', onDocumentMouseMove1, {capture: false, passive: false} );

@@ -10,27 +10,35 @@
     <meta name="description" content="Construction Overlay App" />
     <meta name="author" content="Avner M." />
     <title>Construction Overlay App</title>
-    <script src="../js/static/nanobar/0.2.1/js/nanobar.min.js"></script>
     <script src="../js/static/jquery/3.6.0/jquery.js"></script>
+    <script src="../js/static/nanobar/0.2.1/js/nanobar.min.js"></script>
     <script src="../js/static/toastr/2.1.4/toastr.min.js"></script>
-    <script src="../js/static/bootstrap/5.0.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../js/static/bootstrap/5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
     <script src="../js/static/bootstrap/libs/bootstrap-slider/11.0.2/bootstrap-slider.min.js"></script>
     <script src="../js/static/bootstrap/libs/bootstrap-datepicker/1.9.0/bootstrap-datepicker.min.js"></script>
     <script src="../js/static/moment/2.22.2/min/moment.min.js"></script>
     <script src="../js/static/quilljs/1.3.7/quill.min.js"></script>
     <script src="../js/static/exif-reader/3.5.0/exif-reader.js"></script>
     <script src="../js/static/bootstrap/libs/bootstrap-table/1.18.3/bootstrap-table.min.js"></script>
+    <script src="../js/static/localforage/1.10.0/localforage.min.js"></script>
+    <script src="../js/static/fabricjs/5.3.0/fabric.js"></script>
 
     <link rel="shortcut icon" href="#" />
-    <link rel="stylesheet" type="text/css" href="../css/style.css" />
+    <link rel="stylesheet" type="text/css" href="/V1/css/style.css" />
     <link rel="stylesheet" href="../js/static/pure-css-loader/dist/css-loader.css" />
 
-    <!-- {% block head %}
-             {% endblock %} -->
+    <link href="../js/static/bootstrap/5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous" />
+
+    <link rel="stylesheet" type="text/css" href="/V1/css/custom.css" />
+    <link rel="stylesheet" href="../js/static/bootstrap/libs/bootstrap-icons/1.9.1/font/bootstrap-icons.css" />
+
+    {% block head %} {% endblock %}
     <link rel="manifest" href="../js/manifest.json" />
   </head>
 
   <body>
+    <!-- block for e.g. admin_add_site.html, admin_view_sites.html, masterButtonGroup, toolbarGroupId, etc ... -->
+    {% block content1 %} {% endblock %}
 
     <!-- use main.js for development -->
     <!-- see section "load from individual js module files not working beacuse of CORS error - android" in the notes,
@@ -41,7 +49,6 @@
     <!-- <script src="../js/static/regenerator-runtime/0.13.1/runtime.js"></script>
              <script src="../js/"></script> -->
 
-    <link rel="preload" href="../js/static/bootstrap/5.0.2/dist/css/bootstrap.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'" />
     <link rel="preload" href="../js/static/bootstrap/libs/bootstrap-slider/11.0.2/bootstrap-slider.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'" />
     <link rel="preload" href="../js/static/bootstrap/libs/bootstrap-datepicker/1.9.0/bootstrap-datepicker3.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'" />
     <link rel="preload" href="../js/static/quilljs/1.3.7/quill.snow.css" as="style" onload="this.onload=null;this.rel='stylesheet'" />

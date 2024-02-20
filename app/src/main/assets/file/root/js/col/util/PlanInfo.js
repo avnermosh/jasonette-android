@@ -41,11 +41,11 @@ class PlanInfo {
     // example json-string in the site-plan menu
     // {
     //   "site_name":"123_main_road",
-    //   "name":"123_main_road.structure.layer0",
+    //   "name":"123_main_road.layer0",
     //   "site_id":"369",
     //   "id":"429",
-    //   "url":"123_main_road.structure.layer0.json",
-    //   "plan_filename":"123_main_road.structure.layer0.json"
+    //   "url":"123_main_road.layer0.json",
+    //   "plan_filename":"123_main_road.layer0.json"
     // }
     
     toJsonString = function () {

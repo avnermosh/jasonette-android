@@ -2,7 +2,9 @@
 // Copyright 2018-2022 Construction Overlay Inc.
 // =========================================================
 
-import packageInfo from '../../package.json' assert { type: "json" };
+// commented out for firefox (does not support import with assert?), but packageInfo is not used ?
+// tbd - maybe it is needed for the mobile app (Android?)
+// import packageInfo from '../../package.json' assert { type: "json" };
 
 'use strict';
 
@@ -21,8 +23,7 @@ const COL = {
     isOldGUIEnabled: false,
     fetchTimeoutInMilliSec: 4000,
     // tbd - softwareVersion should be read from package.json
-    softwareVersion: '1.1.0'
-
+    softwareVersion: '1.3.0'    
 };
 
 COL.util = {};
@@ -34,6 +35,10 @@ COL.Error = function(errorCode, message) {
     this.message = message;
 };
 
+COL.getPlanView = function() {
+    return COL.planView;
+};
+
 (function($) {
     if (typeof $ === 'undefined') {
         console.error('jQuery library needed.');
@@ -41,11 +46,11 @@ COL.Error = function(errorCode, message) {
 
     this.getSoftwareVersion = function () {
         return COL.softwareVersion;
-    }
+    };
 
     this.setSoftwareVersion = function (softwareVersion) {
         COL.softwareVersion = softwareVersion;
-    }
+    };
 
     this.setError = function(error) {
         this.error = error;

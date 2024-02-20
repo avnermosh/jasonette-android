@@ -34,7 +34,7 @@
                     <td>
                         <a href="{{ url_for('api.admin_delete_group', group_id = group.id) }}">Delete</a>
                         <a href="{{ url_for('api.admin_edit_group', group_id = group.id) }}">Edit</a>
-                        {% if (current_user.role == "admin") %}
+                        {% if (current_user.role == "admin") or (current_user.role == "group_owner") %}
                         <button id="downloadGroupButton{{group.id}}">Download Group Sites</button>
 
                         {% if flask_env == "development" %}

@@ -67,8 +67,25 @@ COL.util.Color = {
 // BEG File related utils
 // ////////////////////////////////////
 
+COL.util.isImageType = function (fileExtension) {
+    switch(fileExtension.toLowerCase()) {
+        case 'jpg':
+        case 'jpeg':
+        case 'png': {
+            return true;
+        }
+        default: {
+            return false;
+        }
+    }
+}
+
 COL.util.getFileTypeFromFilename = function (filename) {
     let fileExtention = COL.util.getFileExtention(filename);
+    return COL.util.getFileTypeFromExtension(fileExtention);
+}
+
+COL.util.getFileTypeFromExtension = function (fileExtention) {
     let fileType = undefined;
     switch(fileExtention) {
         case '':{
@@ -128,12 +145,7 @@ COL.util.getPathElements = function (str) {
     }
     let filename = basename + '.' + extension;
     
-    let path_elements = {dirname: dirname,
-        basename: basename,
-        extension: extension,
-        filename: filename};
-    
-    return path_elements;
+    return [dirname, basename, extension, filename];
 };
 
 COL.util.filePathToFilename = function (file_path) {
@@ -192,17 +204,36 @@ COL.util.FindPlanInSiteplanMenu = function (matchPattern1, matchPattern2=undefin
         
         // try to match the substring of the site-plan-id (matchPattern1) in '#sitesId option'
         let matchPattern1RE = new RegExp(matchPattern1);
-        let matchPattern2RE = new RegExp(matchPattern2);
+
+        let matchPattern2RE = undefined;
+        if(COL.util.isObjectValid(matchPattern2)) {
+            let matchPattern2RE = new RegExp(matchPattern2);
+        }
+
         let optionsMatched = $('#sitesId option').filter(function() {
             let val = $(this).val();
             // console.log('val:', val);
-            let retval1 = val.match(matchPattern1RE);
 
-            let retval2 = val.match(matchPattern2RE);
+            let match1 = val.match(matchPattern1RE);
 
-            let retval3 = (retval1 && retval2);
+            let foundMatch = false;
+            if(COL.util.isObjectValid(matchPattern2)) {
+                let match2 = val.match(matchPattern2RE);
+                if(COL.util.isObjectValid(match1) && COL.util.isObjectValid(match2)) {
+                    // matched matchPattern1 and matchPattern2
+                    foundMatch = true;
+                }
+            }
+            else{
+                if(COL.util.isObjectValid(match1)) {
+                    // matched matchPattern1 (matchPattern2 is not requested)
+                    foundMatch = true;
+                }
+            }
 
-            return retval3;
+            // returning true, will add the item to the filtered list
+            // returning false will discard the item from the filtered list
+            return foundMatch;
         });
 
         if(optionsMatched.length >= 1) {
@@ -214,18 +245,16 @@ COL.util.FindPlanInSiteplanMenu = function (matchPattern1, matchPattern2=undefin
 
 COL.util.isTouchDevice = function () {
     // console.log('BEG COL.util.isTouchDevice'); 
-    let isTouchDevice1 = true;
     if ('ontouchstart' in document.documentElement) {
-        isTouchDevice1 = true;
+        return true;
     }
     else {
-        isTouchDevice1 = false;
+        return false;
     }
-    return isTouchDevice1;
 };
 
-COL.util.getPointFromEvent = function (event) {
-    // console.log('BEG COL.util.getPointFromEvent');
+COL.util.getPointFromMouseEventAndTouchEvent = function (event) {
+    // console.log('BEG COL.util.getPointFromMouseEventAndTouchEvent');
 
     let point2d;
     if (event instanceof MouseEvent) {
@@ -238,9 +267,12 @@ COL.util.getPointFromEvent = function (event) {
                 break;
 
             case 2:
+                // // get the point from the center point of the 2 touchs
                 // let centerPointX = (event.touches[0].pageX + event.touches[1].pageX) / 2;
                 // let centerPointY = (event.touches[0].pageY + event.touches[1].pageY) / 2;
                 // point2d = new THREE_Vector2(centerPointX, centerPointY);
+
+                // get the point from the first touch
                 point2d = new THREE_Vector2(event.touches[0].pageX, event.touches[0].pageY);
                 break;
     
@@ -250,6 +282,7 @@ COL.util.getPointFromEvent = function (event) {
             }
         }
     }
+
     return point2d;
 };
 
@@ -470,7 +503,7 @@ COL.util.listAllEventListeners = function () {
 
                 console.log('====================');
                 console.log('currentElement', currentElement); 
-                COL.util._showEvents(evts);
+                COL.util.showEvents(evts);
                 
                 for (let evt of Object.keys(evts)) {
                     for (let k=0; k < evts[evt].length; k++) {
@@ -489,7 +522,7 @@ COL.util.listAllEventListeners = function () {
     return elements.sort();
 };
 
-COL.util._showEvents = function (events) {
+COL.util.showEvents = function (events) {
     for (let evt of Object.keys(events)) {
         console.log(evt + ' ----------------> ' + events[evt].length);
         for (let i=0; i < events[evt].length; i++) {

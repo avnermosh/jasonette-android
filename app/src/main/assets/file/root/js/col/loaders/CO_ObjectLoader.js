@@ -63,33 +63,35 @@ COL.loaders.CO_ObjectLoader = {
         };
         
         let response = await fetch(layerUrl, fetchData);
-        
         await COL.errorHandlingUtil.handleErrors(response);
         let dataAsJson = await response.json();
 
-
         // ////////////////////////////////////////////////////////////////////////////
         // we get here, once, when selecting a plan in the menu.
-        // here we add the layerJsonFilename so it is alway in the metaDataFilesInfo list
+        // here we add the layerJsonFilename so it is alway in the metaDataBlobsInfo list
         // the actual content of the layerJsonFilename entry is updated wheneve we sync with the webserver (e.g. by clicking on the magickwand icon)
         // ////////////////////////////////////////////////////////////////////////////
 
-        let metaDataFilesInfo = layer.getMetaDataFilesInfo();
+        let metaDataBlobsInfo = layer.getMetaDataBlobsInfo();
         let layerJsonFilename = layer.getLayerJsonFilename();
         let layer_asJson_str = JSON.stringify(dataAsJson);
-        COL.loaders.utils.addMetaDataFileInfoToMetaDataFilesInfo(metaDataFilesInfo, layer_asJson_str, layerJsonFilename);
+        // when loading from webserver, set isDirty to false because the blob is in sync
+        // with the webserver and nothing has changed yet.
+        BlobInfo.UpdateMetaDataBlobsInfo({metaDataBlobsInfo: metaDataBlobsInfo, 
+            metaData: layer_asJson_str, 
+            filename: layerJsonFilename, 
+            isDirty: false});
 
         // ////////////////////////////////////////////////////////////////////////////
-        // populate layer._imagesInfo from dataAsJson._imagesInfo
+        // populate layer.imagesInfo from dataAsJson.imagesInfo
         // ////////////////////////////////////////////////////////////////////////////
 
-        if(COL.util.isObjectValid(dataAsJson._imagesInfo)) {
-            let imagesInfo_asDict = dataAsJson._imagesInfo;
+        if(COL.util.isObjectValid(dataAsJson.imagesInfo)) {
+            let imagesInfo_asDict = dataAsJson.imagesInfo;
             layer.toImagesInfo(imagesInfo_asDict);
         }
 
-        let imagesInfo_forLayer0 = layer.getImagesInfo();
-        
+       
         // ////////////////////////////////////////////////////////////////////////////
         // populate layer.planView from dataAsJson
         // ////////////////////////////////////////////////////////////////////////////
@@ -97,7 +99,7 @@ COL.loaders.CO_ObjectLoader = {
         await layer.toPlanView(objectLoader, dataAsJson.planView);
 
         // ////////////////////////////////////////////////////////////////////////////
-        // populate layer._selectedOverlayRect from dataAsJson.selectedOverlayRect
+        // populate layer.selectedOverlayRect from dataAsJson.selectedOverlayRect
         // ////////////////////////////////////////////////////////////////////////////
 
         if(COL.util.isObjectValid(dataAsJson.selectedOverlayRect)) {
@@ -105,17 +107,7 @@ COL.loaders.CO_ObjectLoader = {
                 await layer.toSelectedOverlayRect(dataAsJson.selectedOverlayRect);
             }
         }
-        
-        // //////////////////////////////////////////////////////////////////////////
-        // sanity check - verify that
-        // this.imagesInfo
-        // imagesInfo_forLayer2 (from overlayRect.imageNames)
-        // are the same
-        // //////////////////////////////////////////////////////////////////////////
-
-        // layer.imagesInfo is populated earlier in layer.toImagesInfo
-        let imagesInfo_forLayer1 = layer.getImagesInfo();
-        
+                
         PlanView.Render();
     };
     
@@ -149,7 +141,7 @@ COL.loaders.CO_ObjectLoader = {
         let imagesInfo = layer.getImagesInfo();
         // console.log('imagesInfo', imagesInfo.toString());
         
-        let metaDataFilesInfo = layer.getMetaDataFilesInfo();
+        let metaDataBlobsInfo = layer.getMetaDataBlobsInfo();
         
         // remove the prefix "./" before the file name if it exists e.g. ./foo.json -> foo.json
         const regex2 = /\.\//gi;
@@ -167,20 +159,20 @@ COL.loaders.CO_ObjectLoader = {
                     let msgStr = 'Invalid imageInfo for filename: ' + filename;
                     throw new Error(msgStr);
                 }
-                blobInfo = imageInfo.blobInfo;
+                blobInfo = imageInfo.imageBlobInfo;
 
                 break;
             }
             case 'json':
             case 'txt': {
-                let metaDataFileInfo = metaDataFilesInfo.getByKey(filename);
-                if(COL.util.isObjectInvalid(metaDataFileInfo)) {
-                    console.log('metaDataFilesInfo'); 
-                    metaDataFilesInfo.printKeysAndValues();
-                    let msgStr = 'Invalid metaDataFileInfo for filename: ' + filename;
+                let metaDataBlobInfo = metaDataBlobsInfo.getByKey(filename);
+                if(COL.util.isObjectInvalid(metaDataBlobInfo)) {
+                    console.log('metaDataBlobsInfo'); 
+                    metaDataBlobsInfo.printKeysAndValues();
+                    let msgStr = 'Invalid metaDataBlobInfo for filename: ' + filename;
                     throw new Error(msgStr);
                 }
-                blobInfo = metaDataFileInfo.blobInfo;
+                blobInfo = metaDataBlobInfo;
 
                 break;
             }

@@ -12,9 +12,21 @@ COL.errorHandlingUtil = {};
 COL.errorHandlingUtil.handleErrors = async function (response, forceOkValToFalse) {
 
     if (!response.ok || COL.util.isObjectValid(forceOkValToFalse)) {
-        let dataAsJson = await response.json();
-        let msgStr = 'Request rejected with status: ' + response.status + ', and message: ' + dataAsJson.message;
-        throw Error(msgStr);
+        const contentType = response.headers.get('content-type');
+        let msgStr = 'Request rejected with status: ' + response.status;
+        // if (contentType && contentType.includes('application/json')) {
+        //     let dataAsJson = await response.json();
+        //     msgStr += ', and message: ' + dataAsJson.message;
+        // }
+
+        // the throw was commented out because for some calls there was no files ? 
+        // so we wanted to be more generouse with error handling?
+        // otherwise the whole flow e.g. loadLayer will break ?
+        // e.g. calling foo.json for an image foo.jpg without annotation?
+        // note response.json() can be called only once so if calling it here, we cannot call 
+        // response.json() outside the error handling function
+
+        // throw Error(msgStr);
     }
 
     if (response.message == 'offline' || response.url == 'https://localhost/static/offline/offline.html') {

@@ -867,25 +867,6 @@ COL.component.AccordionEntry = function (flags) {
         return this;
     };
 
-    
-    // // tbd - remove - the function is it being used ???
-    // this.addHeaderButton = function () {
-    //     var button;
-    //     for (var i = 0, m = arguments.length; i < m; i++) {
-    //         button = arguments[i];
-    //         if (!(button instanceof COL.component.Button)) {
-    //             console.error("The parameter must be a COL.component.Button instance");
-    //         } else {
-    //             _$btnWrapp.append(button.$);
-    //             button.onClick(function (event) {
-    //                 // tbd - remove - it is recommended to NOT use stopPropagation()
-    //                 event.stopPropagation();
-    //             });
-    //         }
-    //     }
-    //     return this;
-    // };
-
 };
 
 // SPINNER _____________________________________________________________________

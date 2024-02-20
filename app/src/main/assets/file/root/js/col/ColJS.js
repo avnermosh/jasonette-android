@@ -13,6 +13,9 @@ import { Model } from './core/Model.js';
 import { Layer } from './core/Layer.js';
 import { PlanView } from './core/PlanView.js';
 import './loaders/CO_ObjectLoader.js';
+import { onResize_planView } from './core/PlanViewEventListeners.js';
+import { onResize_imageView } from './core/ImageView_eventListeners.js';
+import { ManageGUI } from './manageGUI.js';
 
 class ColJS {
     constructor(){
@@ -30,7 +33,7 @@ class ColJS {
         floorplanButtonGroupJqueryElement.append(this.nextImageButton.$);
         floorplanButtonGroupJqueryElement.append(this.imageIndexInOverlayRectLabel.$);
         if(COL.doEnableWhiteboard) {
-            floorplanButtonGroupJqueryElement.append(this._floorPlanWhiteboardMenu);
+            floorplanButtonGroupJqueryElement.append(this.floorPlanWhiteboardMenu);
         }
         floorplanButtonGroupJqueryElement.append(this.onOffModeButton.$);
 
@@ -284,11 +287,11 @@ class ColJS {
     }
 
     setupPlanPaneGui() {
-        this._planPaneWrapper = $('#planPaneWrapperId');
-        this._planViewPane = $('#planViewPaneId');
+        this.planPaneWrapper = $('#planPaneWrapperId');
+        this.planViewPane = $('#planViewPaneId');
 
         if(COL.doEnableWhiteboard) {
-            this._floorPlanWhiteboard1 = $('<div id="floorPlanWhiteboardId" class="floorPlanWhiteboardClass"></div>');
+            this.floorPlanWhiteboard1 = $('<div id="floorPlanWhiteboardId" class="floorPlanWhiteboardClass"></div>');
             
             let floorPlanWhiteboardMenuHtml = `
 <span id="floorPlanWhiteboardMenuWrapperId" class="floorPlanWhiteboardMenuWrapperClass">
@@ -302,8 +305,8 @@ class ColJS {
             
             // console.log('floorPlanWhiteboardMenuHtml', floorPlanWhiteboardMenuHtml); 
 
-            this._floorPlanWhiteboardMenu = $(floorPlanWhiteboardMenuHtml);
-            console.log('this._floorPlanWhiteboardMenu', this._floorPlanWhiteboardMenu); 
+            this.floorPlanWhiteboardMenu = $(floorPlanWhiteboardMenuHtml);
+            console.log('this.floorPlanWhiteboardMenu', this.floorPlanWhiteboardMenu); 
         }
         
     }
@@ -321,7 +324,7 @@ class ColJS {
         }
 
         if(COL.doEnableWhiteboard) {
-            this._planPaneWrapper.append(this._floorPlanWhiteboard1);
+            this.planPaneWrapper.append(this.floorPlanWhiteboard1);
         }
 
         if(COL.isOldGUIEnabled) {
@@ -330,7 +333,7 @@ class ColJS {
     
         // document.addEventListener("click", onClick_inPage);
     
-        this._planPaneWrapper.appendTo('#main-container-id');
+        this.planPaneWrapper.appendTo('#main-container-id');
     
         let doSaveUsingGoogleDrive = true;
         doSaveUsingGoogleDrive = false;
@@ -338,16 +341,19 @@ class ColJS {
             this.addGoogleDriveButtons();
         }
             
-        this._planViewPane.addClass('planViewPaneClass');
+        this.planViewPane.addClass('planViewPaneClass');
         
         COL.model = new Model();
         await COL.model.initModel();
+
+        COL.planView = new PlanView();
+        COL.planView.initPlanView();
 
         let startTime1 = performance.now();
         let hamburgerBtnEl = document.getElementById('hamburgerBtnId');
         console.log('hamburgerBtnEl: ', hamburgerBtnEl);
         await COL.manageGUI.setPane(hamburgerBtnEl);
-        COL.manageGUI.showHideProjectMenu(false);
+        COL.manageGUI.toggleProjectMenu(false);
 
         // now that the page is ready, show the main-container-id
         $('#main-container-id').removeClass('hideElementClass');
@@ -484,6 +490,8 @@ class ColJS {
     }
 
     async loadLayer(sitePlanName=undefined, zipFileName=undefined) {
+        // console.log('BEG loadLayer');
+        
         let planInfo = new PlanInfo({});
         try {
 
@@ -491,15 +499,15 @@ class ColJS {
             // toastr.clear();
             
             // with the newGUI "planName === layerName"
-            // e.g. 44_decourcy_drive_pilot_bay_gabriola_island__44_decourcy_drive_pilot_bay_gabriola_island.structure.layer0
+            // e.g. 44_decourcy_drive_pilot_bay_gabriola_island__44_decourcy_drive_pilot_bay_gabriola_island.layer0
             // because it is created with CreateLayerName like so: let layerName = planInfo.siteName + '__' + planInfo.name;
             // 
             // break sitePlanName to: siteName and planName to be compatible with the old GUI
             //
-            // 44_decourcy_drive_pilot_bay_gabriola_island__44_decourcy_drive_pilot_bay_gabriola_island.structure.layer0
+            // 44_decourcy_drive_pilot_bay_gabriola_island__44_decourcy_drive_pilot_bay_gabriola_island.layer0
             // ->
             // 44_decourcy_drive_pilot_bay_gabriola_island
-            // 44_decourcy_drive_pilot_bay_gabriola_island.structure.layer0
+            // 44_decourcy_drive_pilot_bay_gabriola_island.layer0
 
             const myArray = sitePlanName.split('__');
             let siteName = myArray[0];
@@ -516,7 +524,7 @@ class ColJS {
             // Get the the option "value"
             // let matchPattern1 = 'site_name.*' + siteName + '.*name.*' + planName;
             
-            // e.g. "name.*geographic_map.structure.layer0"
+            // e.g. "name.*geographic_map.layer0"
             let matchPattern1 = 'name.*' + planName;
 
             let matchPattern2;
@@ -835,6 +843,28 @@ function onScroll5( event ) {
 
 $(window).resize(function (event) {
     console.log('BEG ColJS resize'); 
+
+    let paneType = COL.manageGUI.getPaneType();
+    switch (paneType) {
+        case ManageGUI.PANE_TYPE.SELECTED_PLAN: {
+            onResize_planView();
+            break;
+        }
+        case ManageGUI.PANE_TYPE.SELECTED_IMAGE: {
+            onResize_imageView();
+            break;
+        }
+        case ManageGUI.PANE_TYPE.NONE: 
+        case ManageGUI.PANE_TYPE.PLAN_TUMBNAILS: 
+        case ManageGUI.PANE_TYPE.IMAGE_TUMBNAILS: {
+            // Nothing to be done
+            break;
+        }
+        default:{
+            let msgStr = 'Pane type is not supported: ' + paneType;
+            throw new Error(msgStr);
+        }
+    }
 });
 
 

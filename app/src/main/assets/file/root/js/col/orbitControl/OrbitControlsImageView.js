@@ -19,14 +19,19 @@ import {
     Spherical as THREE_Spherical,
     Vector2 as THREE_Vector2,
     EventDispatcher as THREE_EventDispatcher,
+    MathUtils as THREE_MathUtils
 } from '../../static/three.js/three.js-r135/build/three.module.js';
 
 import { COL } from '../COL.js';
 import { Model } from '../core/Model.js';
 import { ImageView } from '../core/ImageView.js';
+import { ImageInfo } from '../core/ImageInfo.js';
+import { ImageTags } from '../core/ImageTags.js';
+import { Annotation } from '../core/Annotation.js';
 
 import './OrbitControlsUtils.js';
 import '../util/Util.js';
+import { getPositionOnImage } from '../core/FabricJsUtils.js';
 
 class OrbitControlsImageView extends THREE_EventDispatcher {
     constructor(camera, domElement) {
@@ -36,10 +41,6 @@ class OrbitControlsImageView extends THREE_EventDispatcher {
             ? domElement
             : document;
 
-        if (!camera.isOrthographicCamera) {
-            // sanity check
-            throw new Error('camera is not orthographic');
-        }
         this.camera = camera;
 
         // "target" sets the location of focus, where the camera orbits around
@@ -110,6 +111,7 @@ class OrbitControlsImageView extends THREE_EventDispatcher {
         this.zoomChanged = false;
 
         // the point coordinate where starting the pan
+        this.isImagePanned = false;
         this.panPointStart = new THREE_Vector2();
         this.panPointCurrent = new THREE_Vector2();
         this.panPointEnd = new THREE_Vector2();
@@ -121,6 +123,109 @@ class OrbitControlsImageView extends THREE_EventDispatcher {
         // NDC point anchor for zooming via two-finger touch
         this.centerPoint2d_inNDC_start = new THREE_Vector2();
         this.centerPoint2d_inNDC_end = new THREE_Vector2();
+
+        this.offscreenCanvasEl = document.getElementById('canvas2Id');
+
+        // /////////////////////////////////
+        // BEG 360 related variables
+        // /////////////////////////////////
+
+        this.onPointerDownMouseX = 0;
+        this.onPointerDownMouseY = 0;
+        this.lon = 0;
+        this.onPointerDownLon = 0;
+        this.lat = 0;
+        this.onPointerDownLat = 0;
+        this.phi = 0;
+        this.theta = 0;
+
+        // /////////////////////////////////
+        // END 360 related variables
+        // /////////////////////////////////
+    }
+
+    initDolly(){
+        // console.log('BEG initDolly');
+
+        this.calcMultiPointerEventsDistance();
+
+        // set the deltaPoint2d_inScreenCoord_start from deltaPoint2d_inScreenCoord_end
+        this.centerPoint2d_inNDC_start.copy(this.centerPoint2d_inNDC_end);
+        this.deltaPoint2d_inScreenCoord_start.copy(this.deltaPoint2d_inScreenCoord_end);
+    }
+
+    calcMultiPointerEventsDistance(){
+        // Enable "two-finger-pinch(zoom,dolly) touch" only if both touches are in the same DOM element.
+        let dx = Math.abs(ImageView.pointerEventCache[0].pageX - ImageView.pointerEventCache[1].pageX);
+        let dy = Math.abs(ImageView.pointerEventCache[0].pageY - ImageView.pointerEventCache[1].pageY);
+        let deltaPoint2d = new THREE_Vector2(dx, dy);
+        
+        let x2 = (ImageView.pointerEventCache[0].pageX + ImageView.pointerEventCache[1].pageX) / 2;
+        let y2 = (ImageView.pointerEventCache[0].pageY + ImageView.pointerEventCache[1].pageY) / 2;
+        let centerPoint2d_inScreenCoord_end = new THREE_Vector2(x2, y2);
+
+        let imageView = COL.model.getImageView();
+        this.centerPoint2d_inNDC_end = imageView.screenPointCoordToNormalizedCoord(centerPoint2d_inScreenCoord_end);
+        
+        this.deltaPoint2d_inScreenCoord_end = new THREE_Vector2(deltaPoint2d.x, deltaPoint2d.y);
+    }
+
+    initPan360(event){
+        // console.log('BEG initPan360');
+
+        if ( event.isPrimary === false ) return;
+
+        this.isImagePanned = false;
+        this.onPointerDownMouseX = event.clientX;
+        this.onPointerDownMouseY = event.clientY;
+        this.onPointerDownLon = this.lon;
+        this.onPointerDownLat = this.lat;
+    }
+
+    initPanNon360(point2d){
+        // console.log('BEG initPanNon360');
+
+        this.isImagePanned = false;
+        this.panPointStart.set(point2d.x, point2d.y);
+        this.panPointEnd.copy(this.panPointStart);
+        this.panPointCurrent.copy(this.panPointStart);
+    }
+
+    pan360Image(){
+        // console.log('BEG pan360Image');
+        
+        let deltaX = this.onPointerDownMouseX - event.clientX;
+        let deltaY = event.clientY - this.onPointerDownMouseY;
+        this.lon = ( deltaX ) * 0.1 + this.onPointerDownLon;
+        this.lat = ( deltaY ) * 0.1 + this.onPointerDownLat;
+
+        let panPointDeltaThresh = 10;
+        if((Math.abs(deltaX) > panPointDeltaThresh) || (Math.abs(deltaY) > panPointDeltaThresh)){
+            this.isImagePanned = true;
+        }
+        this.update();
+    }
+
+    panNon360Image(){
+        // console.log('BEG panNon360Image');
+        
+        let panPointDelta = new THREE_Vector2();
+        let point2d_inScreenCoord = ImageView.GetPointFromPointerEvent();
+        panPointDelta.subVectors ( point2d_inScreenCoord, this.panPointStart );
+        let panPointDeltaThresh = 10;
+
+        // console.log('this.isImagePanned3', this.isImagePanned);
+        if(panPointDelta.length() > panPointDeltaThresh){
+            // the distance from panPointStart to point2d is bigger than panPointDeltaThresh - consider as moved.
+            this.isImagePanned = true;
+            this.panPointEnd.set(point2d_inScreenCoord.x, point2d_inScreenCoord.y);
+            // pan the pane
+            this.pan_usingScreenCoords(this.panPointCurrent, this.panPointEnd);
+                
+            // update panPointCurrent for the future
+            this.panPointCurrent.copy(this.panPointEnd);
+            this.update();
+        }
     }
 
     initOrbitControlsImageViewPane() {
@@ -129,11 +234,116 @@ class OrbitControlsImageView extends THREE_EventDispatcher {
     }
 
     setState(otherState) {
-        this.state = otherState;
+        // console.log('BEG OrbitControlsImageView::setState');
+    
+        // console.log('getStateAsStr before setting from otherState', this.getStateAsStr());
+        if(this.state !== otherState) {
+            let imageView = COL.model.getImageView();
+
+            // Step1 - before setting the state, manage the previous state
+            switch (this.state) {
+                case OrbitControlsImageView.STATE.NONE:
+                    // usecase: annotationShapeId is emphasized, the annotationShapeIconBar is shown, but no shape is selected yet.
+                    // (so the state is OrbitControlsImageView.STATE.NONE), and now the the user clicks on the moveAnnotation button.
+                    // In this case, we want to demphesize the button annotationShapeId, and hide the annotationShapeIconBar
+                    COL.manageGUI.emphasizeElement('annotationShapeId', false);
+                    COL.manageGUI.setElementDisplay('annotationShapeIconBarId', false, 'flex');
+                    break;
+                case OrbitControlsImageView.STATE.DOLLY:
+                    break;
+                case OrbitControlsImageView.STATE.EDIT_MODE_ADD_SHAPE_ANNOTATION:
+                    COL.manageGUI.setShape(Annotation.SHAPE.NONE);
+                    COL.manageGUI.emphasizeElement('annotationShapeId', false);
+                    break;
+                case OrbitControlsImageView.STATE.EDIT_MODE_ADD_FREE_DRAW_ANNOTATION:
+                    COL.manageGUI.emphasizeElement('annotationFreeDrawModeId', false);
+                    COL.model.fabricCanvas.isDrawingMode = false;
+                    break;
+                case OrbitControlsImageView.STATE.EDIT_MODE_MOVE_ANNOTATION:
+                case OrbitControlsImageView.STATE.EDIT_MODE_DELETE_ANNOTATION:
+                    Annotation.SetAnnotationObjectsState(Annotation.STATE.NONE);
+
+                    if(this.state == OrbitControlsImageView.STATE.EDIT_MODE_MOVE_ANNOTATION) {
+                        COL.manageGUI.emphasizeElement('annotationMoveModeId', false);
+                    }
+                    else if(this.state == OrbitControlsImageView.STATE.EDIT_MODE_DELETE_ANNOTATION) {
+                        COL.manageGUI.emphasizeElement('annotationDeleteModeId', false);
+                    }
+                    break;
+                default:
+                    throw new Error('Invalid orbitControls state: ' + this.getState());
+            }
+
+
+            this.state = otherState;
+            // console.log('getStateAsStr after setting from otherState', this.getStateAsStr());
+
+            // Step2 - manage the current state
+            switch (this.state) {
+                case OrbitControlsImageView.STATE.NONE:
+                    break;
+                case OrbitControlsImageView.STATE.DOLLY:
+                {
+                    Annotation.SetAnnotationObjectsState(Annotation.STATE.NONE);
+
+                    if (ImageTags.Is360Image()) {
+                        this.initPan360(event);
+                    }
+                    else{
+                        // set the start to where the first pointer is
+                        let point2d = ImageView.GetPointFromPointerEvent();
+                        this.initPanNon360(point2d);
+                    }
+            
+                    break;
+                }
+                case OrbitControlsImageView.STATE.EDIT_MODE_ADD_SHAPE_ANNOTATION:
+                    COL.manageGUI.emphasizeElement('annotationShapeId', true);
+                    break;
+                case OrbitControlsImageView.STATE.EDIT_MODE_ADD_FREE_DRAW_ANNOTATION:
+                    COL.model.fabricCanvas.isDrawingMode = true;
+                    COL.manageGUI.emphasizeElement('annotationFreeDrawModeId', true);
+                    break;
+                case OrbitControlsImageView.STATE.EDIT_MODE_MOVE_ANNOTATION:
+                {
+                    Annotation.SetAnnotationObjectsState(Annotation.STATE.MOVE_ANNOTATION);
+                    COL.manageGUI.emphasizeElement('annotationMoveModeId', true);
+                    break;
+                }
+                case OrbitControlsImageView.STATE.EDIT_MODE_DELETE_ANNOTATION:
+                {
+                    Annotation.SetAnnotationObjectsState(Annotation.STATE.DELETE_ANNOTATION);
+                    COL.manageGUI.emphasizeElement('annotationDeleteModeId', true);
+                    break;
+                }
+                    
+                default:
+                    throw new Error('Invalid orbitControls state: ' + this.getState());
+            }
+        }
     }
 
     getState() {
         return this.state;
+    }
+
+    getStateAsStr() {
+        switch (this.getState()) {
+            case OrbitControlsImageView.STATE.NONE:
+                return 'OrbitControlsImageView.STATE.NONE';
+            case OrbitControlsImageView.STATE.DOLLY:
+                return 'OrbitControlsImageView.STATE.DOLLY';
+            case OrbitControlsImageView.STATE.EDIT_MODE_ADD_SHAPE_ANNOTATION:
+                return 'OrbitControlsImageView.STATE.EDIT_MODE_ADD_SHAPE_ANNOTATION';
+            case OrbitControlsImageView.STATE.EDIT_MODE_ADD_FREE_DRAW_ANNOTATION:
+                return 'OrbitControlsImageView.STATE.EDIT_MODE_ADD_FREE_DRAW_ANNOTATION';
+            case OrbitControlsImageView.STATE.EDIT_MODE_MOVE_ANNOTATION:
+                return 'OrbitControlsImageView.STATE.EDIT_MODE_MOVE_ANNOTATION';
+            case OrbitControlsImageView.STATE.EDIT_MODE_DELETE_ANNOTATION:
+                return 'OrbitControlsImageView.STATE.EDIT_MODE_DELETE_ANNOTATION';
+            default:
+                throw new Error('Invalid orbitControls state: ' + this.getState());
+        }
     }
 
     saveState() {
@@ -156,28 +366,6 @@ class OrbitControlsImageView extends THREE_EventDispatcher {
         this.setState(OrbitControlsImageView.STATE.NONE);
     }
 
-    setFromCameraInfo(cameraInfo) {
-    // console.log('BEG setFromCameraInfo');
-
-        this.camera.left = cameraInfo.cameraFrustumLeftPlane;
-        this.camera.right = cameraInfo.cameraFrustumRightPlane;
-        this.camera.top = cameraInfo.cameraFrustumTopPlane;
-        this.camera.bottom = cameraInfo.cameraFrustumBottomPlane;
-        this.camera.near = cameraInfo.cameraFrustumNearPlane;
-        this.camera.far = cameraInfo.cameraFrustumFarPlane;
-        this.camera.position.set(
-            cameraInfo.cameraPosition.x,
-            cameraInfo.cameraPosition.y,
-            cameraInfo.cameraPosition.z
-        );
-        this.camera.zoom = cameraInfo.cameraZoom;
-
-        this.target.set(this.camera.position.x, this.camera.position.y, 0);
-        this.minZoom = cameraInfo.cameraMinZoom;
-
-        this.camera.updateProjectionMatrix();
-    }
-
     getZoomScale() {
         return Math.pow(0.95, this.zoomSpeed);
     }
@@ -187,23 +375,83 @@ class OrbitControlsImageView extends THREE_EventDispatcher {
     }
 
     setZoom(otherZoom) {
-    // console.log('BEG setZoom');
+        // console.log('BEG setZoom');
 
-        // this.camera.zoom = Math.max( this.minZoom, Math.min( this.maxZoom, this.camera.zoom * dollyScale ) );
-        this.camera.zoom = otherZoom;
         this.camera.zoom = Math.max(
             this.minZoom,
-            Math.min(this.maxZoom, this.camera.zoom)
+            Math.min(this.maxZoom, otherZoom)
         );
         this.camera.updateProjectionMatrix();
         this.zoomChanged = true;
 
         this.saveState();
-    // console.log('this.camera.zoom', this.camera.zoom);
+    }
+
+    setMinZoom(
+        guiWindowWidth,
+        guiWindowHeight,
+        imageWidth,
+        imageHeight,
+        canvasWidth,
+        canvasHeight
+    ) {
+        // console.log('BEG setMinZoom');
+
+        let image_w_h_ratio = imageWidth / imageHeight;
+        let guiWindow_w_h_ratio = guiWindowWidth / guiWindowHeight;
+        let canvas_w_h_ratio = canvasWidth / canvasHeight;
+
+        let zoomFactor = 1;
+        if (guiWindow_w_h_ratio > image_w_h_ratio) {
+            // canvasWidth is smaller than guiWindowWidth
+            zoomFactor = guiWindowHeight / canvasHeight;
+        }
+        else {
+            zoomFactor = guiWindowWidth / canvasWidth;
+        }
+
+        this.minZoom = zoomFactor;
+
+        // make sure that the current zoom is bounded by the new value of this.minZoom
+        this.setZoom(this.camera.zoom);
     }
 
     update() {
-        // console.log('BEG OrbitControlsImageView::update()');
+        if (ImageTags.Is360Image()) {
+            this.update360();
+        }
+        else{
+            this.updateNon360();
+        }
+    }
+
+    update360() {
+        // console.log('BEG OrbitControlsImageView::update360()');
+
+        if(!this.camera.isPerspectiveCamera){
+            throw new Error('camera is not perspective');
+        }
+
+        this.lat = Math.max( - 85, Math.min( 85, this.lat ) );
+        this.phi = THREE_MathUtils.degToRad( 90 - this.lat );
+        this.theta = THREE_MathUtils.degToRad( this.lon );
+
+        const x = 500 * Math.sin( this.phi ) * Math.cos( this.theta );
+        const y = 500 * Math.cos( this.phi );
+        const z = 500 * Math.sin( this.phi ) * Math.sin( this.theta );
+
+        this.camera.lookAt( x, y, z );
+
+        ImageView.Render2();
+
+    }
+
+    updateNon360() {
+        // console.log('BEG OrbitControlsImageView::updateNon360()');
+
+        if(!this.camera.isOrthographicCamera){
+            throw new Error('camera is not orthographic');
+        }
 
         // move target to panned location
         this.target.add(this.panOffset);
@@ -231,26 +479,20 @@ class OrbitControlsImageView extends THREE_EventDispatcher {
 
         if (
             this.zoomChanged ||
-      positionShift > OrbitControlsImageView.EPS ||
-      condition3 > OrbitControlsImageView.EPS
+            positionShift > OrbitControlsImageView.EPS ||
+            condition3 > OrbitControlsImageView.EPS
         ) {
             this.lastPosition.copy(this.camera.position);
             this.lastQuaternion.copy(this.camera.quaternion);
             this.zoomChanged = false;
 
-            let selectedLayer = COL.model.getSelectedLayer();
-            if (COL.util.isObjectInvalid(selectedLayer)) {
-                console.warn('Layer is invalid');
-                return false;
-            }
-
-            let imageView = selectedLayer.getImageView();
+            let imageView = COL.model.getImageView();
             let bBox = imageView.getBoundingBox();
             let viewportExtendsOnX = imageView.doesViewportExtendOnX();
             if (bBox) {
                 this.limitPanning(bBox, viewportExtendsOnX);
             }
-            ImageView.render2();
+            ImageView.Render2();
 
             return true;
         }
@@ -259,63 +501,12 @@ class OrbitControlsImageView extends THREE_EventDispatcher {
     }
 
     dispose() {
-    // console.log('BEG OrbitControlsPlanView.js::dispose()');
+    // console.log('BEG OrbitControlsImageView.js::dispose()');
     // https://threejs.org/docs/#examples/en/controls/OrbitControls.dispose
     // nothing to be done here - event listeners are removed in ImageView
     }
 
-    setCameraFrustumAndZoom(
-        guiWindowWidth,
-        guiWindowHeight,
-        imageWidth,
-        imageHeight,
-        imageOrientation
-    ) {
-    // console.log('BEG setCameraFrustumAndZoom');
-
-        // ////////////////////////////////////////////////////////
-        // Set the camera frustum, zoom
-        // ////////////////////////////////////////////////////////
-
-        this.camera.left = -imageWidth / 2;
-        this.camera.right = imageWidth / 2;
-        this.camera.top = imageHeight / 2;
-        this.camera.bottom = -imageHeight / 2;
-
-        this.setZoom(this.minZoom);
-        this.camera.updateProjectionMatrix();
-    }
-
-    setMinZoom2(
-        guiWindowWidth,
-        guiWindowHeight,
-        imageWidth,
-        imageHeight,
-        canvasWidth,
-        canvasHeight
-    ) {
-    // console.log('BEG setMinZoom2');
-
-        let image_w_h_ratio = imageWidth / imageHeight;
-        let guiWindow_w_h_ratio = guiWindowWidth / guiWindowHeight;
-        let canvas_w_h_ratio = canvasWidth / canvasHeight;
-
-        let zoomFactor = 1;
-        if (guiWindow_w_h_ratio > image_w_h_ratio) {
-            // canvasWidth is smaller than guiWindowWidth
-            zoomFactor = guiWindowHeight / canvasHeight;
-        }
-        else {
-            zoomFactor = guiWindowWidth / canvasWidth;
-        }
-
-        this.minZoom = zoomFactor;
-
-        // make sure that the current zoom is bounded by the new value of this.minZoom
-        this.setZoom(this.camera.zoom);
-    }
-
-    setCameraAndCanvas(
+    setCameraFrustumAndZoomAndCanvas(
         guiWindowWidth,
         guiWindowHeight,
         imageWidth,
@@ -323,34 +514,42 @@ class OrbitControlsImageView extends THREE_EventDispatcher {
         imageOrientation,
         doRescale
     ) {
-    // console.log('BEG setCameraAndCanvas');
+        console.log('BEG setCameraFrustumAndZoomAndCanvas');
 
         let scaleX = 0;
         let scaleY = 0;
         if (doRescale) {
-            // setCameraFrustumAndZoom -> setCameraFrustum
-            this.setCameraFrustumAndZoom(
-                guiWindowWidth,
-                guiWindowHeight,
+
+            // Set the frustum
+            if(this.camera.isOrthographicCamera){
+                this.camera.left = -imageWidth / 2;
+                this.camera.right = imageWidth / 2;
+                this.camera.top = imageHeight / 2;
+                this.camera.bottom = -imageHeight / 2;
+            }
+
+            // Set the zoom
+            this.setZoom(this.minZoom);
+            this.camera.updateProjectionMatrix();
+
+            [scaleX, scaleY] = COL.OrbitControlsUtils.getScaleAndRotation(
                 imageWidth,
                 imageHeight,
                 imageOrientation
             );
-
-            let retVal0 = COL.OrbitControlsUtils.getScaleAndRatio(
-                imageWidth,
-                imageHeight,
-                imageOrientation
-            );
-
-            scaleX = retVal0.scaleX;
-            scaleY = retVal0.scaleY;
         }
         else {
             scaleX = this.camera.right * 2;
             scaleY = this.camera.top * 2;
         }
 
+        if (ImageTags.Is360Image()) {
+            // hardcode for IMG_360example1.jpg
+            scaleX = 1;
+            scaleY = 1;
+        }
+        console.log('scaleX', scaleX);
+        
         let isImageViewPane = true;
         let retVal1 = COL.OrbitControlsUtils.calcCanvasParams(
             guiWindowWidth,
@@ -360,7 +559,7 @@ class OrbitControlsImageView extends THREE_EventDispatcher {
             isImageViewPane
         );
 
-        this.setMinZoom2(
+        this.setMinZoom(
             guiWindowWidth,
             guiWindowHeight,
             imageWidth,
@@ -417,14 +616,10 @@ class OrbitControlsImageView extends THREE_EventDispatcher {
         this.camera.updateProjectionMatrix();
     }
 
-    pan_usingScreenCoords(
-        panPointCurrent_inScreenCoord,
-        panPointEnd_inScreenCoord
-    ) {
-    // console.log('BEG pan_usingScreenCoords');
+    pan_usingScreenCoords( panPointCurrent_inScreenCoord, panPointEnd_inScreenCoord ) {
+        // console.log('BEG pan_usingScreenCoords');
 
-        let selectedLayer = COL.model.getSelectedLayer();
-        let imageView = selectedLayer.getImageView();
+        let imageView = COL.model.getImageView();
 
         let panPointCurrent_inNDC_Coord = imageView.screenPointCoordToNormalizedCoord(panPointCurrent_inScreenCoord);
         let panPointEnd_inNDC_Coord = imageView.screenPointCoordToNormalizedCoord(panPointEnd_inScreenCoord);
@@ -440,8 +635,7 @@ class OrbitControlsImageView extends THREE_EventDispatcher {
         delta_inWorldCoord.copy(panPointEnd_inWorldCoord);
         delta_inWorldCoord.sub(panPointCurrent_inWorldCoord);
 
-        this.panLeft(delta_inWorldCoord.x);
-        this.panUp(-delta_inWorldCoord.y);
+        this.pan_usingWorldCoords(delta_inWorldCoord);
     }
 
     pan_usingWorldCoords(delta_inWorldCoord) {
@@ -475,17 +669,13 @@ class OrbitControlsImageView extends THREE_EventDispatcher {
     // /////////////////////////////////////////////////////////////////////////
 
     limitPanning(bbox, viewportExtendsOnX) {
-    // console.log('BEG limitPanning');
+        // console.log('BEG limitPanning');
 
         let x1 = 0;
         let x3 = 0;
         if (viewportExtendsOnX) {
-            x1 =
-        this.camera.position.x +
-        (this.camera.left * this.minZoom) / this.camera.zoom;
-            x3 =
-        this.camera.position.x +
-        (this.camera.right * this.minZoom) / this.camera.zoom;
+            x1 = this.camera.position.x + (this.camera.left * this.minZoom) / this.camera.zoom;
+            x3 = this.camera.position.x + (this.camera.right * this.minZoom) / this.camera.zoom;
         }
         else {
             x1 = this.camera.position.x + this.camera.left / this.camera.zoom;
@@ -566,73 +756,292 @@ class OrbitControlsImageView extends THREE_EventDispatcher {
     }
 
     // /////////////////////////////////
-    // BEG Mouse/touch related functions
+    // BEG pointer related functions
     // /////////////////////////////////
 
-    handleMouseDown_orTouchStart_imageView(event) {
-        // console.log( 'BEG handleMouseDown_orTouchStart_imageView' );
+    async handlePointerDown_imageView(event) {
+        console.log( 'BEG handlePointerDown_imageView' );
 
-        let point2d = COL.util.getPointFromEvent(event);
-
-        if (((event instanceof MouseEvent) && (event.button == OrbitControlsImageView.mouseButtons.LEFT)) || 
-        event instanceof TouchEvent)  {
-            this.panPointStart.set(point2d.x, point2d.y);
-            this.panPointEnd.copy(this.panPointStart);
-            this.panPointCurrent.copy(this.panPointStart);
+        if (ImageTags.Is360Image()) {
+            // tbd - three js get coordinate in original equirectangular image from clientX, clientY, pageX, pageY
+            this.initPan360(event);
         }
-    }
-
-    handleMouseMove_orOneFingerTouchMove_imageView(event) {
-        // console.log('BEG handleMouseMove_orOneFingerTouchMove_imageView');
-
-        let panPointDelta = new THREE_Vector2();
-        let point2d_inScreenCoord = COL.util.getPointFromEvent(event);
-        panPointDelta.subVectors ( point2d_inScreenCoord, this.panPointStart );
-        let panPointDeltaThresh = 10;
-
-        if(panPointDelta.length() > panPointDeltaThresh){
-            // the distance from panPointStart to point2d is bigger than panPointDeltaThresh - consider as moved.
-            this.setState(OrbitControlsImageView.STATE.PAN);
-            
-            this.panPointEnd.set(point2d_inScreenCoord.x, point2d_inScreenCoord.y);
-            // pan the pane
-            this.pan_usingScreenCoords(this.panPointCurrent, this.panPointEnd);
-    
-            // update panPointCurrent for the future
-            this.panPointCurrent.copy(this.panPointEnd);
-            this.update();
+        else{
+            let point2d = ImageView.GetPointFromPointerEvent();
+            this.initPanNon360(point2d);
         }
-    }
 
-    handleTwoFingerTouchMove_imageView(event) {
-    // console.log( 'BEG handleTwoFingerTouchMove_imageView' );
-    
-        // Enable "two-finger-pinch(zoom,dolly) touch" only if both touches are in the same DOM element.
-        let dx = Math.abs(event.touches[0].pageX - event.touches[1].pageX);
-        let dy = Math.abs(event.touches[0].pageY - event.touches[1].pageY);
-        let deltaPoint2d = new THREE_Vector2(dx, dy);
-        
-        let x2 = (event.touches[0].pageX + event.touches[1].pageX) / 2;
-        let y2 = (event.touches[0].pageY + event.touches[1].pageY) / 2;
-        let centerPoint2d_inScreenCoord_end = new THREE_Vector2(x2, y2);
-        
-        let selectedLayer = COL.model.getSelectedLayer();
-        let imageView = selectedLayer.getImageView();
-        this.centerPoint2d_inNDC_end = imageView.screenPointCoordToNormalizedCoord(centerPoint2d_inScreenCoord_end);
-        
-        let centerPoint3d_inWorldCoord_end = COL.OrbitControlsUtils.NDC_Coord_to_WorldCoord(this.camera,
-            this.centerPoint2d_inNDC_end);
-        
-        this.deltaPoint2d_inScreenCoord_end = new THREE_Vector2(deltaPoint2d.x, deltaPoint2d.y);
-        let zeroVec = new THREE_Vector3();
-        
+        let imageView = COL.model.getImageView();
+
+        // console.log('this.getStateAsStr()1', this.getStateAsStr());
         switch (this.getState()) {
+            case OrbitControlsImageView.STATE.NONE:
             case OrbitControlsImageView.STATE.DOLLY:
             {
                 break;
             }
+            case OrbitControlsImageView.STATE.EDIT_MODE_ADD_SHAPE_ANNOTATION:
+            case OrbitControlsImageView.STATE.EDIT_MODE_MOVE_ANNOTATION:
+            case OrbitControlsImageView.STATE.EDIT_MODE_DELETE_ANNOTATION:
+            case OrbitControlsImageView.STATE.EDIT_MODE_ADD_FREE_DRAW_ANNOTATION:
+            {
+                if(ImageView.pointerEventCache.length == 1){
+                    // Handle the annotation, only for single touch
+                    let selectedImage3dCanvasEl = document.getElementById('selectedImage3dCanvasId');
+                    const positionOnImage = getPositionOnImage(selectedImage3dCanvasEl);
+                    if (positionOnImage) {
+                        const canvasRect = COL.model.fabricCanvas._offset;
+        
+                        // console.log('event.type', event.type);
+
+                        // note: for some reason need to create a MouseEvent although the event type is PointerEvent
+                        // (found empirically)
+                        // (in handleSinglePointerEventMove_imageView a PointerEvent works ok, but here PointerEvent does not work ...)
+                        let simEvt = new MouseEvent(event.type, {
+                            clientX: canvasRect.left + positionOnImage.x,
+                            clientY: canvasRect.top + positionOnImage.y
+                        });
+                        // let simEvt = new PointerEvent(event.type, {
+                        //     clientX: canvasRect.left + positionOnImage.x,
+                        //     clientY: canvasRect.top + positionOnImage.y
+                        // });
+            
+                        // dispatchEvent is syncronous so if clicking on fabricjs object (e.g. rect) it will be setActiveObject
+                        // before advancing to the next line.
+                        COL.model.fabricCanvas.upperCanvasEl.dispatchEvent(simEvt);
+                    }
+                    if(this.getState() == OrbitControlsImageView.STATE.EDIT_MODE_ADD_SHAPE_ANNOTATION) {
+                        let shape = Annotation.GetShape();
+                        await COL.manageGUI.addAnnotationShape1(event, shape);
+                    }
+                    else if(this.getState() == OrbitControlsImageView.STATE.EDIT_MODE_ADD_FREE_DRAW_ANNOTATION) {
+                        // tbd - if STATE.EDIT_MODE_ADD_FREE_DRAW_ANNOTATION - then no need to ask about fabricCanvas.isDrawingMode ??
+                        if(COL.model.fabricCanvas.isDrawingMode){
+                            this.offscreenCanvasEl = document.getElementById('canvas2Id');
+                            // tbd - width,height can be set only once ?
+                            this.offscreenCanvasEl.width = COL.model.fabricCanvas.width;
+                            this.offscreenCanvasEl.height = COL.model.fabricCanvas.height;
+                    
+                            let imageView = COL.model.getImageView();
+                            // set the image pointer to point to offscreenCanvasEl
+                            imageView.surface.material.map.image = this.offscreenCanvasEl;
+                            imageView.surface.material.map.needsUpdate = true;
+                            // COL.model.fabricCanvas.renderAll();
+                            ImageView.Render2();
+                        }
+                    }
+                }
+                break;
+            }
+            default:
+            {
+                throw new Error('Invalid orbitControls state: ' + this.getState());
+            }
+        }
+        // update the view to show/hide the object selectors
+        imageView.surface.material.map.needsUpdate = true;
+        COL.model.fabricCanvas.renderAll();
+        ImageView.Render2();
+    
+        // console.log('this.getStateAsStr()3', this.getStateAsStr());
+    }
+
+    async handlePointerUp_imageView() {
+        console.log( 'BEG handlePointerUp_imageView' );
+
+        let selectedLayer = COL.model.getSelectedLayer();
+        let imageView = COL.model.getImageView();
+
+        // console.log('this.getStateAsStr1()', this.getStateAsStr());
+        switch (this.getState()) {
             case OrbitControlsImageView.STATE.NONE:
-            case OrbitControlsImageView.STATE.PAN:
+            {
+                if(!this.isImagePanned) {
+                    selectedLayer.toggleImageDisplay();
+                }
+                break;
+            }
+            case OrbitControlsImageView.STATE.DOLLY:
+            {
+                // the state is DOLLY, i.e. multi-pointerEvent. Assuming one of the multi-pointerEvents is released.
+                // set the number of pointerEvents to 1 and change the state to PAN
+                ImageView.pointerEventCache.splice(1);
+                this.setState(OrbitControlsImageView.STATE.NONE);
+                break;
+            }
+            case OrbitControlsImageView.STATE.EDIT_MODE_ADD_SHAPE_ANNOTATION:
+            {
+                this.setState(OrbitControlsImageView.STATE.NONE);
+                COL.manageGUI.emphasizeElement('annotationShapeId', false);
+                let imageInfo = ImageInfo.getSelectedImageInfo(selectedLayer);
+                await imageInfo.updateAnnotationBlob();
+                imageView.surface.material.map.needsUpdate = true;
+                COL.model.fabricCanvas.renderAll();
+                ImageView.Render2();
+                break;
+            }
+            case OrbitControlsImageView.STATE.EDIT_MODE_ADD_FREE_DRAW_ANNOTATION:
+            {
+                // tbd - if STATE.EDIT_MODE_ADD_FREE_DRAW_ANNOTATION - then no need to ask about fabricCanvas.isDrawingMode ??
+                if(COL.model.fabricCanvas.isDrawingMode){
+                    let lowerCanvas1 = document.getElementById('canvasId1');
+                    // set the image pointer to point to the lowerCanvas
+                    imageView.surface.material.map.image = lowerCanvas1;
+                }
+                // no need to call updateAnnotationBlob. The sync happens in path::create
+                imageView.surface.material.map.needsUpdate = true;
+                COL.model.fabricCanvas.renderAll();
+                ImageView.Render2();
+                break;
+            }
+            case OrbitControlsImageView.STATE.EDIT_MODE_MOVE_ANNOTATION:
+            {
+                let imageInfo = ImageInfo.getSelectedImageInfo(selectedLayer);
+                // sync the updated imageInfo to the webServer after moving an annotation.
+                await imageInfo.updateAnnotationBlob();
+                break;
+            }
+            case OrbitControlsImageView.STATE.EDIT_MODE_DELETE_ANNOTATION:
+            {
+                if(!this.isImagePanned) {
+                    let fabricjsActiveObject = COL.model.fabricCanvas.getActiveObject();
+                    if (COL.util.isObjectValid(fabricjsActiveObject)) {
+                        COL.model.fabricCanvas.remove(fabricjsActiveObject);
+                    }
+                    let imageInfo = ImageInfo.getSelectedImageInfo(selectedLayer);
+                    await imageInfo.updateAnnotationBlob();
+                    imageView.surface.material.map.needsUpdate = true;
+                    COL.model.fabricCanvas.renderAll();
+                    ImageView.Render2();
+                }
+                break;
+            }
+            default:
+            {
+                throw new Error('Invalid orbitControls state: ' + this.getState());
+            }
+        }
+        // console.log('this.getStateAsStr2()', this.getStateAsStr());
+    }
+
+    // imageView - handleSinglePointerEventMove_imageView === handleMouseMove_orOneFingerTouchMove_planView - ???
+    // imageView - ??? === planView - handleMouseMove_orOneFingerTouchMove0_planViewInEditMode
+    handleSinglePointerEventMove_imageView(event) {
+        console.log('BEG handleSinglePointerEventMove_imageView');
+
+        // console.log('this.getStateAsStr6()', this.getStateAsStr());
+
+        switch (this.getState()) {
+            case OrbitControlsImageView.STATE.NONE:
+            case OrbitControlsImageView.STATE.DOLLY:
+            {
+                if (ImageTags.Is360Image()) {
+                    this.pan360Image();
+                }
+                else{
+                    this.panNon360Image();
+                }
+    
+                break;
+            }
+            case OrbitControlsImageView.STATE.EDIT_MODE_ADD_SHAPE_ANNOTATION:
+            case OrbitControlsImageView.STATE.EDIT_MODE_MOVE_ANNOTATION:
+            case OrbitControlsImageView.STATE.EDIT_MODE_DELETE_ANNOTATION:
+            case OrbitControlsImageView.STATE.EDIT_MODE_ADD_FREE_DRAW_ANNOTATION:
+            {
+                // Handle the annotation
+                let selectedImage3dCanvasEl = document.getElementById('selectedImage3dCanvasId');
+                const positionOnImage = getPositionOnImage(selectedImage3dCanvasEl);
+                if (positionOnImage) {
+                    const canvasRect = COL.model.fabricCanvas._offset;
+                    // console.log('event.type', event.type);
+
+                    // note: in handlePointerDown_imageView need to create a MouseEvent although
+                    // the event.type is PointerEvent.
+                    // Here, both MouseEvent, and PointerEvent (with event type PointerEvent in both cases) work...
+                    let simEvt = new MouseEvent(event.type, {
+                        clientX: canvasRect.left + positionOnImage.x,
+                        clientY: canvasRect.top + positionOnImage.y
+                    });
+                    // let simEvt = new PointerEvent(event.type, {
+                    //     clientX: canvasRect.left + positionOnImage.x,
+                    //     clientY: canvasRect.top + positionOnImage.y
+                    // });
+        
+                    COL.model.fabricCanvas.upperCanvasEl.dispatchEvent(simEvt);
+                }
+        
+                if(this.getState() == OrbitControlsImageView.STATE.EDIT_MODE_MOVE_ANNOTATION ||
+                   this.getState() == OrbitControlsImageView.STATE.EDIT_MODE_DELETE_ANNOTATION) {
+
+                    let fabricjsActiveObject = COL.model.fabricCanvas.getActiveObject();
+                    if (COL.util.isObjectInvalid(fabricjsActiveObject) ||
+                        (COL.util.isObjectValid(fabricjsActiveObject) && fabricjsActiveObject.get('lockMovementX'))) {
+                        if (ImageTags.Is360Image()) {
+                            this.pan360Image();
+                        }
+                        else{
+                            // the pointed location is not an annotation object, or
+                            // the pointed location is an annotation object which is NOT editable
+                            // (e.g. cannot be moved when the state is EDIT_MODE_DELETE_ANNOTATION) 
+                            // -> so pan the image
+                            this.panNon360Image();
+                        }
+                    }
+            
+                    // annotation object is selected. Do not manipulate (e.g. pan/zoom) the image
+                    // But refresh the display to show any changes in annotation objects.
+                    let imageView = COL.model.getImageView();
+                    imageView.surface.material.map.needsUpdate = true;
+                    COL.model.fabricCanvas.renderAll();
+                    ImageView.Render2();
+                }
+                if(this.getState() == OrbitControlsImageView.STATE.EDIT_MODE_ADD_FREE_DRAW_ANNOTATION) {
+                    if(COL.model.fabricCanvas.isDrawingMode){
+                        this.drawOffScreenAnnotationEditMode();
+                        let imageView = COL.model.getImageView();
+                        imageView.surface.material.map.needsUpdate = true;
+                        ImageView.Render2();
+                    }
+                }
+                break;
+            }
+            default:
+            {
+                throw new Error('Invalid orbitControls state: ' + this.getState());
+            }
+        }
+        // console.log('this.getStateAsStr7()', this.getStateAsStr());
+    }
+
+    drawOffScreenAnnotationEditMode(){
+        // console.log('BEG drawOffScreenAnnotationEditMode');
+    
+        let upperCanvas1 = COL.model.fabricCanvas.upperCanvasEl;
+        let lowerCanvas1 = COL.model.fabricCanvas.lowerCanvasEl;
+        let destCtx = this.offscreenCanvasEl.getContext('2d');
+        destCtx.drawImage(lowerCanvas1, 0, 0);
+        destCtx.drawImage(upperCanvas1, 0, 0);
+    }
+    
+    handleMultiPointerEventMove_imageView() {
+        console.log( 'BEG handleMultiPointerEventMove_imageView' );
+
+        this.calcMultiPointerEventsDistance();
+        let zeroVec = new THREE_Vector3();
+        
+        // console.log('this.getStateAsStr()5', this.getStateAsStr());
+
+        switch (this.getState()) {
+            case OrbitControlsImageView.STATE.DOLLY:
+            case OrbitControlsImageView.STATE.EDIT_MODE_ADD_SHAPE_ANNOTATION:
+            case OrbitControlsImageView.STATE.EDIT_MODE_ADD_FREE_DRAW_ANNOTATION:
+            case OrbitControlsImageView.STATE.EDIT_MODE_MOVE_ANNOTATION:
+            case OrbitControlsImageView.STATE.EDIT_MODE_DELETE_ANNOTATION:
+            {
+                break;
+            }
+            case OrbitControlsImageView.STATE.NONE:
             {
                 this.setState(OrbitControlsImageView.STATE.DOLLY);
                     
@@ -644,8 +1053,7 @@ class OrbitControlsImageView extends THREE_EventDispatcher {
                 // - set deltaPoint2d_inScreenCoord_start to deltaPoint2d_inScreenCoord_end
                 // ////////////////////////////////////////////////////////
         
-                this.centerPoint2d_inNDC_start.copy(this.centerPoint2d_inNDC_end);
-                this.deltaPoint2d_inScreenCoord_start.copy(this.deltaPoint2d_inScreenCoord_end);
+                this.initDolly();
                 break;
             }
             default:
@@ -658,6 +1066,7 @@ class OrbitControlsImageView extends THREE_EventDispatcher {
         // Apply zoom
         // ////////////////////////////////////////////////////////
 
+        // .length() gets the length of the THREE_Vector2
         let lengthDollyStart = this.deltaPoint2d_inScreenCoord_start.length();
         let lengthDollyEnd = this.deltaPoint2d_inScreenCoord_end.length();
 
@@ -681,7 +1090,7 @@ class OrbitControlsImageView extends THREE_EventDispatcher {
             this.centerPoint2d_inNDC_start
         );
 
-        centerPoint3d_inWorldCoord_end = COL.OrbitControlsUtils.NDC_Coord_to_WorldCoord(
+        let centerPoint3d_inWorldCoord_end = COL.OrbitControlsUtils.NDC_Coord_to_WorldCoord(
             this.camera,
             this.centerPoint2d_inNDC_end
         );
@@ -700,10 +1109,27 @@ class OrbitControlsImageView extends THREE_EventDispatcher {
     }
 
     handleWheel_imageView(event) {
-        console.log('BEG handleWheel_imageView');
+        // console.log('BEG handleWheel_imageView');
 
-        if (this.state !== OrbitControlsImageView.STATE.NONE) {
-            return;
+        switch (this.getState()) {
+            case OrbitControlsImageView.STATE.DOLLY:
+            {
+                // do not dolly
+                return;
+            }
+            case OrbitControlsImageView.STATE.EDIT_MODE_ADD_SHAPE_ANNOTATION:
+            case OrbitControlsImageView.STATE.EDIT_MODE_ADD_FREE_DRAW_ANNOTATION:
+            case OrbitControlsImageView.STATE.EDIT_MODE_MOVE_ANNOTATION:
+            case OrbitControlsImageView.STATE.EDIT_MODE_DELETE_ANNOTATION:
+            case OrbitControlsImageView.STATE.NONE:
+            {
+                // only dolly when in these states
+                break;
+            }
+            default:
+            {
+                throw new Error('Invalid orbitControls state: ' + this.getState());
+            }
         }
 
         if (event.deltaY < 0) {
@@ -712,12 +1138,11 @@ class OrbitControlsImageView extends THREE_EventDispatcher {
         else if (event.deltaY > 0) {
             this.dollyInOut(this.getZoomScale(), false);
         }
-        ImageView.render2();
         this.update();
     }
 
     // /////////////////////////////////
-    // END Mouse/touch related functions
+    // END pointer related functions
     // /////////////////////////////////
 
     handleContextMenu_imageView(event) {
@@ -731,9 +1156,22 @@ class OrbitControlsImageView extends THREE_EventDispatcher {
 // BEG Static class variables
 // /////////////////////////////////
 
-OrbitControlsImageView.STATE = { NONE: 0, 
-    DOLLY: 1, 
-    PAN: 2 
+OrbitControlsImageView.STATE = { NONE: -1, 
+    DOLLY: 0, 
+    
+    // The user selected the editMode menu (but has not selected an option yet)
+    CONTEXT_MENU: 1,
+
+    EDIT_MODE_ADD_SHAPE_ANNOTATION: 2,
+
+    EDIT_MODE_ADD_FREE_DRAW_ANNOTATION: 3,
+
+    // tbd - EDIT_MODE_MOVE_ANNOTATION ===> EDIT_MODE_EDIT_ANNOTATION
+    // for now call EDIT_MODE_MOVE_ANNOTATION to be similar to EDIT_MODE_MOVE_OVERLAY_RECT
+    // but with annotation we can also scale, rotate, etc, i.e. "MOVE" -> "EDIT"
+    EDIT_MODE_MOVE_ANNOTATION: 4,
+
+    EDIT_MODE_DELETE_ANNOTATION: 5
 };
 
 OrbitControlsImageView.EPS = 0.0001;

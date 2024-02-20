@@ -20,7 +20,6 @@ import {Object3D as THREE_Object3D,
         RGBFormat as THREE_RGBFormat,
         ClampToEdgeWrapping as THREE_ClampToEdgeWrapping,
         LinearFilter as THREE_LinearFilter,
-        SpriteMaterial as THREE_SpriteMaterial,
         Sprite as THREE_Sprite        
        } from '../../static/three.js/three.js-r135/build/three.module.js';
 

@@ -19,11 +19,10 @@ COL.core.FileNotes = {
     this.loadNotesFromJsonFile = async function (layer, notesFilename) {
         
         let selectedLayer = COL.model.getSelectedLayer();
-        let metaDataFilesInfo = selectedLayer.getMetaDataFilesInfo();
-        let metaDataFileInfo = metaDataFilesInfo.getByKey(notesFilename);
-        let blobInfo = metaDataFileInfo.blobInfo;
+        let metaDataBlobsInfo = selectedLayer.getMetaDataBlobsInfo();
+        let metaDataBlobInfo = metaDataBlobsInfo.getByKey(notesFilename);
         
-        let notesArray1 = await FileZip_withJson.loadFile_viaFetch(blobInfo, 'json');
+        let notesArray1 = await FileZip_withJson.loadFile_viaFetch(metaDataBlobInfo, 'json');
 
         let stickyNoteGroup = layer.getStickyNoteGroup();
         let imageView = layer.getImageView();
@@ -61,7 +60,7 @@ COL.core.FileNotes = {
         
     };
 
-    this.exportNotesToBlob = function(layer, metaDataFilesInfo, notesFilename) {
+    this.exportNotesToBlob = function(layer, metaDataBlobsInfo, notesFilename) {
 
         var noteArray = layer.getNoteArray();
 
@@ -87,15 +86,14 @@ COL.core.FileNotes = {
         let notesExported2 = JSON.stringify(notesExported);
         var notesExportedBlob = new Blob([notesExported2], {type: 'application/json'});
 
-        let blobInfo = new BlobInfo({filenameFullPath: notesFilename, blobUrl: undefined, isDirty: true});
-        blobInfo.blobUrl = URL.createObjectURL(notesExportedBlob);
-
-        let metaDataFileInfo = metaDataFilesInfo.getByKey(notesFilename);
-        if(COL.util.isObjectInvalid(metaDataFileInfo)) {
-            metaDataFileInfo = new ImageInfo({filename: notesFilename, blobInfo: blobInfo});
+        let metaDataBlobInfo = metaDataBlobsInfo.getByKey(notesFilename);
+        if(COL.util.isObjectInvalid(metaDataBlobInfo)) {
+            metaDataBlobInfo = new BlobInfo({filenameFullPath: notesFilename, 
+                blobUrl: URL.createObjectURL(notesExportedBlob), 
+                isDirty: true});
         }
         
-        metaDataFilesInfo.set(notesFilename, metaDataFileInfo);
+        metaDataBlobsInfo.set(notesFilename, metaDataBlobInfo);
     };
 
     

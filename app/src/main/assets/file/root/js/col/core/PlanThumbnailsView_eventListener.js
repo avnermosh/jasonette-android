@@ -17,7 +17,7 @@ var deltaPoint = undefined;
 var scrollTop = undefined;
 
 async function onMouseDown_planThumbnailsPane(event) {
-    console.log('BEG onMouseDown_planThumbnailsPane');
+    // console.log('BEG onMouseDown_planThumbnailsPane');
 
     let planThumbnailEl = document.getElementById('planThumbnailsPaneId');
     
@@ -40,7 +40,7 @@ async function onMouseDown_planThumbnailsPane(event) {
 }
 
 async function handleMouseDown_orOneFingerTouchStart_planThumbnail(event) {
-    console.log('BEG handleMouseDown_orOneFingerTouchStart_planThumbnail');
+    // console.log('BEG handleMouseDown_orOneFingerTouchStart_planThumbnail');
 
     if (COL.util.isTouchDevice()) {
         firstPoint = event.changedTouches[0];
@@ -48,7 +48,7 @@ async function handleMouseDown_orOneFingerTouchStart_planThumbnail(event) {
     else{
         firstPoint = event;
     }
-    console.log('firstPoint', firstPoint);
+    // console.log('firstPoint', firstPoint);
     lastPoint = firstPoint;
 
     let layerName = event.target.id;
@@ -59,6 +59,12 @@ async function handleMouseDown_orOneFingerTouchStart_planThumbnail(event) {
 
 async function onMouseUp_planThumbnailsPane(event) {
     // console.log('BEG onMouseUp_planThumbnailsPane');
+
+    if (event.target.id == 'openZipFileIconId') {
+        // Clicked on an element which is not the plan thumbnails itself, e.g. openZipFileIconId
+        // avoid any response here
+        return;
+    }
 
     let planThumbnailEl = document.getElementById('planThumbnailsPaneId');
     
@@ -108,16 +114,12 @@ async function onTouchStart_planThumbnailsPane(event) {
         passive: false,
     });
 
-    // event.preventDefault();
-
     await handleMouseDown_orOneFingerTouchStart_planThumbnail(event);
 }
 
 async function onScroll_planThumbnailsPane( event ) {
-    console.log('BEG onScroll_planThumbnailsPane');
+    // console.log('BEG onScroll_planThumbnailsPane');
 
-    console.log('this1', this);
-    // let el1 = this;
     let el1 = document.getElementById('planThumbnailsPaneId');
     console.log('el1', el1);
     console.log('el1.scrollTop', el1.scrollTop);
@@ -147,14 +149,14 @@ async function onWheel_planThumbnailsPane(event) {
 }
 
 function onMouseMove_planThumbnailsPane(event) {
-    console.log('BEG onMouseMove_planThumbnailsPane');
+    // console.log('BEG onMouseMove_planThumbnailsPane');
 
-    console.log('event.clientY', event.clientY);
+    // console.log('event.clientY', event.clientY);
     lastPoint = event;
 }
 
 function onTouchMove_planThumbnailsPane(event) {
-    console.log('BEG onTouchMove_planThumbnailsPane');
+    // console.log('BEG onTouchMove_planThumbnailsPane');
 
     // Prevent from applying the _default_, _generic_ browser scroll to the planViewPane
     // (in such case, refresh symbol icon appears at the center-top of the page)
@@ -182,36 +184,34 @@ async function handleMouseUp_orOneFingerTouchEnd_planThumbnail(event) {
     // let deltaPointX = lastPoint.clientX - firstPoint.clientX;
     let deltaPointY = Math.abs(lastPoint.clientY - firstPoint.clientY);
     // console.log('deltaPointX', deltaPointX);
-    console.log('deltaPointY', deltaPointY);
+    // console.log('deltaPointY', deltaPointY);
     // event.target.scrollTop += currentPoint.clientY - lastPoint.clientY;
 
 
     let deltaPointY_thresh = 10;
     if(deltaPointY < deltaPointY_thresh) {
-        // consider as not scrolled
-        // Show the selected plan
+        // not scrolled
         let layerName = event.target.id;
-        let layer = COL.model.getLayerByName(layerName);
-        await COL.model.setSelectedLayer(layer);
-        await COL.manageGUI.setPane(event.target);
+        if( COL.util.isObjectValid(layerName) ) {
+            // we clicked on a plan thumbnail (and not e.g. in-between plan thumbnails)
+            // Show the selected plan
+            let layer = COL.model.getLayerByName(layerName);
+            await COL.model.setSelectedLayer(layer);
+            await COL.manageGUI.setPane(event.target);
+        }
     }
     else{
+        // scrolled - update the planThumbnailsPaneScrollPosition
         let el1 = document.getElementById('planThumbnailsPaneId');
-        // console.log('el1', el1);
         console.log('el1.scrollTop', el1.scrollTop);
     
         let planThumbnailsPaneScrollPosition = { 
             scrollTop: el1.scrollTop,
             scrollLeft: el1.scrollLeft
         };
-        console.log('planThumbnailsPaneScrollPosition', planThumbnailsPaneScrollPosition);
     
         COL.model.setPlanThumbnailsPaneScrollPosition(planThumbnailsPaneScrollPosition);
-    
-        let planThumbnailsPaneScrollPosition2 = COL.model.getPlanThumbnailsPaneScrollPosition();
-        console.log('planThumbnailsPaneScrollPosition2', planThumbnailsPaneScrollPosition2);
     }
-
 }
 
 async function onTouchEnd_planThumbnailsPane(event) {

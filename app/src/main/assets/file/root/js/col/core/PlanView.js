@@ -51,25 +51,24 @@ var cameraPlanViewPosition0 = new THREE_Vector3(
 
 class PlanView {
     constructor() {
-        this._scene;
-        this._camera;
-        this._orbitControls;
-        this._rendererPlanView;
+        this.scene;
+        this.camera;
+        this.orbitControls;
 
         // the mouseCoord in normalized units [-1, 1]
-        this._mouse = new THREE_Vector2();
+        this.mouse = new THREE_Vector2();
 
-        this._bbox = undefined;
-        this._raycasterPlanView = new THREE_Raycaster();
+        this.bbox = undefined;
+        this.raycasterPlanView = new THREE_Raycaster();
         this.viewportExtendsOnX = false;
-        this._currentViewportNormalized;
+        this.currentViewportNormalized;
 
-        this._axesHelperIntersection;
-        this._intersectedStructureInfo = new IntersectionInfo();
-        this._intersectedOverlayRectInfo = new IntersectionInfo();
+        this.axesHelperIntersection;
+        this.intersectedStructureInfo = new IntersectionInfo();
+        this.intersectedOverlayRectInfo = new IntersectionInfo();
         this.timeStamp = 0;
-        this._overlayRectRadius = 20;
-        this._overlayRectScale = 1;
+        this.overlayRectRadius = 20;
+        this.overlayRectScale = 1;
 
         this.lights = {
             AmbientLight: null,
@@ -92,17 +91,20 @@ class PlanView {
     // https://threejs.org/docs/#api/en/math/Vector3.unproject
     // NDC_Coord (a.k.a. normalizedMouseCoord, mouseCoord) - is normalized to [-1, 1]
     //
+    // https://stackoverflow.com/questions/18625858/object-picking-from-small-three-js-viewport
+    // https://stackoverflow.com/questions/28632241/object-picking-with-3-orthographic-cameras-and-3-viewports-three-js
+    // You need to consider the viewport parameters and adjust the mouse.x and mouse.y values so they always remain in the interval [ - 1, + 1 ]. – WestLangley
+
     screenPointCoordToNormalizedCoord(point2d) {
-        // console.log('BEG screenPointCoordToNormalizedCoord');
 
         let mouseCoord = new THREE_Vector2();
         mouseCoord.x = ((point2d.x - this.getPlanViewOffset().left -
-            this._currentViewportNormalized.x) /
-            this._currentViewportNormalized.z) * 2 - 1;
+            this.currentViewportNormalized.x) /
+            this.currentViewportNormalized.z) * 2 - 1;
 
         mouseCoord.y = -((point2d.y - this.getPlanViewOffset().top -
-            this._currentViewportNormalized.y) /
-            this._currentViewportNormalized.w) * 2 + 1;
+            this.currentViewportNormalized.y) /
+            this.currentViewportNormalized.w) * 2 + 1;
 
         return mouseCoord;
     }
@@ -110,77 +112,55 @@ class PlanView {
     screenNormalizedPointCoordToPointCoord(mouseCoord) {
         // console.log('BEG screenNormalizedPointCoordToPointCoord');
 
-        let sizePlanView = PlanView.GetMainContainerSize();
         let point2d = new THREE_Vector2();
 
-        point2d.x = this._currentViewportNormalized.z * ((mouseCoord.x + 1) / 2) +
-            this._currentViewportNormalized.x +
+        point2d.x = this.currentViewportNormalized.z * ((mouseCoord.x + 1) / 2) +
+            this.currentViewportNormalized.x +
             this.getPlanViewOffset().left;
 
-        point2d.y = -(this._currentViewportNormalized.w * ((mouseCoord.y - 1) / 2) +
-            this._currentViewportNormalized.y +
+        point2d.y = -(this.currentViewportNormalized.w * ((mouseCoord.y - 1) / 2) +
+            this.currentViewportNormalized.y +
             this.getPlanViewOffset().top);
 
         return point2d;
     }
 
-    getMouseCoords() {
-        return this._mouse;
-    }
-
-    setMouseOrTouchCoords(event) {
-        // console.log('BEG setMouseOrTouchCoords');
-
-        // https://stackoverflow.com/questions/18625858/object-picking-from-small-three-js-viewport
-        // https://stackoverflow.com/questions/28632241/object-picking-with-3-orthographic-cameras-and-3-viewports-three-js
-        // You need to consider the viewport parameters and adjust the mouse.x and mouse.y values so they always remain in the interval [ - 1, + 1 ]. – WestLangley
-
-        if (!this._mouse || !this._currentViewportNormalized) {
-            // this._mouse, or this._currentViewportNormalized are not defined yet!!
-            return null;
-        }
-
-        this._mouse.x = ((event.clientX - this.getPlanViewOffset().left - this._currentViewportNormalized.x) /
-            this._currentViewportNormalized.z) * 2 - 1;
-
-        this._mouse.y = -((event.clientY - this.getPlanViewOffset().top - this._currentViewportNormalized.y) /
-            this._currentViewportNormalized.w) * 2 + 1;
-
-        return this._mouse;
+    getMouse() {
+        return this.mouse;
     }
 
     boundPlanViewSize_bySizeOfParentElement() {
     // console.log('BEG boundPlanViewSize_bySizeOfParentElement');
 
-        let _planPaneWrapperEl = $('#planPaneWrapperId');
-        let _planPaneWrapperEl_offset = _planPaneWrapperEl.offset();
+        let planPaneWrapperEl = $('#planPaneWrapperId');
+        let planPaneWrapperEloffset = planPaneWrapperEl.offset();
         let grid_container1 = $('#main-container-id');
 
         if (
-            _planPaneWrapperEl_offset.top + _planPaneWrapperEl.outerHeight() >
+            planPaneWrapperEloffset.top + planPaneWrapperEl.outerHeight() >
       grid_container1.outerHeight()
         ) {
-            _planPaneWrapperEl.outerHeight(
-                grid_container1.outerHeight() - _planPaneWrapperEl_offset.top
+            planPaneWrapperEl.outerHeight(
+                grid_container1.outerHeight() - planPaneWrapperEloffset.top
             );
         }
 
         if (
-            _planPaneWrapperEl.left + _planPaneWrapperEl.outerWidth() >
+            planPaneWrapperEl.left + planPaneWrapperEl.outerWidth() >
       grid_container1.outerWidth()
         ) {
-            _planPaneWrapperEl.outerWidth(
-                grid_container1.outerWidth() - _planPaneWrapperEl_offset.left
+            planPaneWrapperEl.outerWidth(
+                grid_container1.outerWidth() - planPaneWrapperEloffset.left
             );
         }
     }
 
     getPlanViewOffset() {
-        let _planViewPane = $('#planViewPaneId');
+        let planViewPane = $('#planViewPaneId');
 
         return {
-            left: _planViewPane.offset().left,
-            top: _planViewPane.offset().top,
+            left: planViewPane.offset().left,
+            top: planViewPane.offset().top,
         };
     }
 
@@ -193,8 +173,8 @@ class PlanView {
         // Set camera related parameters
         // ////////////////////////////////////
 
-        this._scene = new THREE_Scene();
-        this._scene.name = '__scene';
+        this.scene = new THREE_Scene();
+        this.scene.name = '__scene';
 
         // Set camera frustum to arbitrary initial width height
         // These will change later when a selecting a new floor level
@@ -208,7 +188,7 @@ class PlanView {
 
         let near = 0.1;
         let far = 100000;
-        this._camera = new THREE_OrthographicCamera(
+        this.camera = new THREE_OrthographicCamera(
             left,
             right,
             top,
@@ -216,20 +196,17 @@ class PlanView {
             near,
             far
         );
-        this._camera.name = 'camera1';
+        this.camera.name = 'camera1';
 
         let sizePlanView = PlanView.GetMainContainerSize();
-        let sizePlanViewRatio =
-      sizePlanView.width / sizePlanView.height;
-        // console.log('sizePlanViewRatio', sizePlanViewRatio);
-        // console.log('sizePlanView.width3', sizePlanView.width);
+        let sizePlanViewRatio = sizePlanView.width / sizePlanView.height;
 
-        this._camera.updateProjectionMatrix();
+        this.camera.updateProjectionMatrix();
 
-        this._camera.lookAt(this._scene.position);
-        this._camera.updateMatrixWorld();
+        this.camera.lookAt(this.scene.position);
+        this.camera.updateMatrixWorld();
 
-        this._scene.add(this._camera);
+        this.addToScene(this.camera);
 
         if (PlanView.doDrawTwoFingerTouchCenterPoint) {
             // ////////////////////////////////////////////////////////////
@@ -238,7 +215,7 @@ class PlanView {
 
             let numSegments = 32;
             const geometry = new THREE_CircleGeometry(
-                this._overlayRectRadius,
+                this.overlayRectRadius,
                 numSegments
             );
             const material = new THREE_MeshBasicMaterial({
@@ -248,12 +225,12 @@ class PlanView {
                 color: COL.util.Color.Red,
             });
 
-            this._centerPoint_twoFingerTouch = new THREE_Mesh(geometry, material);
-            this._centerPoint_twoFingerTouch.rotation.x = -Math.PI / 2;
-            this._centerPoint_twoFingerTouch.name = 'centerPoint_twoFingerTouch';
-            this._centerPoint_twoFingerTouch.visible = true;
-            this._centerPoint_twoFingerTouch.updateMatrixWorld();
-            this.addToScene(this._centerPoint_twoFingerTouch);
+            this.centerPoint_twoFingerTouch = new THREE_Mesh(geometry, material);
+            this.centerPoint_twoFingerTouch.rotation.x = -Math.PI / 2;
+            this.centerPoint_twoFingerTouch.name = 'centerPoint_twoFingerTouch';
+            this.centerPoint_twoFingerTouch.visible = true;
+            this.centerPoint_twoFingerTouch.updateMatrixWorld();
+            this.addToScene(this.centerPoint_twoFingerTouch);
         }
 
         // ////////////////////////////////////
@@ -261,42 +238,34 @@ class PlanView {
         // ////////////////////////////////////
 
         // _groupPlanView = new THREE_Object3D();
-        // this._scene.add(_groupPlanView);
+        // this.addToScene(_groupPlanView);
 
-        // ////////////////////////////////////
-        // Set this._rendererPlanView
-        // https://stackoverflow.com/questions/21548247/clean-up-threejs-webgl-contexts
-        // set the _rendererPlanView2 as a member of Model, so that it
-        // does not get disposed when disposing Layer::planView.
-        // ////////////////////////////////////
-
-        this._rendererPlanView = COL.model.getRendererPlanView();
 
         // //////////////////////////////////////////////////
         // Helpers
         // //////////////////////////////////////////////////
 
-        // https://sites.google.com/site/threejstuts/home/polygon_offset
+        // https://sites.google.com/site/threejstuts/home/polygonoffset
         // When both parameters are negative, (decreased depth), the mesh is pulled towards the camera (hence, gets in front).
         // When both parameters are positive, (increased depth), the mesh is pushed away from the camera (hence, gets behind).
         // order from far to near:
         // mesh (polygonOffsetUnits = 4, polygonOffsetFactor = 1)
-        // this._axesHelperIntersection (polygonOffsetUnits = -4, polygonOffsetFactor = -1)
+        // this.axesHelperIntersection (polygonOffsetUnits = -4, polygonOffsetFactor = -1)
 
-        this._axesHelperIntersection = new THREE_AxesHelper(500);
-        this._axesHelperIntersection.material.linewidth = 20;
-        this._axesHelperIntersection.material.polygonOffset = true;
-        this._axesHelperIntersection.material.polygonOffsetUnits = -4;
-        // this._axesHelperIntersection more in front, compared to e.g. mesh
-        this._axesHelperIntersection.material.polygonOffsetFactor = -1;
+        this.axesHelperIntersection = new THREE_AxesHelper(500);
+        this.axesHelperIntersection.material.linewidth = 20;
+        this.axesHelperIntersection.material.polygonOffset = true;
+        this.axesHelperIntersection.material.polygonOffsetUnits = -4;
+        // this.axesHelperIntersection more in front, compared to e.g. mesh
+        this.axesHelperIntersection.material.polygonOffsetFactor = -1;
 
-        // this._scene.add(this._axesHelperIntersection);
+        // this.addToScene(this.axesHelperIntersection);
 
         // https://stackoverflow.com/questions/20554946/three-js-how-can-i-update-an-arrowhelper
-        var sourcePos = this._scene.position;
+        var sourcePos = this.scene.position;
         sourcePos = new THREE_Vector3(0, 0, 0);
 
-        var targetPos = this._camera.position;
+        var targetPos = this.camera.position;
         targetPos = new THREE_Vector3(1000, 100, 100);
 
         // //////////////////////////////////////////////////
@@ -311,20 +280,22 @@ class PlanView {
 
         let lightPlanView = new THREE_AmbientLight('#808080');
         lightPlanView.name = 'ambientLight1';
-        this._scene.add(lightPlanView);
+        this.addToScene(lightPlanView);
+
+        let rendererPlanView = COL.model.getRendererPlanView();
 
         this.lights.AmbientLight = new COL.core.AmbientLight(
-            this._scene,
-            this._camera,
-            this._rendererPlanView
+            this.scene,
+            this.camera,
+            rendererPlanView
         );
         this.lights.name = 'ambientLight2';
         this.lights.AmbientLight = 'ambientLight2';
 
         this.lights.Headlight = new COL.core.Headlight(
-            this._scene,
-            this._camera,
-            this._rendererPlanView
+            this.scene,
+            this.camera,
+            rendererPlanView
         );
         this.lights.Headlight.name = 'headLight2';
 
@@ -336,28 +307,17 @@ class PlanView {
         if (COL.util.isTouchDevice()) {
             containerPlanView.addEventListener(
                 'touchmove',
-                this._orbitControls.update.bind(this._orbitControls),
+                this.orbitControls.update.bind(this.orbitControls),
                 { capture: false, passive: false }
             );
         }
         else {
-
-            // tbd - remove the binding of mousemove to _orbitControls.update.bind
-            //   it is probably not needed, but leaving it here for a while to get some milege.
+            // no need the binding of mousemove to orbitControls.update.bind
             //   the eventListener on mousemove is triggered after mousedown
             //   we can probably remove the binding of the OrbitControlsPlanView::update()
             //   because:
             //   1. the onMouseMoveOrTouchMove_planView eventListener on mousemove, (while mousedown) calls OrbitControlsPlanView::update()
-            //   2. there is no functionality need for OrbitControlsPlanView::update() when there is no mousedown (like in the next evetListener)
-            //
-            // containerPlanView.addEventListener(
-            //     'mousemove',
-            //     this._orbitControls.update.bind(this._orbitControls),
-            //     { capture: false, passive: false }
-            // );
-    
-            // needed for firefox ???
-            // containerPlanView.addEventListener('DOMMouseScroll', this._orbitControls.update.bind(this._orbitControls), {capture: false, passive: false}); // firefox
+            //   2. there is no functionality need for OrbitControlsPlanView::update() when there is no mousedown
         }
 
         $('#planViewMenuId li').click(async function(event) {
@@ -371,7 +331,7 @@ class PlanView {
             }
             
             let selectedLayer = COL.model.getSelectedLayer();
-            let planView = selectedLayer.getPlanView();
+            let planView = COL.getPlanView();
             let orbitControls = planView.getOrbitControls();
             switch($(this).attr('data-action')) {
                 case 'moveOverlayRect': 
@@ -384,7 +344,7 @@ class PlanView {
 
                 case 'deleteOverlayRect':
                 {
-                    if (confirm("Are you sure you want to delete this overlayRect?")) {
+                    if (confirm('Are you sure you want to delete this overlayRect?')) {
                         let selectedOverlayRect = selectedLayer.getSelectedOverlayRect();
                         if (COL.util.isObjectValid(selectedOverlayRect)) {
                             // delete the overlayRect
@@ -398,7 +358,7 @@ class PlanView {
                             // sync to the webserver after deleting an overlayRect. 
                             let syncStatus = await selectedLayer.syncBlobsWithWebServer();
                             if(!syncStatus) {
-                                throw new Error('Error from _syncWithBackendBtn');
+                                throw new Error('Error from sync BlobsWithWebServer while deleting overlayRect');
                             }
                             PlanView.Render();
                         }
@@ -428,7 +388,7 @@ class PlanView {
 
                     planView.clearMenuPlanView();
                     orbitControls.setState( OrbitControlsPlanView.STATE.EDIT_MODE_MERGE_END_OVERLAY_RECT );
-                    // - merge all _selectedForMergeOverlayRects into the first overlayRect
+                    // - merge all selectedForMergeOverlayRects into the first overlayRect
                     await selectedLayer.mergeOverlayRectsEnd();
 
                     break;
@@ -437,29 +397,15 @@ class PlanView {
             // call onMouseUpOrTouchEnd_planView to keep the correct state for addEventListener/removeEventListener
             await onMouseUpOrTouchEnd_planView();
         });
-
-        $(window).resize(function () {
-            // console.log('BEG planView window resize');
-
-            let selectedLayer = COL.model.getSelectedLayer();
-            let planView = selectedLayer.getPlanView();
-            // the size of the planViewPane stays the same, even though the size of the full window changed (this may require to scroll)
-            // if doRescale == true, resize the plan view in the planViewPane to cover the full image. Otherwise leave the view as is.
-            let doRescale = false;
-            planView.set_camera_canvas_renderer_and_viewport1(doRescale);
-
-            // tbd - resize the planViewPane itself, relative to the new size of the window, e.g.
-            //   if the window is shrunk horizontally to 1/2 the original size, make the width of the planViewPane 1/2 as well, while keeping the same plan view
-        });
     }
 
     // set_camera_canvas_renderer_and_viewport1 - does:
     //  - sets the camera
-    //    -- if rescaling the image, sets the camera position to center of the image, and height to PlanView._heightOffset
-    //  - sets _orbitControls
+    //    -- if rescaling the image, sets the camera position to center of the image, and height to PlanView.heightOffset
+    //  - sets orbitControls
     //    -- calls OrbitControlsPlanView::setCameraAndCanvas - does xxx
     //  - sets _rendererPlanView
-    //  - sets _currentViewportNormalized
+    //  - sets currentViewportNormalized
 
     set_camera_canvas_renderer_and_viewport1(doRescale = true) {
     // console.log('BEG PlanView set_camera_canvas_renderer_and_viewport1');
@@ -472,13 +418,12 @@ class PlanView {
             throw new Error('floorPlanMeshObj is invalid');
         }
 
-        // ground_1 is given as the object.name for every floorPlan when creating a new .zip file, using the utility
+        // The mesh object.name is floorplanMesh for every floorPlan when creating a new .zip file, using the utility
         // webClient/scripts/create_site_zip_file.py, when creating a new .zip file,
-        // ('ground_1' is defined in template file webClient/scripts/templateFiles/via_json/layer.template.json)
-        // ground_1 === floor_plan (cannot just replace because exiting models already have 'ground_1')
-        let selectedFloorObj = floorPlanMeshObj.getObjectByName('ground_1');
+        // ('floorplanMesh' is defined in template file webClient/scripts/templateFiles/via_json/layer.template.json)
+        let selectedFloorObj = floorPlanMeshObj.getObjectByName('floorplanMesh');
         if (selectedFloorObj) {
-            // bound the size of _planPaneWrapperEl pane by the size of it's parent element (main-container-id)
+            // bound the size of planPaneWrapperEl pane by the size of it's parent element (main-container-id)
             this.boundPlanViewSize_bySizeOfParentElement();
 
             // sizePlanView - the size of the gui window
@@ -486,18 +431,18 @@ class PlanView {
 
             if (doRescale) {
                 // Rescale the planView view to cover the entire image
-                this._bbox = new THREE_Box3().setFromObject(floorPlanMeshObj);
-                this._bbox.getCenter(this._camera.position); // this re-sets the position
-                this._camera.position.setY(PlanView._heightOffset);
-                this._camera.updateProjectionMatrix();
+                this.bbox = new THREE_Box3().setFromObject(floorPlanMeshObj);
+                this.bbox.getCenter(this.camera.position); // this re-sets the position
+                this.camera.position.setY(PlanView.heightOffset);
+                this.camera.updateProjectionMatrix();
             }
 
             // Update the camera frustum to cover the entire image
-            let width1 = this._bbox.max.x - this._bbox.min.x;
-            let height1 = this._bbox.max.z - this._bbox.min.z;
+            let width1 = this.bbox.max.x - this.bbox.min.x;
+            let height1 = this.bbox.max.z - this.bbox.min.z;
             let imageOrientation = 1;
 
-            let retVal = this._orbitControls.setCameraAndCanvas(
+            let retVal = this.orbitControls.setCameraAndCanvas(
                 sizePlanView.width,
                 sizePlanView.height,
                 width1,
@@ -505,15 +450,17 @@ class PlanView {
                 imageOrientation,
                 doRescale
             );
-            this._viewportExtendsOnX = retVal.viewportExtendsOnX;
+            this.viewportExtendsOnX = retVal.viewportExtendsOnX;
 
-            this._rendererPlanView.setSize(
+            let rendererPlanView = COL.model.getRendererPlanView();
+
+            rendererPlanView.setSize(
                 sizePlanView.width,
                 sizePlanView.height
             );
 
-            // Set this._currentViewportNormalized (normalized by the pixelRatio)
-            this._rendererPlanView.setViewport(
+            // Set this.currentViewportNormalized (normalized by the pixelRatio)
+            rendererPlanView.setViewport(
                 -retVal.canvasOffsetLeft,
                 -retVal.canvasOffsetTop,
                 retVal.canvasWidth,
@@ -521,13 +468,13 @@ class PlanView {
             );
 
             let currentViewport = new THREE_Vector4();
-            this._rendererPlanView.getCurrentViewport(currentViewport);
+            rendererPlanView.getCurrentViewport(currentViewport);
 
-            let pixelRatio = this._rendererPlanView.getPixelRatio();
-            this._currentViewportNormalized = new THREE_Vector4();
-            this._currentViewportNormalized.copy(currentViewport);
-            this._currentViewportNormalized.divideScalar(pixelRatio);
-            this._orbitControls.update();
+            let pixelRatio = rendererPlanView.getPixelRatio();
+            this.currentViewportNormalized = new THREE_Vector4();
+            this.currentViewportNormalized.copy(currentViewport);
+            this.currentViewportNormalized.divideScalar(pixelRatio);
+            this.orbitControls.update();
         }
     }
 
@@ -535,45 +482,45 @@ class PlanView {
     // console.log('BEG initializeOrbitControlsPlanView');
 
         let containerPlanView = document.getElementById('planView3dCanvasId');
-        this._orbitControls = new OrbitControlsPlanView(
-            this._camera, containerPlanView);
+        this.orbitControls = new OrbitControlsPlanView(
+            this.camera, containerPlanView);
 
         // ////////////////////////////////////
         // Set rotate related parameters
         // ////////////////////////////////////
 
         // No rotation.
-        this._orbitControls.enableRotate = false;
+        this.orbitControls.enableRotate = false;
 
         // Set the rotation angle (with 0 angle change range) to 0
         // coordinate axis system is:
         // x-red - directed right (on the screen), z-blue directed down (on the screen), y-green directed towards the camera
-        this._orbitControls.minPolarAngle = 0; // radians
-        this._orbitControls.maxPolarAngle = 0; // radians
+        this.orbitControls.minPolarAngle = 0; // radians
+        this.orbitControls.maxPolarAngle = 0; // radians
 
         // No orbit horizontally.
-        this._orbitControls.minAzimuthAngle = 0; // radians
-        this._orbitControls.maxAzimuthAngle = 0; // radians
+        this.orbitControls.minAzimuthAngle = 0; // radians
+        this.orbitControls.maxAzimuthAngle = 0; // radians
 
         // ////////////////////////////////////
         // Set zoom related parameters
         // ////////////////////////////////////
 
-        this._orbitControls.zoomSpeed = 1.2;
-        // this._orbitControls.minZoom = 1;
-        // this._orbitControls.maxZoom = Infinity;
+        this.orbitControls.zoomSpeed = 1.2;
+        // this.orbitControls.minZoom = 1;
+        // this.orbitControls.maxZoom = Infinity;
 
         // ////////////////////////////////////
         // Set pan related parameters
         // ////////////////////////////////////
 
-        this._orbitControls.panSpeed = 0.6;
+        this.orbitControls.panSpeed = 0.6;
         // if true, pan in screen-space
-        this._orbitControls.screenSpacePanning = true;
+        this.orbitControls.screenSpacePanning = true;
         // // pixels moved per arrow key push
-        // this._orbitControls.keyPanSpeed = 7.0;
+        // this.orbitControls.keyPanSpeed = 7.0;
 
-        this._orbitControls.keys = [65, 83, 68, 70, 71, 72];
+        this.orbitControls.keys = [65, 83, 68, 70, 71, 72];
 
         // https://css-tricks.com/snippets/javascript/javascript-keycodes/
         // shift        16
@@ -590,19 +537,19 @@ class PlanView {
         event.which === 72
             ) {
                 event.preventDefault();
-                this._orbitControls.reset();
+                this.orbitControls.reset();
             }
         });
 
-        // need to set this._camera.position after construction of this._orbitControls
-        this._camera.position.copy(cameraPlanViewPosition0);
-        this._camera.zoom = 0.42;
+        // need to set this.camera.position after construction of this.orbitControls
+        this.camera.position.copy(cameraPlanViewPosition0);
+        this.camera.zoom = 0.42;
 
-        this._orbitControls.target.copy(this._camera.position);
-        // initial this._orbitControls.target.Y is set to 0
-        this._orbitControls.target.setY(COL.y0);
+        this.orbitControls.target.copy(this.camera.position);
+        // initial this.orbitControls.target.Y is set to 0
+        this.orbitControls.target.setY(COL.y0);
 
-        // enable this._orbitControls
+        // enable this.orbitControls
         this.enableControls(true);
     }
 
@@ -610,7 +557,7 @@ class PlanView {
         // console.log('BEG PlanView::enableControls');
 
         // let planPaneWrapperEl = document.getElementById('planPaneWrapperId');
-        // planPaneWrapperEl.addEventListener( 'touchstart', onTouchStart_planPaneWrapper, {capture: false, passive: false} );
+        // planPaneWrapperEl.addEventListener( 'touchstart', onTouchStartplanPaneWrapper, {capture: false, passive: false} );
 
         let containerPlanView = document.getElementById('planView3dCanvasId');
     
@@ -688,62 +635,71 @@ class PlanView {
     }
 
     getCameraPlanView() {
-        return this._camera;
+        return this.camera;
     }
 
     setCameraPlanView2(cameraPlanView) {
-        this._camera = cameraPlanView;
+        this.camera = cameraPlanView;
     }
 
     setCameraPlanView(mesh) {
-    // console.log('BEG setCameraPlanView');
+        // console.log('BEG setCameraPlanView');
 
-        this._bbox = mesh.bBox;
+        this.bbox = mesh.bBox;
 
-        if (this._bbox) {
-            this._bbox.getCenter(this._camera.position); // this re-sets the position
+        if (this.bbox) {
+            this.bbox.getCenter(this.camera.position); // this re-sets the position
             // set the camera positionY to be higher than the floor
-            this._camera.position.setY(PlanView._heightOffset);
+            this.camera.position.setY(PlanView.heightOffset);
         }
 
         // Update the camera frustum to cover the entire image
-        let width1 = (this._bbox.max.x - this._bbox.min.x) / 2;
-        let height1 = (this._bbox.max.z - this._bbox.min.z) / 2;
+        let width1 = (this.bbox.max.x - this.bbox.min.x) / 2;
+        let height1 = (this.bbox.max.z - this.bbox.min.z) / 2;
 
-        this._camera.left = -width1;
-        this._camera.right = width1;
-        this._camera.top = height1;
-        this._camera.bottom = -height1;
-        this._camera.updateProjectionMatrix();
+        this.camera.left = -width1;
+        this.camera.right = width1;
+        this.camera.top = height1;
+        this.camera.bottom = -height1;
+        this.camera.updateProjectionMatrix();
     }
 
     addToScene(threejsObject) {
     // console.log('BEG addToScene');
-        this._scene.add(threejsObject);
+        this.scene.add(threejsObject);
     }
 
     removeFromScene(threejsObject) {
     // console.log('BEG removeFromScene');
-        this._scene.remove(threejsObject);
+        this.scene.remove(threejsObject);
+    }
+
+    clearScene() {
+        for (let i = 0; i < this.scene.children.length; i++) {
+            // don't clear the camera and the lights
+            if ( (this.scene.children[i].type == 'OrthographicCamera') ||
+                 (this.scene.children[i].type == 'AmbientLight') ) {
+                continue;
+            }
+            this.scene.remove(this.scene.children[i]);
+            i--;
+        }
     }
 
     getIntersectionStructureInfo() {
-        return this._intersectedStructureInfo;
+        return this.intersectedStructureInfo;
     }
 
     getIntersectionOverlayRectInfo() {
-        return this._intersectedOverlayRectInfo;
+        return this.intersectedOverlayRectInfo;
     }
 
     clearIntersectionOverlayRectInfo() {
-        this._intersectedOverlayRectInfo.clearIntersection();
+        this.intersectedOverlayRectInfo.clearIntersection();
     }
 
-    async insertCircleMesh(
-        intersectedStructurePoint,
-        doSetAsSelectedOverlayRect = true
-    ) {
-        console.log('BEG insertCircleMesh');
+    async insertOverlayRectMesh(intersectedStructurePoint, doSetAsSelectedOverlayRect = true) {
+        // console.log('BEG insertOverlayRectMesh');
 
         let selectedLayer = COL.model.getSelectedLayer();
         let materialAttributes = {
@@ -782,51 +738,51 @@ class PlanView {
     }
 
     getOverlayRectRadius() {
-        return this._overlayRectRadius;
+        return this.overlayRectRadius;
     }
 
     setOverlayRectRadius(overlayRectRadius) {
-        return (this._overlayRectRadius = overlayRectRadius);
+        return (this.overlayRectRadius = overlayRectRadius);
     }
 
     getOverlayRectScale() {
-        return this._overlayRectScale;
+        return this.overlayRectScale;
     }
 
     setOverlayRectScale(overlayRectScale) {
-        this._overlayRectScale = overlayRectScale;
+        this.overlayRectScale = overlayRectScale;
     }
 
     getAxesHelperIntersection() {
-        return this._axesHelperIntersection;
+        return this.axesHelperIntersection;
     }
 
     getOrbitControls() {
-        return this._orbitControls;
+        return this.orbitControls;
     }
 
     setOrbitControls(controls) {
-        this._orbitControls = controls;
+        this.orbitControls = controls;
     }
 
     getBoundingBox() {
-        return this._bbox;
+        return this.bbox;
     }
 
     setBoundingBox(bbox) {
-        return (this._bbox = bbox);
+        return (this.bbox = bbox);
     }
 
     doesViewportExtendOnX() {
-        return this._viewportExtendsOnX;
+        return this.viewportExtendsOnX;
     }
 
     getCurrentViewportNormalized() {
-        return this._currentViewportNormalized;
+        return this.currentViewportNormalized;
     }
 
     setCurrentViewportNormalized(currentViewportNormalized) {
-        this._currentViewportNormalized = currentViewportNormalized;
+        this.currentViewportNormalized = currentViewportNormalized;
     }
 
     centerIntersectionPointInPlanViewView() {
@@ -839,11 +795,11 @@ class PlanView {
         // ///////////////////////////////////////////////////////////
 
         let axesHelperIntersection = this.getAxesHelperIntersection();
-        this._camera.position.copy(axesHelperIntersection.position);
-        this._camera.position.setY(cameraPlanViewHeight);
+        this.camera.position.copy(axesHelperIntersection.position);
+        this.camera.position.setY(cameraPlanViewHeight);
 
         let orbitControls = this.getOrbitControls();
-        orbitControls.target.copy(this._camera.position);
+        orbitControls.target.copy(this.camera.position);
         // orbitControls.target.setY(0.0);
         orbitControls.target.setY(COL.y0);
     }
@@ -881,20 +837,20 @@ class PlanView {
         let selectedLayer = COL.model.getSelectedLayer();
         let floorPlanMeshObj = selectedLayer.getFloorPlanMeshObj();
 
-        this._raycasterPlanView.setFromCamera(this._mouse,this._camera);
-        let intersects = this._raycasterPlanView.intersectObjects(floorPlanMeshObj.children,true);
-        this._intersectedStructureInfo.clearIntersection();
+        this.raycasterPlanView.setFromCamera(this.mouse,this.camera);
+        let intersects = this.raycasterPlanView.intersectObjects(floorPlanMeshObj.children,true);
+        this.intersectedStructureInfo.clearIntersection();
 
         if (intersects.length > 0) {
             // Get the intersection info with the planViewMesh (floor)
             let intersectionCurr = this.getLayerIntersectionsInfo(intersects);
             if (intersectionCurr) {
-                // Set this._intersectedStructureInfo to the planViewMesh (floor) that is intersected
-                this._intersectedStructureInfo.currentIntersection = intersectionCurr;
+                // Set this.intersectedStructureInfo to the planViewMesh (floor) that is intersected
+                this.intersectedStructureInfo.currentIntersection = intersectionCurr;
             }
         }
 
-        return this._intersectedStructureInfo.currentIntersection;
+        return this.intersectedStructureInfo.currentIntersection;
     }
 
     async findIntersectionWithOverlayMeshGroup(selectedLayer) {
@@ -909,12 +865,12 @@ class PlanView {
         // and then use the first Mesh object
         // ////////////////////////////////////////////////////
 
-        this._raycasterPlanView.setFromCamera(this._mouse,this._camera);
-        let intersectsOverlayRect = this._raycasterPlanView.intersectObjects(overlayMeshGroup.children,true);
+        this.raycasterPlanView.setFromCamera(this.mouse,this.camera);
+        let intersectsOverlayRect = this.raycasterPlanView.intersectObjects(overlayMeshGroup.children,true);
         // console.log('intersectsOverlayRect.length', intersectsOverlayRect.length);
 
         // Reset any previous intersection info before finding a new one
-        this._intersectedOverlayRectInfo.clearIntersection();
+        this.intersectedOverlayRectInfo.clearIntersection();
 
         if (intersectsOverlayRect.length > 0) {
             // Intersect only with objects of type Mesh (i.e. ignore intersection with e.g. Sprites)
@@ -927,17 +883,17 @@ class PlanView {
                         'userData',
                         'isOverlayRectFilteredIn',
                     ]);
-                    if (!selectedLayer._isMilestoneDatesFilterEnabled ||
-                        (selectedLayer._isMilestoneDatesFilterEnabled && isOverlayRectFilteredIn)) {
-                        // Sets this._intersectedOverlayRectInfo to the overlayRect (circle) that is intersected
-                        this._intersectedOverlayRectInfo.currentIntersection = intersection;
+                    if (!selectedLayer.isMilestoneDatesFilterEnabled ||
+                        (selectedLayer.isMilestoneDatesFilterEnabled && isOverlayRectFilteredIn)) {
+                        // Sets this.intersectedOverlayRectInfo to the overlayRect (circle) that is intersected
+                        this.intersectedOverlayRectInfo.currentIntersection = intersection;
                         break;
                     }
                 }
             }
         }
 
-        let intersectedOverlayMeshObject = COL.util.getNestedObject(this._intersectedOverlayRectInfo,['currentIntersection', 'object']);
+        let intersectedOverlayMeshObject = COL.util.getNestedObject(this.intersectedOverlayRectInfo,['currentIntersection', 'object']);
 
         return intersectedOverlayMeshObject;
     }
@@ -982,7 +938,7 @@ class PlanView {
                 }
     
                 // Find closest distance between floor intersection and overlayRects (circles)
-                let planViewPosition = this._intersectedStructureInfo.currentIntersection.point;
+                let planViewPosition = this.intersectedStructureInfo.currentIntersection.point;
                 if (COL.util.isObjectInvalid(editedOverlayMeshObj) &&
                 (orbitControlsState == OrbitControlsPlanView.STATE.EDIT_MODE_ADD_OVERLAY_RECT) ) {
                 // ////////////////////////////////////////////////////////////////////////
@@ -1008,7 +964,7 @@ class PlanView {
     
                         let overlayMeshGroup1 = selectedLayer.getOverlayMeshGroup();
                         // Add new overlayMesh
-                        await this.insertCircleMesh(planViewPosition);
+                        await this.insertOverlayRectMesh(planViewPosition);
                         let overlayMeshGroup2 = selectedLayer.getOverlayMeshGroup();
     
                         // after adding the new overlayMesh, calling to findIntersections() again causes the
@@ -1046,7 +1002,7 @@ class PlanView {
                     // console.log('The position is INVALID!!');
                     // The position is invalid
                     // revert the editedOverlayMeshObj to its original position
-                        editedOverlayMeshObj.position.copy(this._editedOverlayMeshObjInitialPosition);
+                        editedOverlayMeshObj.position.copy(this.editedOverlayMeshObjInitialPosition);
                     }
     
                 // this.dispatchEvent({ type: 'dragend', object: editedOverlayMeshObj });
@@ -1067,7 +1023,7 @@ class PlanView {
                 break;
 
             default:
-                let msgStr = 'orbitControls state is not supported: ' + orbitControls.getState();
+                let msgStr = 'orbitControls state is not supported: ' + orbitControls.getStateAsStr();
                 throw new Error(msgStr);
 
         }
@@ -1110,8 +1066,8 @@ class PlanView {
             }
         }
 
-        // Set the threshold to be "2 x this._overlayRectRadius" so that the overlayRects do not overlap
-        let minDistanceThresh = 2 * this._overlayRectRadius;
+        // Set the threshold to be "2 x this.overlayRectRadius" so that the overlayRects do not overlap
+        let minDistanceThresh = 2 * this.overlayRectRadius;
         let retVal = minDistance < minDistanceThresh ? false : true;
 
         return retVal;
@@ -1123,10 +1079,10 @@ class PlanView {
         let isPositionWithinBoundaries = false;
 
         if (
-            planViewPosition.x >= this._bbox.min.x &&
-      planViewPosition.x < this._bbox.max.x &&
-      planViewPosition.z >= this._bbox.min.z &&
-      planViewPosition.z < this._bbox.max.z
+            planViewPosition.x >= this.bbox.min.x &&
+      planViewPosition.x < this.bbox.max.x &&
+      planViewPosition.z >= this.bbox.min.z &&
+      planViewPosition.z < this.bbox.max.z
         ) {
             isPositionWithinBoundaries = true;
         }
@@ -1142,12 +1098,12 @@ class PlanView {
         let selectedLayer = COL.model.getSelectedLayer();
 
         // Find intersection with planViewMesh (floor)
-        this._intersectedStructureInfo.currentIntersection = this.findIntersectionWithPlanViewMesh();
+        this.intersectedStructureInfo.currentIntersection = this.findIntersectionWithPlanViewMesh();
 
         // tbd - overlayRect -> overlayPoint
 
-        if (this._intersectedStructureInfo.currentIntersection) {
-            let intersectionPointCurr = this._intersectedStructureInfo.currentIntersection.point;
+        if (this.intersectedStructureInfo.currentIntersection) {
+            let intersectionPointCurr = this.intersectedStructureInfo.currentIntersection.point;
             let intersectionPointPrev = new THREE_Vector3();
             intersectionPointCurr.setY(COL.y0);
 
@@ -1156,7 +1112,7 @@ class PlanView {
             let epsilon = 1.0;
             if (dist1 > epsilon) {
                 intersectionPointPrev.copy(intersectionPointCurr);
-                this._axesHelperIntersection.position.copy(intersectionPointCurr);
+                this.axesHelperIntersection.position.copy(intersectionPointCurr);
             }
 
             // intersect with the overlayRects (circles)
@@ -1187,65 +1143,50 @@ class PlanView {
     static Render() {
     // console.log('BEG this.Render');
 
-        let selectedLayer = COL.model.getSelectedLayer();
-        if (COL.util.isObjectValid(selectedLayer)) {
-            let planView = selectedLayer.getPlanView();
+        let planView = COL.getPlanView();
 
-            if (COL.util.isObjectValid(planView)) {
-                // tbd - multiple calls update()->Render()->update()... happen as long as, between the iterations, inside _orbitControls.update()
-                // we are getting into the following code section, inside _orbitControls.update():
-                //   if ( this.zoomChanged ||
-                //      (positionShift > OrbitControlsPlanView.EPS) ||
-                //      (condition3 > OrbitControlsPlanView.EPS) ) {
-                //
-                // check why the first call to _orbitControls.update() (which calls Render() does not already set the position to its final value...
-                planView._orbitControls.update();
-                planView._rendererPlanView.render(
-                    planView._scene,
-                    planView._camera
-                );
-            }
+        if (COL.util.isObjectValid(planView)) {
+            // tbd - multiple calls update()->Render()->update()... happen as long as, between the iterations, inside orbitControls.update()
+            // we are getting into the following code section, inside orbitControls.update():
+            //   if ( this.zoomChanged ||
+            //      (positionShift > OrbitControlsPlanView.EPS) ||
+            //      (condition3 > OrbitControlsPlanView.EPS) ) {
+            //
+            // check why the first call to orbitControls.update() (which calls Render() does not already set the position to its final value...
+            planView.orbitControls.update();
+                
+            COL.model.getRendererPlanView().render(
+                planView.scene,
+                planView.camera
+            );
         }
     }
 
     resetTrackballPlanView() {
-        this._orbitControls.reset();
+        this.orbitControls.reset();
     }
 
     toJSON() {
-        console.log('BEG PlanView::toJSON()');
+        // console.log('BEG PlanView::toJSON()');
 
-        if (COL.util.isNumberInvalid(this._orbitControls.minZoom)) {
+        if (COL.util.isNumberInvalid(this.orbitControls.minZoom)) {
             throw new Error('minZoom is invalid.');
         }
 
-        return {
-            _scene: this._scene,
-            _camera: this._camera,
-            _orbitControls: this._orbitControls,
-            _rendererPlanView: this._rendererPlanView,
-            _mouse: this._mouse,
-            _bbox: this._bbox,
-            _raycasterPlanView: this._raycasterPlanView,
-            viewportExtendsOnX: this.viewportExtendsOnX,
-            _currentViewportNormalized: this._currentViewportNormalized,
-            _axesHelperIntersection: this._axesHelperIntersection,
-            _intersectedStructureInfo: this._intersectedStructureInfo,
-            _intersectedOverlayRectInfo: this._intersectedOverlayRectInfo,
-            timeStamp: this.timeStamp,
-            lights: this.lights,
-            _overlayRectRadius: this._overlayRectRadius,
-            _overlayRectScale: this._overlayRectScale,
+        let planViewAsJson = {
+            scene: this.scene,
         };
+
+        return planViewAsJson;
     }
 
     // create a filtered/manipulated json, to be exported to file
     // e.g. without some members, and with some members manipulated (e.g. some nested entries removed)
     toJSON_forFile() {
-        // console.log('BEG toJSON_forFile');
+        console.log('BEG toJSON_forFile');
 
-        this._scene.traverse(async function (child) {
-            if (child.name === 'objInstance1') {
+        this.scene.traverse(async function (child) {
+            if (child.name === 'floorplanGroup') {
                 // //////////////////////////////////////////////////////////////////////////
                 // Remove the floor plan image so it does not get exported as part of the
                 // .json file (it is stored seperatly in the floorPlan image file)
@@ -1253,65 +1194,64 @@ class PlanView {
 
                 let meshObj1 = child.children[0];
                 // sanity check
-                if (
-                    meshObj1.type !== 'Mesh' ||
-          meshObj1.name !== 'ground_1' ||
-          COL.util.isObjectInvalid(meshObj1.material)
-                ) {
-                    throw new Error(
-                        'Invalid meshObj1. Should have: type "Mesh", name === "ground_1", material defined'
-                    );
+                if (meshObj1.type !== 'Mesh' || meshObj1.name !== 'floorplanMesh' || COL.util.isObjectInvalid(meshObj1.material)) {
+                    throw new Error('Invalid meshObj1. Should have: type "Mesh", name === "floorplanMesh", or invalid material');
                 }
                 meshObj1.material.map = null;
             }
         });
 
         let planView_asJson = this.toJSON();
-        console.log('planView_asJson1', planView_asJson);
+        // console.log('planView_asJson1', planView_asJson);
 
         // remove unneeded nodes
-        delete planView_asJson._intersectedOverlayRectInfo;
-        delete planView_asJson._intersectedStructureInfo;
-        delete planView_asJson._raycasterPlanView;
-        delete planView_asJson._rendererPlanView;
+        delete planView_asJson.intersectedOverlayRectInfo;
+        delete planView_asJson.intersectedStructureInfo;
+        delete planView_asJson.raycasterPlanView;
 
-        // store (overwrite) manipulated version of _orbitControls (e.g. witout camera)
+        // store (overwrite) manipulated version of orbitControls (e.g. witout camera)
         let orbitControls = this.getOrbitControls();
-        planView_asJson._orbitControls = orbitControls.toJSON_forFile();
+        planView_asJson.orbitControls = orbitControls.toJSON_forFile();
 
         planView_asJson.images = null;
 
         return planView_asJson;
     }
 
-    async fromJson(layer, objectLoader, planView_asDict) {
-    // //////////////////////////////////////////////////////////////////////////
-    // Set:
-    // - this._overlayRectRadius
-    // - this._overlayRectScale
-    // //////////////////////////////////////////////////////////////////////////
+    // Split PlanView::fromJson to 2 functions:
+    // PlanView::fromJson -> Layer::setPlanViewForSelectedLayer
+    // PlanView::fromJson -> Layer::fromJson
 
-        if (COL.util.isObjectValid(planView_asDict._overlayRectRadius)) {
-            this.setOverlayRectRadius(planView_asDict._overlayRectRadius);
+    async fromJson(layer, objectLoader, planView_asDict) {
+        // console.log('BEG PlanView::fromJson()');
+        
+        // //////////////////////////////////////////////////////////////////////////
+        // Set:
+        // - this.overlayRectRadius
+        // - this.overlayRectScale
+        // //////////////////////////////////////////////////////////////////////////
+
+        if (COL.util.isObjectValid(planView_asDict.overlayRectRadius)) {
+            this.setOverlayRectRadius(planView_asDict.overlayRectRadius);
         }
 
-        if (COL.util.isObjectValid(planView_asDict._overlayRectScale)) {
-            this.setOverlayRectScale(planView_asDict._overlayRectScale);
+        if (COL.util.isObjectValid(planView_asDict.overlayRectScale)) {
+            this.setOverlayRectScale(planView_asDict.overlayRectScale);
         }
 
         // //////////////////////////////////////////////////////////////////////////
         // Set:
-        // - this._scene
+        // - this.scene
         // //////////////////////////////////////////////////////////////////////////
 
-        let scene_asDict = planView_asDict._scene;
+        let scene_asDict = planView_asDict.scene;
         const scene = objectLoader.parse(scene_asDict);
         const children = [];
         scene.traverse((o) => children.push(o));
 
         // Then you can use a regular async-loop to do your work:
         for (let child of children) {
-            if (child.name === 'objInstance1') {
+            if (child.name === 'floorplanGroup') {
                 // //////////////////////////////////////////////////////////////////////////
                 // add images related to floorPlan (e.g. floorPlan image) to imagesInfo_forLayer2
                 // //////////////////////////////////////////////////////////////////////////
@@ -1352,34 +1292,34 @@ class PlanView {
 
         // //////////////////////////////////////////////////////////////////////////
         // Set:
-        // - this._camera
+        // - this.camera
         // //////////////////////////////////////////////////////////////////////////
 
-        let cameraPlanView_asDict = planView_asDict._camera;
+        let cameraPlanView_asDict = planView_asDict.camera;
         const cameraPlanView = objectLoader.parse(cameraPlanView_asDict);
         this.setCameraPlanView2(cameraPlanView);
 
         // //////////////////////////////////////////////////////////////////////////
         // Set:
-        // - this._orbitControls
-        // - this._viewportExtendsOnX
-        // - this._currentViewportNormalized
-        // - this._bbox
+        // - this.orbitControls
+        // - this.viewportExtendsOnX
+        // - this.currentViewportNormalized
+        // - this.bbox
         // //////////////////////////////////////////////////////////////////////////
 
-        this._orbitControls.camera = this.getCameraPlanView();
-        this._orbitControls.fromJson(planView_asDict._orbitControls);
+        this.orbitControls.camera = this.getCameraPlanView();
+        this.orbitControls.fromJson(planView_asDict.orbitControls);
 
         this.viewportExtendsOnX = planView_asDict.viewportExtendsOnX;
 
-        this._currentViewportNormalized = new THREE_Vector4(
-            planView_asDict._currentViewportNormalized.x,
-            planView_asDict._currentViewportNormalized.y,
-            planView_asDict._currentViewportNormalized.z,
-            planView_asDict._currentViewportNormalized.w
+        this.currentViewportNormalized = new THREE_Vector4(
+            planView_asDict.currentViewportNormalized.x,
+            planView_asDict.currentViewportNormalized.y,
+            planView_asDict.currentViewportNormalized.z,
+            planView_asDict.currentViewportNormalized.w
         );
 
-        this.setBoundingBox(planView_asDict._bbox);
+        this.setBoundingBox(planView_asDict.bbox);
     }
 
     dispose() {
@@ -1389,10 +1329,6 @@ class PlanView {
         // Before Dispose
         // ////////////////////////////////////////////////////
 
-        // console.log( "Before Dispose");
-        // let planViewAsJson = this.toJSON();
-        // console.log('planViewAsJson before dispose', planViewAsJson);
-
         // ////////////////////////////////////////////////////
         // Dispose
         // https://discourse.threejs.org/t/dispose-things-correctly-in-three-js/6534
@@ -1400,8 +1336,8 @@ class PlanView {
 
         // dispose geometries and materials in scene
         // this.sceneTraverse();
-        // console.log('BEG PlanView:: this._scene.traverse');
-        this._scene.traverse(function (obj) {
+        // console.log('BEG PlanView:: this.scene.traverse');
+        this.scene.traverse(function (obj) {
             COL.ThreejsUtil.disposeObject(obj);
         });
 
@@ -1409,30 +1345,24 @@ class PlanView {
         this.enableControls(false);
 
         // https://threejs.org/docs/#examples/en/controls/OrbitControls.dispose
-        this._orbitControls.dispose();
+        this.orbitControls.dispose();
 
-        // this._rendererPlanView is not disposed because it is a member of class Model
-        console.log(
-            'this._rendererPlanView.info.programs.length',
-            this._rendererPlanView.info.programs.length
-        );
+        this.mouse = null;
 
-        this._mouse = null;
+        this.bbox = null;
 
-        this._bbox = null;
+        this.raycasterPlanView = null;
 
-        this._raycasterPlanView = null;
+        this.currentViewportNormalized = null;
 
-        this._currentViewportNormalized = null;
+        this.axesHelperIntersection.material.dispose();
+        this.axesHelperIntersection = null;
 
-        this._axesHelperIntersection.material.dispose();
-        this._axesHelperIntersection = null;
+        this.intersectedStructureInfo.dispose();
+        this.intersectedStructureInfo = null;
 
-        this._intersectedStructureInfo.dispose();
-        this._intersectedStructureInfo = null;
-
-        this._intersectedOverlayRectInfo.dispose();
-        this._intersectedOverlayRectInfo = null;
+        this.intersectedOverlayRectInfo.dispose();
+        this.intersectedOverlayRectInfo = null;
 
         this.lights.AmbientLight = null;
         this.lights.Headlight = null;
@@ -1442,9 +1372,6 @@ class PlanView {
         // ////////////////////////////////////////////////////
 
         // console.log( "After Dispose");
-
-    // let planViewAsJson2 = this.toJSON();
-    // console.log('planViewAsJson after dispose', planViewAsJson2);
     }
 
     // /////////////////////////////////
@@ -1460,14 +1387,17 @@ class PlanView {
         }
 
         let timeIntervalInMilliSec = 500;
+        let planView = COL.getPlanView();
         this.timeoutID = setTimeout(PlanView.ShowMenuPlanView, timeIntervalInMilliSec, event);
     }
     
+    // We need to use static function PlanView.ShowMenuPlanView
+    // because the function that is trigerred by setTimeout(), has "this" of type "Window" (and not the instance, e.g. PlanView)
+    // even if triggering the instance function planView.showMenuPlanView()
     static ShowMenuPlanView(event) {
         // console.log('BEG ShowMenuPlanView');
 
-        let selectedLayer = COL.model.getSelectedLayer();
-        let planView = selectedLayer.getPlanView();
+        let planView = COL.getPlanView();
         planView.showMenuPlanView(event);
     }
 
@@ -1512,7 +1442,7 @@ class PlanView {
 // /////////////////////////////////
 
 // https://stackoverflow.com/questions/35242113/define-a-const-in-class-constructor-es6
-PlanView._heightOffset = 1000;
+PlanView.heightOffset = 1000;
 PlanView.overlayRectRadiusDefault = 20;
 PlanView.numSegments = 10;
 // PlanView.numSegments = 4;
@@ -1529,13 +1459,5 @@ $(window).ready(function () {});
 // $(window).on('load', ...) happens after $(window).ready
 // $(window).ready(function () {
 $(window).on('load', function () {});
-
-function animate() {
-    console.log('BEG PlanView::animate');
-
-    requestAnimationFrame(animate);
-    PlanView.Render();
-}
-
 
 export { PlanView };

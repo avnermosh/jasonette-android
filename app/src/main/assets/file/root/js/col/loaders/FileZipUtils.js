@@ -332,7 +332,6 @@ class FileZipUtils {
             toastr.error(msgStr, toastTitleStr, COL.errorHandlingUtil.toastrSettings);
         }
     };
-
 };
 
 FileZipUtils.filenamesFailedToLoad = [];

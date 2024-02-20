@@ -32,13 +32,13 @@ class SceneBar {
             // --------------------------------------------------------------
     
             iconPath = iconDir + '/0278-play2.png';
-            this._playImagesInAllOverlayRectsButton = new component.ToggleButton({
+            this.playImagesInAllOverlayRectsButton = new component.ToggleButton({
                 id: 'playImagesInAllOverlayRectsButtonId',
                 tooltip: 'Play images in all overlayRects',
                 icon: iconPath,
                 on: false
             });
-            let jqueryObj = $(this._playImagesInAllOverlayRectsButton.$);
+            let jqueryObj = $(this.playImagesInAllOverlayRectsButton.$);
             jqueryObj.addClass('ui-button');
     
             // --------------------------------------------------------------
@@ -55,7 +55,7 @@ class SceneBar {
             if(COL.doWorkOnline) {
                 this._editOverlayRectButton = undefined;
     
-                // tbd - _editOverlayRect -> _editMode -> _state
+                // tbd - _editOverlayRect -> _editMode -> state
                 
                 if(COL.doEnableWhiteboard) {
                     iconPath = iconDir + '/0345-make-group.png';
@@ -74,12 +74,12 @@ class SceneBar {
                 $(this._editOverlayRect_deleteButton.$).addClass('ui-button');
     
                 iconPath = iconDir + '/0015-images.png';
-                this._openImageFileButton = new component.FileButton({
+                this.openImageFileButton = new component.FileButton({
                     tooltip: 'Open image file',
                     icon: iconPath,
                     multiple: true
                 });
-                $(this._openImageFileButton.$).addClass('ui-button');
+                $(this.openImageFileButton.$).addClass('ui-button');
     
                 iconPath = iconDir + '/0102-undo.png';
                 this._reconcileFrontEndButton = new component.Button({
@@ -109,7 +109,7 @@ class SceneBar {
         }
         
         // skipping row 0 (the header row)
-        this._milestoneDatesRowNum = 1;
+        this.milestoneDatesRowNum = 1;
     }
 
     createPlanViewSettingModal () {
@@ -126,7 +126,7 @@ class SceneBar {
         // - tbd - option to see cross-hair between the 2 fingers
 
         let dataSliderInitialValue = 2;
-        let rowNum = this._milestoneDatesRowNum;
+        let rowNum = this.milestoneDatesRowNum;
         
         // value="Remove1" sets the label inside the button (as opposed to setting it besides the button if used after the element)
         let planViewSettingModalEl = `
@@ -183,8 +183,7 @@ class SceneBar {
 
         $('#planview-settings-modal-btn').click(function() {
 
-            let selectedLayer = COL.model.getSelectedLayer();
-            let planView = selectedLayer.getPlanView();
+            let planView = COL.getPlanView();
             let overlayRectScale = planView.getOverlayRectScale();
             let sliderVal = SceneBar.OverlayRectScale_to_sliderVal(overlayRectScale);
 
@@ -415,8 +414,8 @@ class SceneBar {
             
             // add row with date_pickrs
             // rowNum++;
-            sceneBar._milestoneDatesRowNum++;
-            let rowNum = sceneBar._milestoneDatesRowNum;
+            sceneBar.milestoneDatesRowNum++;
+            let rowNum = sceneBar.milestoneDatesRowNum;
 
             let nu_row = `
 <tr id="rowNum${rowNum}" class="date_row_class">
@@ -468,7 +467,7 @@ class SceneBar {
         var table = document.getElementById('date_table');
 
         let selectedLayer = COL.model.getSelectedLayer();
-        selectedLayer._milestoneDatesInfo.clear();
+        selectedLayer.milestoneDatesInfo.clear();
 
         // start at row 1 to skip row0 (the header row)
         for (let rowIndex = 1, numRows = table.rows.length; rowIndex < numRows; rowIndex++) {
@@ -487,11 +486,11 @@ class SceneBar {
                 isEnabled: isEnabled,
             };
             
-            selectedLayer._milestoneDatesInfo.set(eventName, milestoneDateInfo);
+            selectedLayer.milestoneDatesInfo.set(eventName, milestoneDateInfo);
         }
 
         // sort dates by date (enabled, and disabled)
-        let milestoneDatesInfo_sortedByDate = selectedLayer._milestoneDatesInfo.sortByVal('date');
+        let milestoneDatesInfo_sortedByDate = selectedLayer.milestoneDatesInfo.sortByVal('date');
 
         // //////////////////////////////////////////////////////////////////
         // create the filter conditions
@@ -586,7 +585,7 @@ class SceneBar {
                     editOptions.add(this._editOverlayRect_editFloorPlanWhiteboard);
                 }
                 editOptions.add(this._editOverlayRect_deleteButton);
-                editOptions.add(this._openImageFileButton);
+                editOptions.add(this.openImageFileButton);
                 editOptions.add(this._reconcileFrontEndButton);
             // editOptions.add(this._addStickyNoteButton);
             }
@@ -603,7 +602,7 @@ class SceneBar {
                     this._toolBar.add(
                         zipFileOptions_admin,
                         editOptions,
-                        this._playImagesInAllOverlayRectsButton,
+                        this.playImagesInAllOverlayRectsButton,
                         this._reloadPageButton
                     );
                 
@@ -613,7 +612,7 @@ class SceneBar {
                 // hide buttons group: zipFileOptions_admin
                     this._toolBar.add(
                         editOptions,
-                        this._playImagesInAllOverlayRectsButton,
+                        this.playImagesInAllOverlayRectsButton,
                         this._reloadPageButton
                     );
                 }
@@ -629,14 +628,13 @@ class SceneBar {
                 if(COL.doEnableWhiteboard) {
                     this._editOverlayRect_editFloorPlanWhiteboard.onClick(async function () {
                         console.log('BEG _editOverlayRect_editFloorPlanWhiteboard'); 
-                        let selectedLayer = COL.model.getSelectedLayer();
-                        let planView = selectedLayer.getPlanView();
+                        let planView = COL.getPlanView();
                     });
                 }
 
                 this._editOverlayRect_deleteButton.onClick(async function () {
                     let selectedLayer = COL.model.getSelectedLayer();
-                    let planView = selectedLayer.getPlanView();
+                    let planView = COL.getPlanView();
                     let intersectedOverlayRectInfo = planView.getIntersectionOverlayRectInfo();
                     let selectedOverlayRectObj = COL.util.getNestedObject(intersectedOverlayRectInfo, ['currentIntersection', 'object']);
     
@@ -652,8 +650,8 @@ class SceneBar {
                     }
                 });
 
-                this._openImageFileButton.onClick(async function (input) {
-                    console.log('BEG _openImageFileButton.onClick');
+                this.openImageFileButton.onClick(async function (input) {
+                    console.log('BEG openImageFileButton.onClick');
     
                     // the onClick event is fired when clicking on the button
     
@@ -667,8 +665,8 @@ class SceneBar {
                 });
 
             
-                this._openImageFileButton.onChange(async function (input) {
-                // console.log('BEG _openImageFileButton.onChange');
+                this.openImageFileButton.onChange(async function (input) {
+                // console.log('BEG openImageFileButton.onChange');
 
                     // let inputType = (typeof input);
 
@@ -713,15 +711,15 @@ class SceneBar {
                 window.location.reload(true);
             });
 
-            this._playImagesInAllOverlayRectsButton.onClick(async function () {
-                // console.log('BEG _playImagesInAllOverlayRectsButton.onClick');
+            this.playImagesInAllOverlayRectsButton.onClick(async function () {
+                // console.log('BEG playImagesInAllOverlayRectsButton.onClick');
     
                 let sceneBar = COL.model.getSceneBar();
                 let selectedLayer = COL.model.getSelectedLayer();
                 try {
                     // disable the button (successive clicks, before the first click is processed
                     // cause, e.g. to miss split images? (172 images in total but after rapid splitting shows only 162 images??))
-                    let playImagesState = sceneBar._playImagesInAllOverlayRectsButton.isOn() ? Layer.PLAY_IMAGES_STATE.PLAY_IMAGES_IN_ALL_OVERLAY_RECTS : Layer.PLAY_IMAGES_STATE.NONE;
+                    let playImagesState = sceneBar.playImagesInAllOverlayRectsButton.isOn() ? Layer.PLAY_IMAGES_STATE.PLAY_IMAGES_IN_ALL_OVERLAY_RECTS : Layer.PLAY_IMAGES_STATE.NONE;
                     // console.log('playImagesState1', playImagesState); 
                     
                     selectedLayer.setPlayImagesState(playImagesState);
@@ -737,10 +735,10 @@ class SceneBar {
     
                 // reset the play button 
                 selectedLayer.setPlayImagesState(Layer.PLAY_IMAGES_STATE.NONE);
-                // change the state of scenebar::_playImagesInAllOverlayRectsButton without
-                // trigerring a call to _playImagesInAllOverlayRectsButton.onClick
+                // change the state of scenebar::playImagesInAllOverlayRectsButton without
+                // trigerring a call to playImagesInAllOverlayRectsButton.onClick
                 let event = undefined;
-                sceneBar._playImagesInAllOverlayRectsButton.toggle(null, event);
+                sceneBar.playImagesInAllOverlayRectsButton.toggle(null, event);
                 
                 // update the buttons: previousImageButton, nextImageButton, play Buttons to their default state
                 // (e.g. enable if selectedOverlayRect is defined and has more than 1 image)
@@ -813,7 +811,7 @@ class SceneBar {
     }
 
     // The variable zipFile is only used in non-mobile webapp.
-    // In mobile app (android), the zipfile info is taken from model._selectedZipFileInfo
+    // In mobile app (android), the zipfile info is taken from model.selectedZipFileInfo
     // (therefore, for mobile app the value of zipFile is 'undefined' and it does not make any impact)
     async onChange_openZipFileButton (zipFile = undefined) {
         console.log('BEG onChange_openZipFileButton');
@@ -837,7 +835,7 @@ class SceneBar {
         let hamburgerBtnEl = document.getElementById('hamburgerBtnId');
         console.log('hamburgerBtnEl: ', hamburgerBtnEl);
         COL.manageGUI.setPane(hamburgerBtnEl);
-        COL.manageGUI.showHideProjectMenu(false);
+        COL.manageGUI.toggleProjectMenu(false);
         
         let selectedLayer = COL.model.getSelectedLayer();
         let selectedOverlayRect = selectedLayer.getSelectedOverlayRect();
@@ -852,8 +850,7 @@ class SceneBar {
 
         if(COL.doWorkOnline) {
             let selectedLayer = COL.model.getSelectedLayer();
-
-            let planView = selectedLayer.getPlanView();
+            let planView = COL.getPlanView();
             let orbitControls = planView.getOrbitControls();
             // planView.enableControls(isEditOverlayRectEnabled);
         
@@ -895,7 +892,7 @@ class SceneBar {
                 this._editOverlayRect_editFloorPlanWhiteboard.disabled(doDisable);
             }
             this._editOverlayRect_deleteButton.disabled(doDisable);
-            this._openImageFileButton.disabled(doDisable);
+            this.openImageFileButton.disabled(doDisable);
             this._reconcileFrontEndButton.disabled(doDisable);
         }
     }

@@ -6,155 +6,71 @@
 
 import {
     Vector3 as THREE_Vector3,
-    OrthographicCamera as THREE_OrthographicCamera,
 } from '../../static/three.js/three.js-r135/build/three.module.js';
 
-import { Model } from "./Model.js";
-import { COL } from  "../COL.js";
-import "../orbitControl/OrbitControlsUtils.js";
-import { FileInfo } from "./FileInfo.js";
+import { Model } from './Model.js';
+import { COL } from  '../COL.js';
+import '../orbitControl/OrbitControlsUtils.js';
+import { ImageView } from './ImageView.js';
+import { ImageTags } from './ImageTags.js';
+import { BlobInfo } from './BlobInfo.js';
+import { Annotation } from './Annotation.js';
 
-class ImageInfo extends FileInfo{
-    constructor({filename,
-                 imageTags = undefined,
-                 cameraInfo_asDict = undefined,
-                 blobInfo = undefined}) {
+class ImageInfo {
+    constructor({imageFilename,
+        annotationFilename = undefined,
+        imageTags = undefined,
+        imageBlobInfo = undefined,
+        annotationBlobInfo = undefined,
+        annotationAsJsonStr = undefined}) {
 
-        // https://javascript.info/class-inheritance
-        super(filename, blobInfo);
-        
-        this.imageTags = imageTags;
-
-        if(cameraInfo_asDict)
-        {
-            this.cameraInfo = cameraInfo_asDict;
-            this.cameraInfo.cameraPosition = new THREE_Vector3(cameraInfo_asDict.cameraPosition.x,
-                                                               cameraInfo_asDict.cameraPosition.y,
-                                                               cameraInfo_asDict.cameraPosition.z);
+        if(COL.util.isObjectInvalid(imageFilename)) {
+            throw new Error('ImageInfo::imageFilename invalid');
         }
-        else
-        {
-            this.cameraInfo = {
-                cameraFrustumLeftPlane: undefined,
-                cameraFrustumRightPlane: undefined,
-                cameraFrustumTopPlane: undefined,
-                cameraFrustumBottomPlane: undefined,
-                cameraFrustumNearPlane: undefined,
-                cameraFrustumFarPlane: undefined,
-                cameraPosition: new THREE_Vector3(),
-                cameraMinZoom: 0,
-                cameraZoom: 0,
-                
-                rotationVal: COL.OrbitControlsUtils.defaultRotationVal,
-                flipY: COL.OrbitControlsUtils.defaultFlipY,
-                
-                viewportExtendsOnX: undefined
-            };
+
+        this.imageFilename = imageFilename;
+        this.imageBlobInfo = imageBlobInfo;
+        this.annotationFilename = annotationFilename;
+
+        this.annotationBlobInfo = annotationBlobInfo;
+        // annotationAsJsonStr - the elements of the fabricCanvas
+        this.annotationAsJsonStr = annotationAsJsonStr;
+        
+        if(COL.util.isObjectValid(imageTags)) {
+            this.imageTags = imageTags;
+        }
+        else{
+            this.imageTags = new ImageTags({filename: imageFilename});
         }
 
         this.isImageInRange = ImageInfo.IsImageInRangeEnum.NOT_APPLICABLE;
-    };
+    }
 
-    dispose()
-    {
+    dispose() {
         // console.log('BEG ImageInfo::dispose()');
 
         this.imageTags = null;
-        this.cameraInfo = null;
-        // https://stackoverflow.com/questions/11854958/how-to-call-a-parent-method-from-child-class-in-javascript
-        FileInfo.prototype.dispose.call(this)
-
-    };
-    
-    getCameraInfo = function()
-    {
-        // console.log('BEG getCameraInfo');
-        
-        let retVal = {};
-        retVal['cameraFrustumLeftPlane'] = this.cameraInfo.cameraFrustumLeftPlane;
-        retVal['cameraFrustumRightPlane '] = this.cameraInfo.cameraFrustumRightPlane;
-        retVal['cameraFrustumTopPlane'] = this.cameraInfo.cameraFrustumTopPlane;
-        retVal['cameraFrustumBottomPlane'] = this.cameraInfo.cameraFrustumBottomPlane;
-        retVal['cameraFrustumNearPlane'] = this.cameraInfo.cameraFrustumNearPlane;
-        retVal['cameraFrustumFarPlane'] = this.cameraInfo.cameraFrustumFarPlane;
-        console.log('this.cameraInfo.cameraPosition', this.cameraInfo.cameraPosition); 
-        retVal['cameraPosition'] = this.cameraInfo.cameraPosition;
-        retVal['cameraMinZoom'] = this.cameraInfo.cameraMinZoom;
-        retVal['cameraZoom'] = this.cameraInfo.cameraZoom;
-        
-        retVal['rotationVal'] = this.cameraInfo.rotationVal;
-        retVal['flipY'] = this.cameraInfo.flipY;
-        
-        return retVal;
-    };
-
-    setCameraInfo = function(otherOrbitControls, otherRotationVal, otherFlipY)
-    {
-        // console.log('BEG setCameraInfo');
-        
-        if(COL.util.isObjectValid(otherOrbitControls))
-        {
-            this.cameraInfo.cameraFrustumLeftPlane = otherOrbitControls.camera.left;
-            this.cameraInfo.cameraFrustumRightPlane = otherOrbitControls.camera.right;
-            this.cameraInfo.cameraFrustumTopPlane = otherOrbitControls.camera.top;
-            this.cameraInfo.cameraFrustumBottomPlane = otherOrbitControls.camera.bottom;
-            this.cameraInfo.cameraFrustumNearPlane = otherOrbitControls.camera.near;
-            this.cameraInfo.cameraFrustumFarPlane = otherOrbitControls.camera.far;
-            this.cameraInfo.cameraPosition.set(otherOrbitControls.camera.position.x,
-                                               otherOrbitControls.camera.position.y,
-                                               otherOrbitControls.camera.position.z);
-            this.cameraInfo.cameraMinZoom = otherOrbitControls.minZoom;
-            this.cameraInfo.cameraZoom = otherOrbitControls.camera.zoom;
-        }
-        
-        if(COL.util.isObjectValid(otherRotationVal))
-        {
-            this.cameraInfo.rotationVal = otherRotationVal;
-        }
-        
-        if(COL.util.isObjectValid(otherFlipY))
-        {
-            this.cameraInfo.flipY = otherFlipY;
-        }
-        
-        // this.printCameraInfo();
+        this.imageFilename = null;
+        this.imageBlobInfo = null;
+        this.annotationFilename = null;
+        this.annotationBlobInfo = null;
+        this.annotationAsJsonStr = null;
     }
-
-    printImageInfo = function() {
-        console.log('ImageInfo data for filename: ', this.filename);
-
-        // FileInfo.prototype.printInfo.call(this)
+    
+    printImageInfo() {
+        console.log('ImageInfo data for imageFilename: ', this.imageFilename);
 
         let imageTagsStr = this.imageTagsToString();
         console.log('imageTagsStr', imageTagsStr);
 
-        this.printCameraInfo();
-
         console.log('isImageInRange', this.isImageInRange); 
         // newline
         console.log('');         
-    };
+    }
     
-    printCameraInfo = function() {
-        console.log('CameraInfo for filename: ', this.filename);
-
-        console.log('cameraInfo.rotationVal', this.cameraInfo.rotationVal);
-        console.log('cameraInfo.flipY', this.cameraInfo.flipY);
-        console.log('cameraInfo.cameraFrustumLeftPlane', this.cameraInfo.cameraFrustumLeftPlane);
-        console.log('cameraInfo.cameraFrustumRightPlane', this.cameraInfo.cameraFrustumRightPlane);
-        console.log('cameraInfo.cameraFrustumTopPlane', this.cameraInfo.cameraFrustumTopPlane);
-        console.log('cameraInfo.cameraFrustumBottomPlane', this.cameraInfo.cameraFrustumBottomPlane);
-        console.log('cameraInfo.cameraFrustumNearPlane', this.cameraInfo.cameraFrustumNearPlane);
-        console.log('cameraInfo.cameraFrustumFarPlane', this.cameraInfo.cameraFrustumFarPlane);
-        console.log('cameraInfo.cameraPosition', this.cameraInfo.cameraPosition);
-        console.log('cameraInfo.cameraMinZoom', this.cameraInfo.cameraMinZoom);
-        console.log('cameraInfo.cameraZoom', this.cameraInfo.cameraZoom);
-    };
-    
-    imageTagsToString = function() {
-        let imageInfoStr = 'filename: ' + this.filename;
-        if(COL.util.isObjectValid(this.imageTags))
-        {
+    imageTagsToString() {
+        let imageInfoStr = 'imageFilename: ' + this.imageFilename;
+        if(COL.util.isObjectValid(this.imageTags)) {
             // if(this.imageTags.imageHeight)
             // {
             //     imageInfoStr += '\n' + 'imageHeight: ' + this.imageTags.imageHeight;
@@ -167,28 +83,30 @@ class ImageInfo extends FileInfo{
             // {
             //     imageInfoStr += '\n' + 'imageOrientation: ' + this.imageTags.imageOrientation;
             // }
-            if(this.imageTags.dateCreated)
-            {
+            if(this.imageTags.dateCreated) {
                 imageInfoStr += '\n' + 'Date taken: ' + this.imageTags.dateCreated;
             }
         }
 
         return imageInfoStr;
-    };
+    }
 
-    validateInfo = function() {
-        FileInfo.prototype.validateInfo.call(this)
-    };
+    validateInfo() {
+        if(!this.imageBlobInfo.isBlobUrlValid()) {
+            let msgStr = 'imageFilename: ' + imageFilename + ' imageBlobInfo.blobUrl is invalid';
+            console.log(msgStr); 
+        }
+    }
     
-    static validateImagesInfo = function(imagesInfo) {
+    static validateImagesInfo(imagesInfo) {
         let iter = imagesInfo.iterator();
         while (iter.hasNext()) {
             let keyVal = iter.nextKeyVal();
             let imageInfo = keyVal[1];
         }
-    };
+    }
 
-    static PrintImagesInfo = function(imagesInfo) {
+    static PrintImagesInfo(imagesInfo) {
         // newline
         console.log('');         
         console.log('imagesInfo.size()', imagesInfo.size());
@@ -197,37 +115,144 @@ class ImageInfo extends FileInfo{
         while (iter.hasNext()) {
             let keyVal = iter.nextKeyVal();
             let imageInfo = keyVal[1];
-	    imageInfo.printImageInfo();
+	        imageInfo.printImageInfo();
         }
-    };
+    }
 
-    static getSelectedImageInfo = function (layer) {
+    static getSelectedImageInfo(layer) {
 
         let imageInfo = undefined;
-        if(COL.util.isObjectValid(layer))
-        {
+        if(COL.util.isObjectValid(layer)) {
             let imageInfoVec = layer.getImagesInfo();
             let selectedOverlayRect = layer.getSelectedOverlayRect();
-            if(COL.util.isObjectValid(selectedOverlayRect))
-            {
+            if(COL.util.isObjectValid(selectedOverlayRect)) {
                 let selectedImageFilename = selectedOverlayRect.getSelectedImageFilename();
                 imageInfo = imageInfoVec.getByKey(selectedImageFilename);
             }
         }
         
         return imageInfo;
-    };
+    }
+
+    async updateImageInfoFromUrl (imageBlobUrl, imageAnnotationBlobUrl) {
+        // console.log('BEG updateImageInfoFromUrl');
+
+        await this.updateImageTags(imageBlobUrl);
+        
+        if(COL.util.isObjectInvalid(this.imageBlobInfo)) {
+            // the blob is not in memory. Update it, and since we are only displaying it set isDirty=false
+            this.imageBlobInfo = new BlobInfo({filenameFullPath: this.imageFilename, blobUrl: imageBlobUrl, isDirty: false});
+        }
+        else {
+            // the blob is in memory. It may be a new blob with a isDirty=true (or a preloaded blob from the webServer with isDirty=true)
+            // so leave isDirty as is
+            this.imageBlobInfo.blobUrl = imageBlobUrl;
+        }
+
+        if(COL.util.isObjectValid(this.annotationFilename)) {
+            // annotationFilename exists - create annotationBlobInfo or update it with imageAnnotationBlobUrl
+            if(COL.util.isObjectInvalid(this.annotationBlobInfo)) {
+                this.annotationBlobInfo = new BlobInfo({filenameFullPath: this.annotationFilename, blobUrl: imageAnnotationBlobUrl, isDirty: false});
+            }
+            else {
+                this.annotationBlobInfo.blobUrl = imageAnnotationBlobUrl;
+            }
+        }
+
+        let fabricCanvasAsJson = COL.model.fabricCanvas.toJSON(['annotationState', 'uuid']);
+        this.annotationAsJsonStr = JSON.stringify(fabricCanvasAsJson);
+
+        // console.log('this.annotationAsJsonStr', this.annotationAsJsonStr);
+    }        
+
+    async updateImageTags (imageBlobUrl) {
+        // console.log('BEG updateImageTags');
+        
+        let fileType = COL.util.getFileTypeFromFilename(this.imageFilename);
+        this.imageTags = new ImageTags({filename: this.imageFilename});
+        if(fileType === 'jpg') {
+            // load imageTags from the image. This will update the imageTags for the image in imagesInfo
+            
+            // get the blob from the imageBlobUrl
+            let response = await fetch(imageBlobUrl);
+            await COL.errorHandlingUtil.handleErrors(response);
+            let blob = await response.blob();
+            this.imageTags = await ImageTags.GetImageTags(this.imageFilename, blob);
+        }
+    }
+
+    addAnnotationShape3(shape) {
+        Annotation.AddAnnotationShape4(shape);
+
+        // Render the canvas
+        COL.model.fabricCanvas.renderAll();
+        ImageView.Render2();
+
+        let fabricCanvasAsJson = COL.model.fabricCanvas.toJSON(['annotationState', 'uuid']);
+        this.annotationAsJsonStr = JSON.stringify(fabricCanvasAsJson);
+    }
+
+    async updateAnnotationBlob() {
+        // console.log('BEG updateAnnotationBlob');
+
+        let selectedLayer = COL.model.getSelectedLayer();
+
+        // update annotationAsJsonStr
+        let fabricCanvasAsJson = {
+            canvasWidth: COL.model.fabricCanvas.width,
+            canvasHeight: COL.model.fabricCanvas.height,
+            freeDrawingBrushWidth: COL.model.fabricCanvas.freeDrawingBrush.width,
+            state: COL.model.fabricCanvas.toJSON(['annotationState', 'uuid'])
+        };
+        this.annotationAsJsonStr = JSON.stringify(fabricCanvasAsJson);
+
+        if( COL.util.isObjectInvalid(this.annotationFilename) ) {
+            // set this.annotationFilename from this.imageFilename, e.g. IMG_6626.jpg -> IMG_6626.json
+            this.annotationFilename = this.imageFilename.replace(/\.[^.]+$/, '.json');
+        }
+
+        let metaDataBlobsInfo = selectedLayer.getMetaDataBlobsInfo();
+        
+        // update annotationBlobInfo
+        this.annotationBlobInfo = BlobInfo.UpdateMetaDataBlobsInfo({metaDataBlobsInfo: metaDataBlobsInfo, 
+            metaData: this.annotationAsJsonStr, 
+            filename: this.annotationFilename, 
+            isDirty: true});
+
+        // update imageInfo within imagesInfo after the annotationBlob has changed
+        let imagesInfo = selectedLayer.getImagesInfo();
+        imagesInfo.set(this.imageFilename, this);
+
+        // mark as not-synced after updating the annotationBlob.
+        selectedLayer.setSyncWithWebServerStatus(false);
+
+        // Sync with the backend
+        let syncStatus = await selectedLayer.syncBlobsWithWebServer();
+        if(!syncStatus) {
+            throw new Error('Error from sync BlobsWithWebServer after adding rectangle annotation.');
+        }
+    }
 
     // https://stackoverflow.com/questions/40201589/serializing-an-es6-class-object-as-json/40201783
-    toJSON = function() {
-        return {
-            blobInfo: this.blobInfo,
-            filename: this.filename,
+    toJSON() {
+        let imageInfo_asJson = {
+            imageBlobInfo: this.imageBlobInfo.toJSON(),
+            annotationFilename: this.annotationFilename,
+            imageFilename: this.imageFilename,
             imageTags: this.imageTags,
-            cameraInfo: this.cameraInfo,
         };
-    };
-};
+
+        if(COL.util.isObjectValid(this.annotationBlobInfo)) {
+            // tbd - rename ImageInfo -> AssetInfo ? also stores annotationInfo (e.g. img1234.json)
+            // the information about the annotationBlobInfo
+            imageInfo_asJson = { ...imageInfo_asJson, ...{annotationBlobInfo: this.annotationBlobInfo.toJSON()} };
+            // no need to output the annotationAsJsonStr to json (as we don't want them to end up in the layer .json file
+            // annotationAsJsonStr is represented in its own file e.g. img1234.json
+        }
+
+        return imageInfo_asJson;
+    }
+}
 
 ImageInfo.IsImageInRangeEnum = { IN_RANGE: 0, NOT_IN_RANGE: 1, NOT_APPLICABLE: 2 };
 

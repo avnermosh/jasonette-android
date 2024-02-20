@@ -11,174 +11,204 @@ import {
 import { COL } from '../COL.js';
 import { Model } from './Model.js';
 import { OrbitControlsImageView } from '../orbitControl/OrbitControlsImageView.js';
+import { ImageView } from './ImageView.js';
+import { ImageInfo } from './ImageInfo.js';
+import { ImageTags } from './ImageTags.js';
+import { Annotation } from './Annotation.js';
 
-async function onMouseDownOrTouchStart_imageView(event) {
-    console.log('BEG onMouseDownOrTouchStart_imageView');
+function pushPointerDownEventToCache(ev) {
+    // console.log('BEG pushPointerDownEventToCache');
+    
+    // Save this event in the target's cache
+    ImageView.pointerEventCache.push(ev);
 
+    if(ImageView.pointerEventCache.length == 2){
+        // save the current state and change the state to OrbitControlsImageView.STATE.DOLLY.
+        // this is done to manage a usecase where the user does some annotation editing and then
+        // enters a multi-touch (e.g. 2-finger touch) mode
+        // (in 2-finger touch the editing is disabled, but when the user turns to single-touch mode,
+        // restore the previous mode, e.d. add/move/delete an annotation)
+        let imageView = COL.model.getImageView();
+        let orbitControls = imageView.getOrbitControls();
+        let orbitControlsImageViewState = orbitControls.getState();
+        ImageView.orbitControlsImageViewStateCache.push(orbitControlsImageViewState);
+        orbitControls.setState(OrbitControlsImageView.STATE.DOLLY);
+    }
+}
+
+function removePointerDownEventFromCache(ev) {
+    // console.log('BEG removePointerDownEventFromCache');
+
+    // Remove this event from the target's cache
+    const index = ImageView.pointerEventCache.findIndex(
+        (cachedEv) => cachedEv.pointerId === ev.pointerId,
+    );
+    ImageView.pointerEventCache.splice(index, 1);
+
+    if(ImageView.pointerEventCache.length == 1){
+        // restore the state before it was set to OrbitControlsImageView.STATE.DOLLY
+        let orbitControlsImageViewState = ImageView.orbitControlsImageViewStateCache.pop();
+        let imageView = COL.model.getImageView();
+        let orbitControls = imageView.getOrbitControls();
+        // COL.model.fabricCanvas.discardActiveObject();
+        orbitControls.setState(orbitControlsImageViewState);
+    }
+}
+
+function updatePointerEventInCache(ev) {
+    // console.log('BEG updatePointerEventInCache');
+
+    const index = ImageView.pointerEventCache.findIndex(
+        (cachedEv) => cachedEv.pointerId === ev.pointerId,
+    );
+    ImageView.pointerEventCache[index] = ev;
+}
+
+async function onResize_imageView(event) {
+    // console.log('BEG onResize_imageView');
     let selectedLayer = COL.model.getSelectedLayer();
-    let imageView = selectedLayer.getImageView();
-    let orbitControls = imageView.getControls();
-    console.log('orbitControlsState1', orbitControls.getState());
+    if (COL.util.isObjectValid(selectedLayer)) {
+        let imageView = COL.model.getImageView();
+        let imageInfo = ImageInfo.getSelectedImageInfo(selectedLayer);
+        imageView.setTheSpriteSurface(imageInfo);
+        let doRescale = false;
+        doRescale = true;
+        imageView.updateCameraAndCanvas( imageInfo, doRescale );
+    }
+}
 
-    let imageViewPaneEl = document.getElementById('imageViewPaneId');
+async function onPointerDown_imageView(event) {
+    // console.log('BEG onPointerDown_imageView');
 
-    if (COL.util.isTouchDevice()) {
-        imageViewPaneEl.removeEventListener('touchstart', onMouseDownOrTouchStart_imageView, {
+    if (event.target.id !== 'selectedImage3dCanvasId' && event.target.id !== 'imageViewPaneId') {
+        // Clicked on an element which is not the image itself, e.g. addShapeIconId
+        // avoid any response here
+        return;
+    }
+
+    pushPointerDownEventToCache(event);
+
+    let imageView = COL.model.getImageView();
+    let orbitControls = imageView.getOrbitControls();
+
+    if(ImageView.pointerEventCache.length == 1) {
+        // single-pointerEvent
+        let imageViewPaneEl = document.getElementById('imageViewPaneId');
+        imageViewPaneEl.addEventListener('pointermove', onPointerMove_imageView, {
             capture: false,
             passive: false,
         });
-        imageViewPaneEl.addEventListener('touchend', onMouseUpOrTouchEnd_imageView, {
-            capture: false,
-            passive: false,
-        });
-        imageViewPaneEl.addEventListener('touchmove', onMouseMoveOrTouchMove_imageView, {
-            capture: false,
-            passive: false,
-        });
+    }
+    else if(ImageView.pointerEventCache.length > 1) {
+        // multi-pointerEvent
+        orbitControls.initDolly();
     }
     else{
-        imageViewPaneEl.removeEventListener('mousedown', onMouseDownOrTouchStart_imageView, {
-            capture: false,
-            passive: false,
-        });
-        imageViewPaneEl.addEventListener('mouseup', onMouseUpOrTouchEnd_imageView, {
-            capture: false,
-            passive: false,
-        });
-        imageViewPaneEl.addEventListener('mousemove', onMouseMoveOrTouchMove_imageView, {
-            capture: false,
-            passive: false,
-        });
+        throw new Error('The value of ImageView.pointerEventCache.length is invalid: ' + ImageView.pointerEventCache.length);
     }
+
+    // console.log('orbitControlsState1', orbitControls.getStateAsStr());
+
+    let point2d = ImageView.GetPointFromPointerEvent();
+    imageView.mouse = imageView.screenPointCoordToNormalizedCoord(point2d);
 
     event.preventDefault();
-    if (((event instanceof MouseEvent) && (event.button == OrbitControlsImageView.mouseButtons.LEFT)) || 
-        event instanceof TouchEvent)  {
-        orbitControls.handleMouseDown_orTouchStart_imageView(event);
-    }
+    await orbitControls.handlePointerDown_imageView(event);
+
 }
   
-async function onMouseUpOrTouchEnd_imageView(event) {
-    // console.log('BEG onMouseUpOrTouchEnd_imageView');
-  
-    let selectedLayer = COL.model.getSelectedLayer();
-    let imageView = selectedLayer.getImageView();
-  
-    let imageViewPaneEl = document.getElementById('imageViewPaneId');
-    if (COL.util.isTouchDevice()) {
-        imageViewPaneEl.addEventListener('touchstart', onMouseDownOrTouchStart_imageView, {
-            capture: false,
-            passive: false,
-        });
-        imageViewPaneEl.removeEventListener('touchmove', onMouseMoveOrTouchMove_imageView, {
-            capture: false,
-            passive: false,
-        });
-        imageViewPaneEl.removeEventListener('touchend', onMouseUpOrTouchEnd_imageView, {
+async function onPointerUp_imageView(event) {
+    // console.log('BEG onPointerUp_imageView');
+
+    if (event.target.id !== 'selectedImage3dCanvasId' && event.target.id !== 'imageViewPaneId') {
+        // Clicked on an element which is not the image itself, e.g. addShapeIconId
+        // avoid any response here
+        return;
+    }
+
+    removePointerDownEventFromCache(event);
+
+    let imageView = COL.model.getImageView();
+    let orbitControls = imageView.getOrbitControls();
+    // console.log('orbitControls.getState()', orbitControls.getStateAsStr());
+
+    if(ImageView.pointerEventCache.length == 0) {
+        let imageViewPaneEl = document.getElementById('imageViewPaneId');
+        imageViewPaneEl.removeEventListener('pointermove', onPointerMove_imageView, {
             capture: false,
             passive: false,
         });
     }
     else{
-        imageViewPaneEl.addEventListener('mousedown', onMouseDownOrTouchStart_imageView, {
-            capture: false,
-            passive: false,
-        });
-        imageViewPaneEl.removeEventListener('mousemove', onMouseMoveOrTouchMove_imageView, {
-            capture: false,
-            passive: false,
-        });
-        imageViewPaneEl.removeEventListener('mouseup', onMouseUpOrTouchEnd_imageView, {
-            capture: false,
-            passive: false,
-        });
-    }
-
-    let orbitControls = imageView.getControls();
-    switch (orbitControls.getState()) {
-        case OrbitControlsImageView.STATE.NONE:
-        {
-            selectedLayer.toggleImageDisplay();
-            break;
+        if (ImageTags.Is360Image()) {
+            orbitControls.initPan360(event);
         }
-        case OrbitControlsImageView.STATE.DOLLY:
-        case OrbitControlsImageView.STATE.PAN:
-        {
-            break;
-        }
-        default:
-        {
-            throw new Error('Invalid orbitControls state: ' + orbitControls.getState());
+        else{
+            // set the start to where the first pointer is (in case that the first pointer has changed)
+            let point2d = ImageView.GetPointFromPointerEvent();
+            orbitControls.initPanNon360(point2d);
         }
     }
-    orbitControls.setState(OrbitControlsImageView.STATE.NONE);
 
-    // // =-----
-    // // tbd - from endTouchProcessing - remove ??
-    // // is deltaPoint2d_inScreenCoord_start, centerPoint2d_inNDC_start being used ???
-
-    // // reset the point anchors for zooming via two-finger touch
-    // this.deltaPoint2d_inScreenCoord_start = new THREE_Vector2();
-    // this.deltaPoint2d_inScreenCoord_end = new THREE_Vector2();
-
-    // this.centerPoint2d_inNDC_start = new THREE_Vector2();
-    // this.centerPoint2d_inNDC_end = new THREE_Vector2();
-
+    await orbitControls.handlePointerUp_imageView();
 }
 
-function onMouseMoveOrTouchMove_imageView(event) {
-    // console.log('BEG onMouseMoveOrTouchMove_imageView');
-  
-    let selectedLayer = COL.model.getSelectedLayer();
-    let imageView = selectedLayer.getImageView();
-    let orbitControls = imageView.getControls();
+function onPointerMove_imageView(event) {
+    // console.log('BEG onPointerMove_imageView');
+
+    if (event.target.id !== 'selectedImage3dCanvasId' && event.target.id !== 'imageViewPaneId') {
+        // Clicked on an element which is not the image itself, e.g. addShapeIconId
+        // avoid any processing here
+        return;
+    }
+
+    let imageView = COL.model.getImageView();
+    let orbitControls = imageView.getOrbitControls();
+
+    updatePointerEventInCache(event);
+            
+    let point2d = ImageView.GetPointFromPointerEvent();
+    imageView.mouse = imageView.screenPointCoordToNormalizedCoord(point2d);
 
     if (COL.util.isTouchDevice()) {
-        // Prevent from applying the _default_, _generic_ browser scroll to the planViewPane
-        // (in such case, refresh symbol icon appears at the center-top of the page)
-        // Instead, the planViewPane is _panned_ with custom logic
-        event.preventDefault();
-
-        switch (event.touches.length) {
-            case 1:
-                // single-finger touch
-                orbitControls.handleMouseMove_orOneFingerTouchMove_imageView(event);
-                break;
-        
-            case 2:
-                // two-finger touch
-                if (event.targetTouches.length == 2) {
-                    orbitControls.handleTwoFingerTouchMove_imageView(event);
-                }
-                break;
-            default:
-            {
-                throw new Error('The value of event.targetTouches.length is invalid: ' + event.targetTouches.length);
-            }
+        // // Prevent from applying the _default_, _generic_ browser scroll to the planViewPane
+        // // (in such case, refresh symbol icon appears at the center-top of the page)
+        // // Instead, the planViewPane is _panned_ with custom logic
+        // event.preventDefault();
+    
+        // console.log('ImageView.pointerEventCache.length', ImageView.pointerEventCache.length);
+        if(ImageView.pointerEventCache.length == 1) {
+            // single-pointerEvent (e.g. one-finger touch)
+            orbitControls.handleSinglePointerEventMove_imageView(event);
+        }
+        else if(ImageView.pointerEventCache.length > 1) {
+            // multi-pointerEvent (e.g. two-finger touch)
+            orbitControls.handleMultiPointerEventMove_imageView();
+        }
+        else {
+            throw new Error('The value of ImageView.pointerEventCache.length is invalid: ' + ImageView.pointerEventCache.length);
         }
     }
     else{
-        orbitControls.handleMouseMove_orOneFingerTouchMove_imageView(event);
+        orbitControls.handleSinglePointerEventMove_imageView(event);
     }
 }
   
 function onWheel_imageView(event) {
     // console.log('BEG onWheel_imageView');
   
-    let selectedLayer = COL.model.getSelectedLayer();
-    let imageView = selectedLayer.getImageView();
-    let orbitControls = imageView.getControls();
+    let imageView = COL.model.getImageView();
+    let orbitControls = imageView.getOrbitControls();
     orbitControls.handleWheel_imageView(event);
 }
   
 function onKeyDown_imageView(event) {
-    let selectedLayer = COL.model.getSelectedLayer();
-    let imageView = selectedLayer.getImageView();
-    let orbitControls = imageView.getControls();
-    orbitControls.handleKey_imageView(event);
+    let imageView = COL.model.getImageView();
+    let orbitControls = imageView.getOrbitControls();
+    orbitControls.handleKey_imageViewNon360(event);
 }
- 
-  
-export { onMouseDownOrTouchStart_imageView, onMouseMoveOrTouchMove_imageView, 
-    onWheel_imageView, onKeyDown_imageView };
+
+
+export { onPointerDown_imageView, onPointerMove_imageView, onPointerUp_imageView,
+    onWheel_imageView, onKeyDown_imageView, onResize_imageView };
     

@@ -151,12 +151,18 @@ class OrbitControlsPlanView extends THREE_EventDispatcher {
         this.centerPoint2d_inNDC_end = new THREE_Vector2();
 
         // refactored from EditOverlayRect_TrackballControls
-        this._raycaster = new THREE_Raycaster();
-        this._mouse = new THREE_Vector2();
-        this._intersection = new THREE_Vector3();
-        this._selectedStructureObj = null;
-        this._hoveredOverlayRect = null;
-        this._editedOverlayMeshObjInitialPosition = new THREE_Vector3();
+        this.raycaster = new THREE_Raycaster();
+        this.mouse = new THREE_Vector2();
+        this.intersection = new THREE_Vector3();
+        this.selectedStructureObj = null;
+        this.hoveredOverlayRect = null;
+        this.editedOverlayMeshObjInitialPosition = new THREE_Vector3();
+    }
+
+    initPan(point2d){
+        this.panPointStart.set(point2d.x, point2d.y);
+        this.panPointEnd.copy(this.panPointStart);
+        this.panPointCurrent.copy(this.panPointStart);
     }
 
     async setState(otherState) {
@@ -227,11 +233,40 @@ class OrbitControlsPlanView extends THREE_EventDispatcher {
                 throw new Error(msgStr);
         }
 
-        // console.log('orbitControlsState6:', this.getState());    
+        // console.log('orbitControlsState6:', this.getStateAsStr());    
     }
 
     getState() {
         return this.state;
+    }
+
+    getStateAsStr() {
+        switch (this.getState()) {
+            case OrbitControlsPlanView.STATE.NONE:
+                return 'OrbitControlsPlanView.STATE.NONE';
+            case OrbitControlsPlanView.STATE.SELECT_OVERLAY_RECT:
+                return 'OrbitControlsPlanView.STATE.SELECT_OVERLAY_RECT';
+            case OrbitControlsPlanView.STATE.DOLLY_PAN:
+                return 'OrbitControlsPlanView.STATE.DOLLY_PAN';
+            case OrbitControlsPlanView.STATE.DOLLY_ZOOM:
+                return 'OrbitControlsPlanView.STATE.DOLLY_ZOOM';
+            case OrbitControlsPlanView.STATE.CONTEXT_MENU: 
+                return 'OrbitControlsPlanView.STATE.CONTEXT_MENU';
+            case OrbitControlsPlanView.STATE.EDIT_MODE_ADD_OVERLAY_RECT: 
+                return 'OrbitControlsPlanView.STATE.EDIT_MODE_ADD_OVERLAY_RECT';
+            case OrbitControlsPlanView.STATE.CONTEXT_MENU: 
+                return 'OrbitControlsPlanView.STATE.EDIT_MODE_MOVE_OVERLAY_RECT';
+            case OrbitControlsPlanView.STATE.EDIT_MODE_MOVE_OVERLAY_RECT: 
+                return 'OrbitControlsPlanView.STATE.EDIT_MODE_MERGE_START_OVERLAY_RECT';
+            case OrbitControlsPlanView.STATE.EDIT_MODE_MERGE_START_OVERLAY_RECT: 
+                return 'OrbitControlsPlanView.STATE.EDIT_MODE_MERGE_END_OVERLAY_RECT';
+            case OrbitControlsPlanView.STATE.EDIT_MODE_MERGE_END_OVERLAY_RECT: 
+                return 'OrbitControlsPlanView.STATE.CONTEXT_MENU';
+            default:
+            {
+                throw new Error('Invalid orbitControls state: ' + this.getState());
+            }
+        }
     }
 
     getPolarAngle() {
@@ -304,10 +339,7 @@ class OrbitControlsPlanView extends THREE_EventDispatcher {
         // angle from z-axis around y-axis
         this.spherical.setFromVector3(this.offset);
 
-        if (
-            this.autoRotate &&
-      this.state === OrbitControlsPlanView.STATE.NONE
-        ) {
+        if ( this.autoRotate && this.state === OrbitControlsPlanView.STATE.NONE ) {
             rotateLeft(getAutoRotationAngle());
         }
 
@@ -315,26 +347,17 @@ class OrbitControlsPlanView extends THREE_EventDispatcher {
         this.spherical.phi += this.sphericalDelta.phi;
 
         // restrict theta to be between desired limits
-        this.spherical.theta = Math.max(
-            this.minAzimuthAngle,
-            Math.min(this.maxAzimuthAngle, this.spherical.theta)
-        );
+        this.spherical.theta = Math.max(this.minAzimuthAngle, Math.min(this.maxAzimuthAngle, this.spherical.theta) );
 
         // restrict phi to be between desired limits
-        this.spherical.phi = Math.max(
-            this.minPolarAngle,
-            Math.min(this.maxPolarAngle, this.spherical.phi)
-        );
+        this.spherical.phi = Math.max(this.minPolarAngle, Math.min(this.maxPolarAngle, this.spherical.phi) );
 
         this.spherical.makeSafe();
 
         this.spherical.radius *= this.scale;
 
         // restrict radius to be between desired limits
-        this.spherical.radius = Math.max(
-            this.minDistance,
-            Math.min(this.maxDistance, this.spherical.radius)
-        );
+        this.spherical.radius = Math.max( this.minDistance, Math.min(this.maxDistance, this.spherical.radius) );
 
         // move target to panned location
         this.target.add(this.panOffset);
@@ -361,11 +384,9 @@ class OrbitControlsPlanView extends THREE_EventDispatcher {
         );
         let condition3 = 8 * (1 - this.lastQuaternion.dot(this.camera.quaternion));
 
-        if (
-            this.zoomChanged ||
-      positionShift > OrbitControlsPlanView.EPS ||
-      condition3 > OrbitControlsPlanView.EPS
-        ) {
+        if (this.zoomChanged ||
+            positionShift > OrbitControlsPlanView.EPS ||
+            condition3 > OrbitControlsPlanView.EPS) {
             this.lastPosition.copy(this.camera.position);
             this.lastQuaternion.copy(this.camera.quaternion);
             this.zoomChanged = false;
@@ -376,7 +397,7 @@ class OrbitControlsPlanView extends THREE_EventDispatcher {
                 return false;
             }
 
-            let planView = selectedLayer.getPlanView();
+            let planView = COL.getPlanView();
             let bBox = planView.getBoundingBox();
             let viewportExtendsOnX = planView.doesViewportExtendOnX();
             if (bBox) {
@@ -476,13 +497,13 @@ class OrbitControlsPlanView extends THREE_EventDispatcher {
     // console.log('BEG OrbitControlsPlanView.js::dispose()');
 
         // https://threejs.org/docs/#examples/en/controls/OrbitControls.dispose
-        this._raycaster = null;
-        this._mouse = null;
-        this._intersection = null;
+        this.raycaster = null;
+        this.mouse = null;
+        this.intersection = null;
         this.camera = null;
-        this._selectedStructureObj = null;
-        this._hoveredOverlayRect = null;
-        this._editedOverlayMeshObjInitialPosition = null;
+        this.selectedStructureObj = null;
+        this.hoveredOverlayRect = null;
+        this.editedOverlayMeshObjInitialPosition = null;
     }
 
     setCameraFrustumAndZoom(
@@ -558,14 +579,11 @@ class OrbitControlsPlanView extends THREE_EventDispatcher {
                 imageOrientation
             );
 
-            let retVal0 = COL.OrbitControlsUtils.getScaleAndRatio(
+            [scaleX, scaleY] = COL.OrbitControlsUtils.getScaleAndRotation(
                 imageWidth,
                 imageHeight,
                 imageOrientation
             );
-
-            scaleX = retVal0.scaleX;
-            scaleY = retVal0.scaleY;
         }
         else {
             scaleX = this.camera.right * 2;
@@ -643,8 +661,7 @@ class OrbitControlsPlanView extends THREE_EventDispatcher {
     pan_usingScreenCoords( panPointCurrent_inScreenCoord, panPointEnd_inScreenCoord ) {
         // console.log('BEG pan_usingScreenCoords');
 
-        let selectedLayer = COL.model.getSelectedLayer();
-        let planView = selectedLayer.getPlanView();
+        let planView = COL.getPlanView();
 
         let panPointCurrent_inNDC_Coord = planView.screenPointCoordToNormalizedCoord(panPointCurrent_inScreenCoord);
         let panPointEnd_inNDC_Coord = planView.screenPointCoordToNormalizedCoord(panPointEnd_inScreenCoord);
@@ -660,8 +677,7 @@ class OrbitControlsPlanView extends THREE_EventDispatcher {
         delta_inWorldCoord.copy(panPointEnd_inWorldCoord);
         delta_inWorldCoord.sub(panPointCurrent_inWorldCoord);
 
-        this.panLeft(delta_inWorldCoord.x);
-        this.panUp(delta_inWorldCoord.z);
+        this.pan_usingWorldCoords(delta_inWorldCoord);
     }
 
     pan_usingWorldCoords(delta_inWorldCoord) {
@@ -793,7 +809,7 @@ class OrbitControlsPlanView extends THREE_EventDispatcher {
             return;
         }
 
-        let planView = selectedLayer.getPlanView();
+        let planView = COL.getPlanView();
         await planView.validateIntersectionPoint();
         await planView.findIntersections();
 
@@ -837,7 +853,7 @@ class OrbitControlsPlanView extends THREE_EventDispatcher {
             this.setState(OrbitControlsPlanView.STATE.NONE);
         }
 
-        this.domElement.style.cursor = this._hoveredOverlayRect ? 'pointer' : 'auto';
+        this.domElement.style.cursor = this.hoveredOverlayRect ? 'pointer' : 'auto';
         PlanView.Render();
     }
 
@@ -849,14 +865,14 @@ class OrbitControlsPlanView extends THREE_EventDispatcher {
         // /////////////////////////////////////
     
         let selectedLayer = COL.model.getSelectedLayer();
-        let planView = selectedLayer.getPlanView();
+        let planView = COL.getPlanView();
         let intersectedOverlayRectInfo =
           planView.getIntersectionOverlayRectInfo();
         let editedOverlayMeshObj = COL.util.getNestedObject(
             intersectedOverlayRectInfo,
             ['currentIntersection', 'object']
         );
-        editedOverlayMeshObj.position.copy(this._intersection.point);
+        editedOverlayMeshObj.position.copy(this.intersection.point);
     
         // update the position of the overlayRect (i.e. overlayMeshObj) in overlayMeshGroup
         // (this is needed to persist the changes when syncing the changes to the webserver)
